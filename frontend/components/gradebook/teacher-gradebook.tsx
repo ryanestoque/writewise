@@ -39,7 +39,9 @@ import { QueryRecovery } from "@/components/shared/query-recovery";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
@@ -70,6 +72,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
@@ -154,13 +158,13 @@ export function TeacherGradebook({
 
   if (!active)
     return (
-      <p role="status" className="text-muted-foreground text-sm">
-        Sign in again to view grades.
-      </p>
+      <Alert role="status">
+        <AlertDescription>Sign in again to view grades.</AlertDescription>
+      </Alert>
     );
 
   return (
-    <div className="w-full min-w-0 space-y-5 sm:space-y-6">
+    <div className="flex w-full min-w-0 flex-col gap-5 sm:gap-6">
       {/* Page Header — matches Dashboard, Activities, and Roster */}
       <div className="flex items-center justify-between gap-3 sm:gap-4 print:hidden">
         <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
@@ -174,7 +178,11 @@ export function TeacherGradebook({
             className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer shrink-0"
             aria-label={exporting ? "Downloading class record" : "Export class record"}
           >
-            <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" aria-hidden="true" />
+            {exporting ? (
+              <Spinner data-icon="inline-start" aria-hidden="true" />
+            ) : (
+              <Download data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+            )}
             <span>{exporting ? "Downloading…" : "Export CSV"}</span>
           </Button>
         )}
@@ -196,21 +204,21 @@ export function TeacherGradebook({
           isRetrying={sections.isFetching}
         />
       ) : sections.isPending ? (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <div className="flex gap-3">
             <Skeleton className="h-10 w-56 rounded-xl" />
             <Skeleton className="h-10 w-40 rounded-xl" />
           </div>
-          <div className="rounded-xl sm:rounded-2xl border border-border p-6 space-y-3 shadow-warm">
+          <div className="flex flex-col gap-3 rounded-xl sm:rounded-2xl border border-border p-6 shadow-warm">
             <Skeleton className="h-8 w-full rounded-lg" />
             <Skeleton className="h-12 w-full rounded-lg" />
             <Skeleton className="h-12 w-full rounded-lg" />
           </div>
         </div>
       ) : !sections.data.length ? (
-        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-8 shadow-warm">
+        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
-            <Users className="size-5" />
+            <Users aria-hidden="true" />
           </EmptyMedia>
           <EmptyHeader>
             <EmptyTitle>Choose a class to start</EmptyTitle>
@@ -219,9 +227,9 @@ export function TeacherGradebook({
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Link href="/roster" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Button nativeButton={false} variant="outline" size="sm" render={<Link href="/roster" />}>
               Open class roster
-            </Link>
+            </Button>
           </EmptyContent>
         </Empty>
       ) : (
@@ -310,9 +318,9 @@ function SectionGrid({
 
   if (!query.isAccountActive)
     return (
-      <p role="status" className="text-muted-foreground text-sm">
-        Sign in again to view grades.
-      </p>
+      <Alert role="status">
+        <AlertDescription>Sign in again to view grades.</AlertDescription>
+      </Alert>
     );
   if (query.isError)
     return (
@@ -325,13 +333,13 @@ function SectionGrid({
     );
   if (!query.data || query.data.section_id !== sectionId)
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="flex gap-3">
           <Skeleton className="h-10 w-56 rounded-md" />
           <Skeleton className="h-10 w-40 rounded-md" />
           <Skeleton className="h-10 w-44 rounded-md" />
         </div>
-        <div className="rounded-md border p-6 space-y-3">
+        <div className="flex flex-col gap-3 rounded-md border p-6">
           <Skeleton className="h-8 w-full rounded-md" />
           <Skeleton className="h-12 w-full rounded-md" />
           <Skeleton className="h-12 w-full rounded-md" />
@@ -477,120 +485,133 @@ function SectionGrid({
     ACTIVITY_FILTER_ITEMS.find((item) => item.value === filter)?.label ?? "All activities";
 
   return (
-    <div className="w-full min-w-0 space-y-4">
+    <div className="flex w-full min-w-0 flex-col gap-4">
       {/* Unified Filter & Search Toolbar — matches Activities and Roster */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 lg:gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm print:hidden">
-        {/* Row 1 on mobile / Left on desktop: Search + Activity Filter */}
-        <div className="flex items-center gap-2 shrink-0">
-          <SearchInput
-            ref={searchInputRef}
-            aria-label="Find student in gradebook"
-            placeholder="Find student…"
-            containerClassName="flex-1 min-w-0 lg:w-60"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            onClear={() => setSearch("")}
-          />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              aria-label="Show activities"
-              className="inline-flex items-center justify-between gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-[36px] text-xs font-medium rounded-lg sm:rounded-xl border border-border bg-background text-foreground hover:bg-muted/60 transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span>{currentActivityFilterLabel}</span>
-              <ChevronDown className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              {ACTIVITY_FILTER_ITEMS.map((item) => (
-                <DropdownMenuItem
-                  key={item.value}
-                  onClick={() => setFilter(item.value)}
-                  className="cursor-pointer text-xs justify-between"
-                >
-                  <span>{item.label}</span>
-                  {filter === item.value && (
-                    <span className="text-primary font-bold">✓</span>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Row 2 on mobile / Right on desktop: Section FilterPills + View Mode Toggle */}
-        <div className="flex items-center justify-between lg:justify-end gap-2 min-w-0 flex-1">
-          {sectionItems.length > 0 && (
-            <FilterPills
-              items={sectionItems}
-              value={sectionId}
-              onChange={onSelectSection}
-              label="Section:"
-              ariaLabel="Select section"
-              containerClassName="min-w-0 flex-1 lg:flex-initial lg:justify-end"
+      <Card size="sm" className="print:hidden">
+        <CardContent className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 lg:gap-3">
+          {/* Row 1 on mobile / Left on desktop: Search + Activity Filter */}
+          <div className="flex items-center gap-2 shrink-0">
+            <SearchInput
+              ref={searchInputRef}
+              aria-label="Find student in gradebook"
+              placeholder="Find student…"
+              containerClassName="flex-1 min-w-0 lg:w-60"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              onClear={() => setSearch("")}
             />
-          )}
 
-          <ToggleGroup
-            value={[viewMode]}
-            multiple={false}
-            spacing={0}
-            onValueChange={(vals) => {
-              if (vals.length > 0) {
-                setViewMode(vals[0] as "points" | "diagnostic");
-              }
-            }}
-            aria-label="Gradebook view mode"
-            className="inline-flex items-center rounded-lg sm:rounded-xl border border-border bg-background p-0.5 text-xs font-medium shrink-0"
-          >
-            <ToggleGroupItem
-              value="points"
-              size="sm"
-              className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground aria-pressed:hover:bg-brand-700 dark:aria-pressed:hover:bg-primary aria-pressed:hover:text-white dark:aria-pressed:hover:text-primary-foreground aria-pressed:shadow-warm-sm aria-pressed:font-semibold"
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    aria-label="Show activities"
+                    className="min-h-11 sm:min-h-9 shrink-0 justify-between"
+                  />
+                }
+              >
+                <span>{currentActivityFilterLabel}</span>
+                <ChevronDown data-icon="inline-end" className="text-muted-foreground" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuRadioGroup value={filter} onValueChange={setFilter}>
+                  {ACTIVITY_FILTER_ITEMS.map((item) => (
+                    <DropdownMenuRadioItem
+                      key={item.value}
+                      value={item.value}
+                      className="cursor-pointer text-xs"
+                    >
+                      {item.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Row 2 on mobile / Right on desktop: Section FilterPills + View Mode Toggle */}
+          <div className="flex items-center justify-between lg:justify-end gap-2 min-w-0 flex-1">
+            {sectionItems.length > 0 && (
+              <FilterPills
+                items={sectionItems}
+                value={sectionId}
+                onChange={onSelectSection}
+                label="Section:"
+                ariaLabel="Select section"
+                containerClassName="min-w-0 flex-1 lg:flex-initial lg:justify-end"
+              />
+            )}
+
+            <ToggleGroup
+              value={[viewMode]}
+              multiple={false}
+              spacing={0}
+              onValueChange={(vals) => {
+                if (vals.length > 0) {
+                  setViewMode(vals[0] as "points" | "diagnostic");
+                }
+              }}
+              aria-label="Gradebook view mode"
+              className="inline-flex items-center rounded-lg sm:rounded-xl border border-border bg-background p-0.5 text-xs font-medium shrink-0"
             >
-              Points
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="diagnostic"
-              size="sm"
-              className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground aria-pressed:hover:bg-brand-700 dark:aria-pressed:hover:bg-primary aria-pressed:hover:text-white dark:aria-pressed:hover:text-primary-foreground aria-pressed:shadow-warm-sm aria-pressed:font-semibold"
-            >
-              Diagnostic
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-      </div>
+              <ToggleGroupItem
+                value="points"
+                size="sm"
+                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-8.5 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
+              >
+                Points
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="diagnostic"
+                size="sm"
+                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-8.5 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
+              >
+                Diagnostic
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Section Readiness Summary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:gap-3 rounded-xl border border-border bg-surface/70 dark:bg-card/70 px-3.5 py-2.5 text-xs">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-4">
-          <span className="text-foreground font-medium">
-            Class: <strong className="font-semibold">{book.section_name}</strong> ({book.rows.length} students)
-          </span>
-          <span className="text-muted-foreground">
-            Graded: <strong className="font-semibold text-foreground tabular-nums">{gradedCellsCount}</strong>
-          </span>
-          <span className="text-muted-foreground">
-            Awaiting scan: <strong className="font-semibold text-foreground tabular-nums">{awaitingScanCount}</strong>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {pendingDraftReleaseCount > 0 ? (
-            <Badge
-              variant="outline"
-              className="h-auto gap-1.5 rounded-full bg-band-2/15 border-band-2/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-2-text"
-            >
-              <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
-              <span>{pendingDraftReleaseCount} draft {pendingDraftReleaseCount === 1 ? "grade" : "grades"} pending release</span>
-            </Badge>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-4-text">
-              <span className="size-1.5 rounded-full bg-band-4" aria-hidden="true" />
-              <span>All current grades released</span>
+      <Card size="sm" className="bg-card/70">
+        <CardContent className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 sm:gap-x-4">
+            <span className="text-foreground font-medium">
+              Class: <strong className="font-semibold">{book.section_name}</strong> ({book.rows.length} students)
             </span>
-          )}
-        </div>
-      </div>
+            <span className="text-muted-foreground">
+              Graded: <strong className="font-semibold text-foreground tabular-nums">{gradedCellsCount}</strong>
+            </span>
+            <span className="text-muted-foreground">
+              Awaiting scan: <strong className="font-semibold text-foreground tabular-nums">{awaitingScanCount}</strong>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {pendingDraftReleaseCount > 0 ? (
+              <Badge
+                variant="outline"
+                className="h-auto gap-1.5 rounded-full bg-band-2/15 border-band-2/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-2-text"
+              >
+                <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
+                <span>{pendingDraftReleaseCount} draft {pendingDraftReleaseCount === 1 ? "grade" : "grades"} pending release</span>
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="h-auto gap-1.5 rounded-full bg-band-4/15 border-band-4/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-4-text"
+              >
+                <span className="size-1.5 rounded-full bg-band-4" aria-hidden="true" />
+                <span>All current grades released</span>
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {selected.size > 0 && (
         <p className="text-muted-foreground text-xs print:hidden">
@@ -599,9 +620,9 @@ function SectionGrid({
       )}
 
       {!book.rows.length ? (
-        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-8 shadow-warm">
+        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
-            <Users className="size-5" />
+            <Users aria-hidden="true" />
           </EmptyMedia>
           <EmptyHeader>
             <EmptyTitle>No students in this section</EmptyTitle>
@@ -610,15 +631,15 @@ function SectionGrid({
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Link href="/roster" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <Button nativeButton={false} variant="outline" size="sm" render={<Link href="/roster" />}>
               Open class roster
-            </Link>
+            </Button>
           </EmptyContent>
         </Empty>
       ) : !activities.length ? (
-        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-surface dark:bg-card p-8 shadow-warm">
+        <Empty className="rounded-xl sm:rounded-2xl border border-border bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
-            <FileText className="size-5" />
+            <FileText aria-hidden="true" />
           </EmptyMedia>
           <EmptyHeader>
             <EmptyTitle>No coursework matches this filter</EmptyTitle>
@@ -647,7 +668,7 @@ function SectionGrid({
           <div
             ref={tableRef}
             className={cn(
-              "bg-surface dark:bg-card max-h-[70svh] overflow-auto rounded-xl sm:rounded-2xl border border-border shadow-warm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none print:shadow-none",
+              "bg-card max-h-[70svh] overflow-auto rounded-xl sm:rounded-2xl border border-border shadow-warm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none print:shadow-none",
               selected.size > 0 && "pb-24 sm:pb-20"
             )}
             tabIndex={-1}
@@ -718,10 +739,17 @@ function SectionGrid({
 
                         <DropdownMenu>
                           <DropdownMenuTrigger
-                            aria-label={`Actions for ${act.title}`}
-                            className="inline-flex min-h-9 min-w-9 size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer print:hidden"
+                            render={
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Actions for ${act.title}`}
+                                className="shrink-0 text-muted-foreground hover:text-foreground print:hidden"
+                              />
+                            }
                           >
-                            <MoreHorizontal className="size-4" />
+                            <MoreHorizontal aria-hidden="true" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuGroup>
@@ -729,7 +757,7 @@ function SectionGrid({
                                 Activity Actions
                               </DropdownMenuLabel>
                               <DropdownMenuItem onClick={() => beginBulk(act.id, "release")} className="cursor-pointer">
-                                <Send className="mr-2 size-4 text-primary" />
+                                <Send data-icon="inline-start" className="text-primary" aria-hidden="true" />
                                 Release grades to parents
                               </DropdownMenuItem>
                               <DropdownMenuItem
@@ -737,28 +765,30 @@ function SectionGrid({
                                 disabled={act.points_possible === null}
                                 className="cursor-pointer"
                               >
-                                <FileX className="mr-2 size-4 text-muted-foreground" />
+                                <FileX data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
                                 {selected.size
                                   ? `Mark uncollected (0) for ${selected.size}`
                                   : "Mark uncollected (0 pts)"}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => beginBulk(act.id, "excuse")} className="cursor-pointer">
-                                <CheckCircle2 className="mr-2 size-4 text-muted-foreground" />
+                                <CheckCircle2 data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
                                 {selected.size
                                   ? `Excuse ${selected.size} selected`
                                   : "Excuse all in section"}
                               </DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                router.push(`/activities/${act.id}`);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <ExternalLink className="mr-2 size-4" />
-                              View activity details
-                            </DropdownMenuItem>
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  router.push(`/activities/${act.id}`);
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <ExternalLink data-icon="inline-start" aria-hidden="true" />
+                                View activity details
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -878,12 +908,25 @@ function SectionGrid({
               </TableBody>
             </Table>
             {!rows.length && (
-              <div className="p-8 text-center space-y-2">
-                <p className="text-sm text-muted-foreground">No students match “{search}”.</p>
-                <Button variant="ghost" size="sm" onClick={() => setSearch("")} className="min-h-9">
-                  Clear search
-                </Button>
-              </div>
+              <Empty className="p-8">
+                <EmptyHeader>
+                  <EmptyTitle>No students match “{search}”</EmptyTitle>
+                  <EmptyDescription>
+                    Try a different student name or clear the search filter.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearch("")}
+                    className="min-h-9"
+                  >
+                    Clear search
+                  </Button>
+                </EmptyContent>
+              </Empty>
             )}
           </div>
         </TouchDeviceContext.Provider>
@@ -898,7 +941,6 @@ function SectionGrid({
           onSelectAll={() => setSelected(new Set(rows.map((r) => r.student_id)))}
           onClearSelection={() => setSelected(new Set())}
           ariaLabel="Gradebook batch student actions"
-          className="bottom-4 mb-[env(safe-area-inset-bottom,0px)]"
         >
           {activities.length > 0 && (
             <div className="flex items-center gap-2">
@@ -928,67 +970,76 @@ function SectionGrid({
                 </>
               ) : (
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="inline-flex items-center gap-1.5 h-9 rounded-md border border-input bg-background/80 px-2.5 text-xs font-medium hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer">
-                    Batch actions <MoreHorizontal className="size-3.5" />
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 text-xs bg-background/80 cursor-pointer"
+                      />
+                    }
+                  >
+                    <span>Batch actions</span>
+                    <MoreHorizontal data-icon="inline-end" aria-hidden="true" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuGroup>
                       <DropdownMenuLabel className="text-xs text-muted-foreground">
                         Batch Actions ({selected.size} selected)
                       </DropdownMenuLabel>
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-xs cursor-pointer min-h-9">
+                          <FileX data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+                          Mark uncollected (0 pts)
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">
+                              Choose activity:
+                            </DropdownMenuLabel>
+                            {activities.filter((a) => a.points_possible !== null).length === 0 ? (
+                              <p className="px-3 py-2 text-xs text-muted-foreground italic">No scored activities</p>
+                            ) : (
+                              activities
+                                .filter((a) => a.points_possible !== null)
+                                .map((act) => (
+                                  <DropdownMenuItem
+                                    key={act.id}
+                                    className="text-xs truncate cursor-pointer min-h-9"
+                                    onClick={() => beginBulk(act.id, "zero")}
+                                  >
+                                    <span className="truncate">{act.title}</span>
+                                  </DropdownMenuItem>
+                                ))
+                            )}
+                          </DropdownMenuGroup>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="text-xs cursor-pointer min-h-9">
+                          <CheckCircle2 data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+                          Excuse students
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">
+                              Choose activity:
+                            </DropdownMenuLabel>
+                            {activities.map((act) => (
+                              <DropdownMenuItem
+                                key={act.id}
+                                className="text-xs truncate cursor-pointer min-h-9"
+                                onClick={() => beginBulk(act.id, "excuse")}
+                              >
+                                <span className="truncate">{act.title}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuGroup>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
                     </DropdownMenuGroup>
-
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-xs cursor-pointer min-h-9">
-                        <FileX className="mr-2 size-3.5 text-muted-foreground" />
-                        Mark uncollected (0 pts)
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">
-                            Choose activity:
-                          </DropdownMenuLabel>
-                          {activities.filter((a) => a.points_possible !== null).length === 0 ? (
-                            <p className="px-3 py-2 text-xs text-muted-foreground italic">No scored activities</p>
-                          ) : (
-                            activities
-                              .filter((a) => a.points_possible !== null)
-                              .map((act) => (
-                                <DropdownMenuItem
-                                  key={act.id}
-                                  className="text-xs truncate cursor-pointer min-h-9"
-                                  onClick={() => beginBulk(act.id, "zero")}
-                                >
-                                  <span className="truncate">{act.title}</span>
-                                </DropdownMenuItem>
-                              ))
-                          )}
-                        </DropdownMenuGroup>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="text-xs cursor-pointer min-h-9">
-                        <CheckCircle2 className="mr-2 size-3.5 text-muted-foreground" />
-                        Excuse students
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-64 max-h-56 overflow-y-auto">
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">
-                            Choose activity:
-                          </DropdownMenuLabel>
-                          {activities.map((act) => (
-                            <DropdownMenuItem
-                              key={act.id}
-                              className="text-xs truncate cursor-pointer min-h-9"
-                              onClick={() => beginBulk(act.id, "excuse")}
-                            >
-                              <span className="truncate">{act.title}</span>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuGroup>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

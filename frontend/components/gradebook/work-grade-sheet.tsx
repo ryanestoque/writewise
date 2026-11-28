@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  AlertCircle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -18,9 +19,24 @@ import {
 import { useGradebookActions, type GradebookCell } from "@/lib/hooks/use-gradebook";
 import { ApiError } from "@/lib/utils/api-error";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import {
   Sheet,
@@ -173,16 +189,19 @@ export function WorkGradeSheet({
 
   async function handleReleaseGrade() {
     if (!cell || cell.grade_revision === null) return;
-    setConfirmRelease(false);
-    await run(
-      () =>
-        actions.releaseGrade.mutateAsync({
-          ...target,
-          revision: cell.grade_revision!,
-        }),
-      "Grade released to parents.",
-      true
-    );
+    try {
+      await run(
+        () =>
+          actions.releaseGrade.mutateAsync({
+            ...target,
+            revision: cell.grade_revision!,
+          }),
+        "Grade released to parents.",
+        true
+      );
+    } finally {
+      setConfirmRelease(false);
+    }
   }
 
   return (
@@ -193,9 +212,9 @@ export function WorkGradeSheet({
       }}
     >
       <SheetContent className="w-full overflow-hidden sm:max-w-lg">
-        <SheetHeader className="pb-3 border-b border-border/40">
+        <SheetHeader className="pb-3">
           <div className="flex items-start justify-between gap-2 pr-14">
-            <div className="space-y-1 min-w-0">
+            <div className="flex flex-col gap-1 min-w-0">
               <SheetTitle className="text-lg font-heading truncate">
                 {studentName ?? "Work grade"}
               </SheetTitle>
@@ -223,7 +242,7 @@ export function WorkGradeSheet({
                   aria-label="Previous student"
                   className="size-9"
                 >
-                  <ChevronLeft className="size-4" />
+                  <ChevronLeft aria-hidden="true" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -234,7 +253,7 @@ export function WorkGradeSheet({
                   aria-label="Next student"
                   className="size-9"
                 >
-                  <ChevronRight className="size-4" />
+                  <ChevronRight aria-hidden="true" />
                 </Button>
               </div>
             )}
@@ -245,6 +264,7 @@ export function WorkGradeSheet({
               : "Evaluates cursive penmanship quality across 5 developmental criteria. Diagnostic feedback is shared with parents."}
           </SheetDescription>
         </SheetHeader>
+        <Separator className="bg-border/40" />
 
         <Tabs
           value={view}
@@ -275,99 +295,113 @@ export function WorkGradeSheet({
           </TabsContent>
 
           <TabsContent value="work" className="overflow-y-auto">
-            <div className="space-y-4 px-4 py-4">
+            <div className="flex flex-col gap-4 px-4 py-4">
               {/* Handwriting Diagnostic Overview Card */}
-              <div className="rounded-xl border border-border/70 bg-card p-4 space-y-3 shadow-warm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Handwriting Assessment
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <BandBadge score={compositeScore} size="default" />
-                      {compositeScore !== null && (
-                        <span className="text-sm font-semibold tabular-nums text-foreground">
-                          {Math.round(compositeScore)}%
-                        </span>
-                      )}
-                      {cell.assessment_source && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-foreground border border-border/50">
-                          {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
-                        </span>
-                      )}
+              <Card size="sm">
+                <CardContent className="flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        Handwriting Assessment
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <BandBadge score={compositeScore} size="default" />
+                        {compositeScore !== null && (
+                          <span className="text-sm font-semibold tabular-nums text-foreground">
+                            {Math.round(compositeScore)}%
+                          </span>
+                        )}
+                        {cell.assessment_source && (
+                          <Badge variant="outline">
+                            {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                    {cell.active_submission_id ? (
+                      <Button
+                        nativeButton={false}
+                        variant="outline"
+                        size="sm"
+                        className="min-h-8 shrink-0 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+                        render={
+                          <Link
+                            href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
+                          />
+                        }
+                      >
+                        <FileText data-icon="inline-start" aria-hidden="true" />
+                        <span>View worksheet</span>
+                        <ExternalLink data-icon="inline-end" className="opacity-70" aria-hidden="true" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-9 cursor-pointer"
+                        onClick={() =>
+                          openUpload({
+                            activityId: cell.activity_id,
+                            studentId: cell.student_id,
+                          })
+                        }
+                      >
+                        <Camera data-icon="inline-start" aria-hidden="true" />
+                        <span>Scan / Upload</span>
+                      </Button>
+                    )}
                   </div>
-                  {cell.active_submission_id ? (
-                    <Link
-                      href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors min-h-8"
-                    >
-                      <FileText className="size-3.5" />
-                      <span>View worksheet</span>
-                      <ExternalLink className="size-3 opacity-70" />
-                    </Link>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-9 gap-1.5 text-xs cursor-pointer"
-                      onClick={() =>
-                        openUpload({
-                          activityId: cell.activity_id,
-                          studentId: cell.student_id,
-                        })
-                      }
-                    >
-                      <Camera className="size-3.5" />
-                      <span>Scan / Upload</span>
-                    </Button>
-                  )}
-                </div>
 
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {developmentalNote}
-                </p>
-
-                {/* 5-Criteria Authentic Breakdown Note */}
-                <div className="pt-2 border-t border-border/40 space-y-1">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">5 Diagnostic Criteria:</span>
-                    <span className="text-[11px]">
-                      {CRITERIA_DEFINITIONS.map((c) => c.name.split(" ")[0]).join(" · ")}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Per-criterion stroke measurements, baseline drift, and visual overlays are calibrated and inspected in the worksheet viewer.
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {developmentalNote}
                   </p>
-                </div>
-              </div>
+
+                  <Separator className="bg-border/40" />
+
+                  {/* 5-Criteria Authentic Breakdown Note */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">5 Diagnostic Criteria:</span>
+                      <span className="text-[11px]">
+                        {CRITERIA_DEFINITIONS.map((c) => c.name.split(" ")[0]).join(" · ")}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Per-criterion stroke measurements, baseline drift, and visual overlays are calibrated and inspected in the worksheet viewer.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Status & Quick Action Card */}
-              <div className="rounded-xl border border-border/60 bg-muted/15 p-3.5 space-y-2">
-                <div className="flex items-center justify-between gap-2">
+              <Card size="sm" className="bg-muted/15">
+                <CardContent className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Worksheet:</span>
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                       {cell.coursework_status === "Released" ? (
                         <>
-                          <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" />
+                          <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" aria-hidden="true" />
                           <span>Released to parents</span>
                         </>
                       ) : cell.coursework_status === "Missing" ? (
                         <>
-                          <span className="size-2 rounded-full bg-muted-foreground/50 shrink-0" />
+                          <span className="size-2 rounded-full bg-muted-foreground/50 shrink-0" aria-hidden="true" />
                           <span className="text-muted-foreground font-normal">Awaiting scan</span>
                         </>
                       ) : (
                         <>
-                          <span className="size-2 rounded-full bg-band-2 shrink-0" />
+                          <span className="size-2 rounded-full bg-band-2 shrink-0" aria-hidden="true" />
                           <span>{cell.coursework_status}</span>
                         </>
                       )}
                       {cell.late && (
-                        <span className="inline-flex items-center px-1 rounded text-[11px] font-medium bg-band-2/15 text-band-2-text border border-band-2/30">
+                        <Badge
+                          variant="outline"
+                          className="border-band-2/30 bg-band-2/15 text-band-2-text"
+                        >
                           Late
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -380,15 +414,16 @@ export function WorkGradeSheet({
                       </span>
                     </div>
                   )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
               {/* Coursework Points Section (Only when points_possible !== null) */}
               {cell.points_possible !== null ? (
                 <section
-                  className="space-y-4 pt-3 border-t border-border/40"
+                  className="flex flex-col gap-4"
                   aria-label="Coursework grading"
                 >
+                  <Separator className="bg-border/40" />
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-heading text-sm font-semibold text-foreground">
@@ -418,7 +453,7 @@ export function WorkGradeSheet({
                   </div>
 
                   <form
-                    className="space-y-3"
+                    className="flex flex-col gap-3"
                     onSubmit={(event) => {
                       event.preventDefault();
                       if (!valid) {
@@ -447,7 +482,7 @@ export function WorkGradeSheet({
                       <Button type="submit" size="sm" className="min-h-9" disabled={pending || !valid}>
                         {savedDraft ? (
                           <>
-                            <Check className="size-3.5 mr-1 text-primary-foreground" />
+                            <Check data-icon="inline-start" aria-hidden="true" />
                             Saved
                           </>
                         ) : (
@@ -471,43 +506,44 @@ export function WorkGradeSheet({
                         Clear override
                       </Button>
 
-                      {confirmZero ? (
-                        <div className="inline-flex items-center gap-1.5 p-1 rounded-md bg-muted/60 border border-border text-xs">
-                          <span className="text-foreground font-medium">Set 0 pts?</span>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="xs"
-                            disabled={pending}
-                            onClick={() => {
-                              setConfirmZero(false);
-                              setOverride("0");
-                              void update({ points_override: "0" }, "Zero saved as draft.");
-                            }}
-                          >
-                            Confirm 0
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="xs"
-                            onClick={() => setConfirmZero(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="min-h-9"
-                          disabled={pending}
-                          onClick={() => setConfirmZero(true)}
+                      <AlertDialog open={confirmZero} onOpenChange={setConfirmZero}>
+                        <AlertDialogTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="min-h-9"
+                              disabled={pending}
+                            />
+                          }
                         >
                           Mark uncollected (0 pts)
-                        </Button>
-                      )}
+                        </AlertDialogTrigger>
+                        <AlertDialogContent size="sm">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Mark uncollected (0 pts)?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This saves a draft score of 0 / {cell.points_possible} points for{" "}
+                              {studentName ?? "this student"}. It stays hidden from parents until
+                              released.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={pending}
+                              onClick={() => {
+                                setConfirmZero(false);
+                                setOverride("0");
+                                void update({ points_override: "0" }, "Zero saved as draft.");
+                              }}
+                            >
+                              Confirm 0 pts
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </form>
 
@@ -515,79 +551,96 @@ export function WorkGradeSheet({
                   {error && error.includes("refresh grade data") && (
                     <div className="pt-1">
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
-                        className="gap-1.5 text-xs min-h-9"
+                        className="text-xs min-h-9"
                         onClick={() => void handleRefreshGrade()}
                       >
-                        <RotateCcw className="size-3.5" />
+                        <RotateCcw data-icon="inline-start" aria-hidden="true" />
                         <span>Refresh grade data</span>
                       </Button>
                     </div>
                   )}
 
                   {/* Release to Parents Confirmation & Trigger */}
-                  <div className="pt-2">
+                  <div className="flex flex-col gap-2 pt-2">
                     {isOverrideDirty && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 pb-1.5">
-                        Save or discard your pending point override before releasing to parents.
-                      </p>
+                      <Alert className="border-band-2/30 bg-band-2/10 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
+                        <AlertCircle aria-hidden="true" />
+                        <AlertDescription className="text-xs">
+                          Save or discard your pending point override before releasing to parents.
+                        </AlertDescription>
+                      </Alert>
                     )}
 
-                    {confirmRelease ? (
-                      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 space-y-2.5">
-                        <p className="text-xs font-medium text-foreground">
-                          Confirm releasing <strong>{cell.final_points} / {cell.points_possible} pts</strong> (Revision #{cell.grade_revision}) to parents?
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          This publishes the final point score directly to the parent portal.
-                        </p>
-                        <div className="flex items-center gap-2 pt-1">
+                    <AlertDialog
+                      open={confirmRelease}
+                      onOpenChange={(value) => {
+                        if (!pending) setConfirmRelease(value);
+                      }}
+                    >
+                      <AlertDialogTrigger
+                        render={
                           <Button
-                            size="sm"
-                            className="min-h-9"
+                            type="button"
+                            className="w-full min-h-10 sm:min-h-9"
+                            disabled={
+                              pending ||
+                              excused ||
+                              cell.final_points === null ||
+                              cell.grade_revision === null ||
+                              cell.publication === "released" ||
+                              isOverrideDirty
+                            }
+                          />
+                        }
+                      >
+                        {pending ? (
+                          <>
+                            <Spinner data-icon="inline-start" aria-hidden="true" />
+                            <span>Releasing…</span>
+                          </>
+                        ) : cell.publication === "released" ? (
+                          "Grade already released to parents"
+                        ) : (
+                          "Release grade to parents"
+                        )}
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Release grade to parents?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Confirm releasing{" "}
+                            <strong className="text-foreground">
+                              {cell.final_points} / {cell.points_possible} pts
+                            </strong>{" "}
+                            (Revision #{cell.grade_revision}) for {studentName ?? "this student"}.
+                            This publishes the final point score directly to the parent portal.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
                             disabled={pending}
                             onClick={() => void handleReleaseGrade()}
                           >
-                            {pending ? "Releasing…" : "Confirm Release"}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="min-h-9"
-                            disabled={pending}
-                            onClick={() => setConfirmRelease(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <Button
-                          className="w-full min-h-10 sm:min-h-9"
-                          disabled={
-                            pending ||
-                            excused ||
-                            cell.final_points === null ||
-                            cell.grade_revision === null ||
-                            cell.publication === "released" ||
-                            isOverrideDirty
-                          }
-                          onClick={() => setConfirmRelease(true)}
-                        >
-                          {pending
-                            ? "Releasing…"
-                            : cell.publication === "released"
-                              ? "Grade already released to parents"
-                              : "Release grade to parents"}
-                        </Button>
-                        {cell.publication !== "released" && cell.final_points !== null && !isOverrideDirty && (
-                          <p className="text-xs text-muted-foreground text-center mt-1.5">
-                            Publishes this numerical grade to the parent portal.
-                          </p>
-                        )}
-                      </>
+                            {pending ? (
+                              <>
+                                <Spinner data-icon="inline-start" aria-hidden="true" />
+                                <span>Releasing…</span>
+                              </>
+                            ) : (
+                              "Confirm Release"
+                            )}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    {cell.publication !== "released" && cell.final_points !== null && !isOverrideDirty && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Publishes this numerical grade to the parent portal.
+                      </p>
                     )}
                   </div>
                 </section>

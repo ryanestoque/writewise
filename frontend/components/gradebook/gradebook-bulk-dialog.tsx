@@ -8,6 +8,7 @@ import { invalidateWorkQueries } from "@/lib/hooks/use-activity-work";
 import { gradebookMutation, gradebookRequest } from "@/lib/gradebook/transport";
 import type { components } from "@/types/api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +19,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 export function GradebookBulkDialog({
   userId,
@@ -210,7 +212,7 @@ export function GradebookBulkDialog({
       }}
     >
       <DialogContent className="sm:max-w-lg max-h-[min(90dvh,calc(100dvh-2rem))] overflow-y-auto">
-        <DialogHeader className="space-y-1.5">
+        <DialogHeader className="flex flex-col gap-1.5">
           <DialogTitle className="text-lg font-semibold tracking-tight font-heading">
             {operation === "zero"
               ? "Mark uncollected work with draft zeros"
@@ -238,7 +240,7 @@ export function GradebookBulkDialog({
         </DialogHeader>
 
         {operation === "release" && (
-          <div className="space-y-3.5">
+          <div className="flex flex-col gap-3.5">
             {/* Section Publication Overview */}
             <div className="rounded-lg border border-border/80 bg-card overflow-hidden text-xs">
               <div className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex items-center justify-between">
@@ -253,16 +255,17 @@ export function GradebookBulkDialog({
                 {assignedSections.map((sec) => (
                   <div
                     key={sec.id}
-                    className={`flex items-center justify-between px-3.5 py-2.5 transition-colors ${
-                      sec.isCurrent ? "bg-primary/5 dark:bg-primary/10" : ""
-                    }`}
+                    className={cn(
+                      "flex items-center justify-between px-3.5 py-2.5 transition-colors",
+                      sec.isCurrent && "bg-primary/10"
+                    )}
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-foreground">{sec.name}</span>
                       {sec.isCurrent && (
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary">
                           Viewing
-                        </span>
+                        </Badge>
                       )}
                     </div>
 
@@ -273,14 +276,17 @@ export function GradebookBulkDialog({
                           Checking…
                         </span>
                       ) : sec.readyCount > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-band-4/15 border border-band-4/30 px-2 py-0.5 text-xs font-medium text-band-4-text tabular-nums">
-                          <CheckCircle2 className="size-3 text-band-4-text shrink-0" aria-hidden="true" />
+                        <Badge
+                          variant="outline"
+                          className="border-band-4/30 bg-band-4/15 text-band-4-text tabular-nums"
+                        >
+                          <CheckCircle2 data-icon="inline-start" aria-hidden="true" />
                           {sec.readyCount} ready to publish
-                        </span>
+                        </Badge>
                       ) : (
-                        <span className="inline-flex items-center rounded-md bg-muted/60 border border-border/40 px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+                        <Badge variant="secondary" className="text-muted-foreground tabular-nums">
                           0 ready · No drafts yet
-                        </span>
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -303,20 +309,22 @@ export function GradebookBulkDialog({
                 </AlertDescription>
               </Alert>
             ) : eligibleCount === 0 && assignedSections.length > 1 ? (
-              <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
-                <span>
-                  No draft grades are ready in <strong>{sectionName ?? "this section"}</strong> yet.
-                </span>
-                <span className="font-semibold text-foreground tabular-nums">
-                  {totalReadyAcrossSections} ready in other {assignedSections.length - 1 === 1 ? "section" : "sections"}
-                </span>
-              </div>
+              <Alert className="bg-muted/30">
+                <AlertDescription className="flex items-center justify-between gap-2 text-xs">
+                  <span>
+                    No draft grades are ready in <strong>{sectionName ?? "this section"}</strong> yet.
+                  </span>
+                  <span className="font-semibold text-foreground tabular-nums shrink-0">
+                    {totalReadyAcrossSections} ready in other {assignedSections.length - 1 === 1 ? "section" : "sections"}
+                  </span>
+                </AlertDescription>
+              </Alert>
             ) : null}
 
             {/* What Happens Upon Release Checklist */}
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground space-y-1.5">
+            <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground">
               <span className="font-medium text-foreground block">What parents receive</span>
-              <ul className="space-y-1 pl-4 list-disc text-muted-foreground text-xs leading-relaxed">
+              <ul className="flex flex-col gap-1 pl-4 list-disc text-muted-foreground text-xs leading-relaxed">
                 <li>
                   Criterion feedback across letter formation, slant, spacing, baseline, and size consistency.
                 </li>
@@ -339,7 +347,7 @@ export function GradebookBulkDialog({
                   id="ack-cross-section"
                   checked={crossSectionAcknowledged}
                   onCheckedChange={(val) => setCrossSectionAcknowledged(Boolean(val))}
-                  className="mt-0.5 border-foreground/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  className="mt-0.5 border-foreground/60"
                   aria-describedby="ack-cross-section-desc"
                 />
                 <FieldLabel
@@ -364,19 +372,20 @@ export function GradebookBulkDialog({
         )}
 
         {message && (
-          <div
+          <Alert
             role="status"
-            className="flex items-center gap-2 rounded-lg border border-band-4/30 bg-band-4/10 p-3 text-xs text-band-4-text"
+            className="border-band-4/30 bg-band-4/10 text-band-4-text *:data-[slot=alert-description]:text-band-4-text"
           >
-            <CheckCircle2 className="size-4 shrink-0 text-band-4-text" aria-hidden="true" />
-            <span>{message}</span>
-          </div>
+            <CheckCircle2 aria-hidden="true" />
+            <AlertDescription className="text-xs">{message}</AlertDescription>
+          </Alert>
         )}
 
         {error && (
-          <FieldError role="alert" className="text-xs">
-            {error}
-          </FieldError>
+          <Alert variant="destructive">
+            <AlertCircle aria-hidden="true" />
+            <AlertDescription className="text-xs">{error}</AlertDescription>
+          </Alert>
         )}
 
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40">

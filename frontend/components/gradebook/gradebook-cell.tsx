@@ -17,7 +17,9 @@ import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { getBandFromScore, PARENT_BAND_EXPLANATIONS } from "@/lib/utils/scoring";
 import { validPointsInput } from "./points-field";
@@ -242,67 +244,73 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         className="bg-card ring-2 ring-primary relative min-h-[5rem] w-full rounded-sm p-2"
         data-gradecell-active
       >
-        <div className="flex items-center gap-1.5">
-          <Input
-            ref={inputRef}
-            type="text"
-            inputMode="decimal"
-            disabled={isSaving}
-            value={inputVal}
-            onChange={(e) => {
-              setInputVal(e.target.value);
-              if (error) setError(null);
-            }}
-            onKeyDown={handleInputKeyDown}
-            className={cn(
-              "h-8 w-16 rounded-sm px-1.5 text-center text-base sm:text-sm font-semibold tabular-nums",
-              error ? "border-destructive text-destructive" : "border-input bg-background"
-            )}
-            placeholder="—"
-            aria-label={`Score for ${label ?? "cell"}`}
-            aria-describedby={error ? `${cellId}-error` : `${cellId}-hint`}
-            aria-invalid={Boolean(error)}
-          />
-          <span className="text-muted-foreground text-xs font-normal">/ {cell.points_possible}</span>
-          <div className="ml-auto flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
+        <Field
+          data-invalid={Boolean(error) || undefined}
+          data-disabled={isSaving || undefined}
+          className="gap-1"
+        >
+          <div className="flex items-center gap-1.5">
+            <Input
+              ref={inputRef}
+              type="text"
+              inputMode="decimal"
               disabled={isSaving}
-              onClick={() => void handleCommit()}
-              aria-label="Save score"
-              className="text-primary relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
-            >
-              {isSaving ? <Spinner className="size-3.5" /> : <Check className="size-3.5" />}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              disabled={isSaving}
-              onClick={() => {
-                setIsEditing(false);
-                setInputVal(initialVal);
-                setError(null);
-                cellRef.current?.focus();
+              value={inputVal}
+              onChange={(e) => {
+                setInputVal(e.target.value);
+                if (error) setError(null);
               }}
-              aria-label="Cancel editing"
-              className="text-muted-foreground relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
-            >
-              <X className="size-3.5" />
-            </Button>
+              onKeyDown={handleInputKeyDown}
+              className={cn(
+                "h-8 w-16 rounded-sm px-1.5 text-center text-base sm:text-sm font-semibold tabular-nums",
+                error ? "border-destructive text-destructive" : "border-input bg-background"
+              )}
+              placeholder="—"
+              aria-label={`Score for ${label ?? "cell"}`}
+              aria-describedby={error ? `${cellId}-error` : `${cellId}-hint`}
+              aria-invalid={Boolean(error) || undefined}
+            />
+            <span className="text-muted-foreground text-xs font-normal">/ {cell.points_possible}</span>
+            <div className="ml-auto flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                disabled={isSaving}
+                onClick={() => void handleCommit()}
+                aria-label="Save score"
+                className="text-primary relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
+              >
+                {isSaving ? <Spinner /> : <Check aria-hidden="true" />}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                disabled={isSaving}
+                onClick={() => {
+                  setIsEditing(false);
+                  setInputVal(initialVal);
+                  setError(null);
+                  cellRef.current?.focus();
+                }}
+                aria-label="Cancel editing"
+                className="text-muted-foreground relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
+              >
+                <X aria-hidden="true" />
+              </Button>
+            </div>
           </div>
-        </div>
-        {error ? (
-          <span id={`${cellId}-error`} role="alert" className="text-destructive mt-1 block text-xs">
-            {error}
-          </span>
-        ) : (
-          <span id={`${cellId}-hint`} className="text-muted-foreground mt-1 block text-xs">
-            Enter to save & advance ↓
-          </span>
-        )}
+          {error ? (
+            <FieldError id={`${cellId}-error`} className="text-xs">
+              {error}
+            </FieldError>
+          ) : (
+            <FieldDescription id={`${cellId}-hint`} className="text-xs">
+              Enter to save &amp; advance ↓
+            </FieldDescription>
+          )}
+        </Field>
       </div>
     );
   }
@@ -345,7 +353,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
       )}
     >
       {viewMode === "diagnostic" ? (
-        <div className="space-y-1.5">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between gap-1.5 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               {cell.assessment_composite !== null ? (
@@ -380,13 +388,10 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               )}
 
               {hasUnreadComments && (
-                <span
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"
-                  title="Unread parent/teacher comments"
-                >
-                  <MessageSquare className="size-3" aria-hidden="true" />
-                  <span>Unread</span>
-                </span>
+                <Badge variant="secondary" title="Unread parent/teacher comments">
+                  <MessageSquare data-icon="inline-start" aria-hidden="true" />
+                  Unread
+                </Badge>
               )}
             </div>
 
@@ -410,7 +415,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                   aria-label={`Edit score for ${label ?? "student"}`}
                   className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
                 >
-                  <Pencil className="size-3" aria-hidden="true" />
+                  <Pencil aria-hidden="true" />
                 </Button>
               )}
               <Button
@@ -424,7 +429,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                 aria-label={`Inspect details for ${label ?? "student"}`}
                 className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
               >
-                <SlidersHorizontal className="size-3" aria-hidden="true" />
+                <SlidersHorizontal aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -437,7 +442,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           </p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-1.5 min-w-0">
             <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               <span className="block text-sm font-semibold tabular-nums text-foreground truncate">
@@ -477,13 +482,10 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               )}
 
               {hasUnreadComments && (
-                <span
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"
-                  title="Unread parent/teacher comments"
-                >
-                  <MessageSquare className="size-3" aria-hidden="true" />
-                  <span>Unread</span>
-                </span>
+                <Badge variant="secondary" title="Unread parent/teacher comments">
+                  <MessageSquare data-icon="inline-start" aria-hidden="true" />
+                  Unread
+                </Badge>
               )}
             </div>
 
@@ -507,7 +509,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                   aria-label={`Edit score for ${label ?? "student"}`}
                   className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
                 >
-                  <Pencil className="size-3" aria-hidden="true" />
+                  <Pencil aria-hidden="true" />
                 </Button>
               )}
               <Button
@@ -521,7 +523,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                 aria-label={`Inspect details for ${label ?? "student"}`}
                 className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
               >
-                <SlidersHorizontal className="size-3" aria-hidden="true" />
+                <SlidersHorizontal aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -543,7 +545,9 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-1.5 mt-auto pt-1 border-t border-border/40">
+      <div className="mt-auto flex flex-col gap-1 pt-1">
+        <Separator className="bg-border/40" />
+        <div className="flex items-center justify-between gap-1.5">
         <div className="shrink-0">
           {viewMode === "diagnostic" ? (
             <span className="text-xs text-muted-foreground tabular-nums">
@@ -580,6 +584,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
               </span>
             )
           ) : null}
+        </div>
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import {
   SubmissionLifecycleControls,
 } from "@/components/submissions/submission-lifecycle-controls";
 import { QueryRecovery } from "@/components/shared/query-recovery";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function WorkGradeDetails({
@@ -82,7 +83,7 @@ export function WorkGradeDetails({
     );
   if (!query.data)
     return (
-      <div className="space-y-3 pt-2" role="status" aria-label="Loading work settings">
+      <div className="flex flex-col gap-3 pt-2" role="status" aria-label="Loading work settings">
         <Skeleton className="h-9 w-48" />
         <Skeleton className="h-4 w-full" />
       </div>
@@ -91,7 +92,8 @@ export function WorkGradeDetails({
     (attempt) => attempt.id === query.data.work?.active_submission_id
   );
   return (
-    <section className="space-y-3 border-t border-border/40 pt-4" aria-label="Deadline, counted attempt and Return">
+    <section className="flex flex-col gap-3 pt-1" aria-label="Deadline, counted attempt and Return">
+      <Separator className="bg-border/40" />
       <StudentWorkControls
         activityId={cell.activity_id}
         studentId={cell.student_id}
