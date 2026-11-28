@@ -22,7 +22,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { Field, FieldLabel, FieldContent, FieldError } from "@/components/ui/field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
+import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   TooltipProvider,
   Tooltip,
@@ -164,8 +166,8 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[480px] p-5 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col gap-3.5 sm:gap-4 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
-          <DialogHeader className="space-y-0 text-left">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[480px] p-5 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col gap-3.5 sm:gap-4 overflow-hidden shadow-warm border border-border/80 bg-card">
+          <DialogHeader className="gap-0 text-left">
             <DialogTitle className="font-heading text-lg font-semibold tracking-tight text-foreground">
               Manage Class Sections
             </DialogTitle>
@@ -176,79 +178,87 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
 
           {/* Create Section Input */}
           <form onSubmit={handleCreate}>
-            <Field className="space-y-1.5" data-invalid={!!createError}>
-              <FieldLabel htmlFor="new-section-name-input" className="sr-only">
-                New section name
-              </FieldLabel>
-              <FieldContent>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="new-section-name-input"
-                    placeholder="New section name (e.g. Diamond, Pearl)"
-                    value={newSectionName}
-                    onChange={(e) => {
-                      setNewSectionName(e.target.value);
-                      if (createError) setCreateError(null);
-                    }}
-                    disabled={isCreating}
-                    maxLength={50}
-                    aria-invalid={!!createError}
-                    aria-describedby={createError ? "new-section-error" : undefined}
-                    className="h-10 sm:h-9 text-base sm:text-sm"
-                  />
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={isCreating || !newSectionName.trim()}
-                    className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 gap-1.5 shrink-0"
-                    aria-label="Add new class section"
-                  >
-                    {isCreating ? (
-                      <Spinner className="w-3.5 h-3.5" />
-                    ) : (
-                      <Plus className="w-3.5 h-3.5" />
-                    )}
-                    <span>Add</span>
-                  </Button>
-                </div>
-              </FieldContent>
-              {createError && (
-                <FieldError id="new-section-error" className="text-xs flex items-center gap-1 mt-1">
-                  <AlertCircle className="w-3 h-3 shrink-0" />
-                  <span>{createError}</span>
-                </FieldError>
-              )}
-            </Field>
+            <FieldGroup>
+              <Field data-invalid={Boolean(createError) || undefined}>
+                <FieldLabel htmlFor="new-section-name-input" className="sr-only">
+                  New section name
+                </FieldLabel>
+                <FieldContent>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="new-section-name-input"
+                      placeholder="New section name (e.g. Diamond, Pearl)"
+                      value={newSectionName}
+                      onChange={(e) => {
+                        setNewSectionName(e.target.value);
+                        if (createError) setCreateError(null);
+                      }}
+                      disabled={isCreating}
+                      maxLength={50}
+                      aria-invalid={!!createError}
+                      aria-describedby={createError ? "new-section-error" : undefined}
+                      className="h-10 sm:h-9 text-base sm:text-sm"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={isCreating || !newSectionName.trim()}
+                      className="h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3.5 shrink-0"
+                      aria-label="Add new class section"
+                    >
+                      {isCreating ? (
+                        <Spinner data-icon="inline-start" />
+                      ) : (
+                        <Plus data-icon="inline-start" aria-hidden="true" />
+                      )}
+                      <span>Add</span>
+                    </Button>
+                  </div>
+                </FieldContent>
+                {createError && (
+                  <FieldError id="new-section-error" className="text-xs flex items-center gap-1 mt-1">
+                    <AlertCircle className="size-3 shrink-0" aria-hidden="true" />
+                    <span>{createError}</span>
+                  </FieldError>
+                )}
+              </Field>
+            </FieldGroup>
           </form>
 
           {/* Section List */}
-          <div className="space-y-2 max-h-[min(50dvh,340px)] overflow-y-auto pr-1">
+          <div className="flex flex-col gap-2 max-h-[min(50dvh,340px)] overflow-y-auto pr-1">
             {isLoading ? (
               <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
-                <Spinner className="w-5 h-5 text-primary" />
+                <Spinner className="size-5 text-primary" />
                 <span className="text-xs">Loading sections...</span>
               </div>
             ) : error ? (
-              <div className="py-6 text-center text-destructive text-xs flex flex-col items-center gap-2 border border-destructive/20 rounded-lg bg-destructive/5 p-4">
-                <span>Failed to load sections. Please try again.</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                  className="h-8 px-3 text-xs border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>Try Again</span>
-                </Button>
-              </div>
+              <Alert variant="destructive" className="p-4">
+                <AlertDescription className="flex flex-col items-center text-center gap-2 text-xs">
+                  <span>Failed to load sections. Please try again.</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => refetch()}
+                    className="h-8 px-3 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                    <span>Try Again</span>
+                  </Button>
+                </AlertDescription>
+              </Alert>
             ) : !sections || sections.length === 0 ? (
-              <div className="py-8 text-center border border-dashed rounded-lg p-4">
-                <p className="text-xs text-muted-foreground">No class sections yet.</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Create a section above or add students with a section name.
-                </p>
-              </div>
+              <Empty className="border py-8 p-4 gap-2 rounded-lg">
+                <EmptyHeader>
+                  <EmptyTitle className="text-xs font-medium text-muted-foreground font-sans">
+                    No class sections yet.
+                  </EmptyTitle>
+                  <EmptyDescription className="text-[11px]">
+                    Create a section above or add students with a section name.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : (
               <ul
                 role="list"
@@ -265,7 +275,10 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                       className="flex items-center justify-between px-3 py-2.5 bg-card hover:bg-muted/30 transition-colors text-sm min-h-[44px]"
                     >
                       {isEditing ? (
-                        <div className="flex flex-col flex-1 mr-2 gap-1">
+                        <Field
+                          data-invalid={Boolean(editError) || undefined}
+                          className="flex-1 mr-2 gap-1"
+                        >
                           <div className="flex items-center gap-1.5 flex-1">
                             <Input
                               value={editSectionName}
@@ -294,13 +307,13 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                               onClick={() => handleSaveEdit(sec)}
                               disabled={isUpdating}
                               aria-label={`Save renaming for section ${sec.name}`}
-                              className="h-10 w-10 sm:h-9 sm:w-9 min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] text-primary hover:text-primary hover:bg-primary/10"
+                              className="size-10 sm:size-9 text-primary hover:text-primary hover:bg-primary/10"
                               title="Save"
                             >
                               {isUpdating ? (
-                                <Spinner className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                                <Spinner />
                               ) : (
-                                <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                                <Check aria-hidden="true" />
                               )}
                             </Button>
                             <Button
@@ -309,23 +322,22 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                               onClick={cancelEdit}
                               disabled={isUpdating}
                               aria-label={`Cancel editing section ${sec.name}`}
-                              className="h-10 w-10 sm:h-9 sm:w-9 min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] text-muted-foreground"
+                              className="size-10 sm:size-9 text-muted-foreground"
                               title="Cancel"
                             >
-                              <X className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                              <X aria-hidden="true" />
                             </Button>
                           </div>
                           {editError && (
-                            <p
+                            <FieldError
                               id={errorId}
-                              role="alert"
-                              className="text-[11px] text-destructive flex items-center gap-1"
+                              className="text-[11px] flex items-center gap-1"
                             >
-                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              <AlertCircle className="size-3 shrink-0" aria-hidden="true" />
                               <span>{editError}</span>
-                            </p>
+                            </FieldError>
                           )}
-                        </div>
+                        </Field>
                       ) : (
                         <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
                           <span className="font-medium text-foreground truncate">
@@ -348,10 +360,10 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                             variant="ghost"
                             onClick={() => startEdit(sec)}
                             aria-label={`Rename section ${sec.name}`}
-                            className="h-10 w-10 sm:h-9 sm:w-9 min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] text-muted-foreground hover:text-foreground"
+                            className="size-10 sm:size-9 text-muted-foreground hover:text-foreground"
                             title="Rename section"
                           >
-                            <Edit2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                            <Edit2 aria-hidden="true" />
                           </Button>
 
                           {hasStudents ? (
@@ -365,9 +377,9 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                                     tabIndex={0}
                                     onClick={(e) => e.preventDefault()}
                                     aria-label={`Cannot delete section ${sec.name}: ${sec.student_count} students enrolled`}
-                                    className="h-10 w-10 sm:h-9 sm:w-9 min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] text-muted-foreground/40 cursor-not-allowed"
+                                    className="size-10 sm:size-9 text-muted-foreground/40 cursor-not-allowed"
                                   >
-                                    <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                                    <Trash2 aria-hidden="true" />
                                   </Button>
                                 }
                               />
@@ -382,10 +394,10 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                               onClick={() => setSectionToDelete(sec)}
                               disabled={isDeleting}
                               aria-label={`Delete section ${sec.name}`}
-                              className="h-10 w-10 sm:h-9 sm:w-9 min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              className="size-10 sm:size-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                               title={`Delete section ${sec.name}`}
                             >
-                              <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                              <Trash2 aria-hidden="true" />
                             </Button>
                           )}
                         </div>
@@ -423,7 +435,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
               variant="destructive"
               className="text-xs"
             >
-              {isDeleting ? <Spinner className="w-3.5 h-3.5 mr-1" /> : null}
+              {isDeleting ? <Spinner data-icon="inline-start" /> : null}
               Delete Section
             </AlertDialogAction>
           </AlertDialogFooter>

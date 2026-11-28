@@ -66,9 +66,9 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
                 selectedCount === 1 ? "student" : "students"
               } to another section`}
             >
-              <ArrowRightLeft className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
+              <ArrowRightLeft data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
               <span className="hidden sm:inline">Move Section</span>
-              <span className="sm:hidden hidden min-[360px]:inline">Move</span>
+              <span className="hidden min-[360px]:inline sm:hidden">Move</span>
             </Button>
           }
         />
@@ -96,9 +96,9 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
                 selectedCount === 1 ? "student" : "students"
               } to CSV`}
             >
-              <Download className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
+              <Download data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
               <span className="hidden sm:inline">Export</span>
-              <span className="sm:hidden hidden min-[400px]:inline">
+              <span className="hidden min-[400px]:inline sm:hidden">
                 Export
               </span>
             </Button>
@@ -123,14 +123,14 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               size="sm"
               onClick={onRemove}
               disabled={isRemoving}
-              className="h-8 px-2 sm:px-3 text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive hover:text-white border border-destructive/20 active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+              className="h-8 px-2 sm:px-3 text-xs font-medium border border-destructive/20 active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
               aria-label={`Remove ${selectedCount} selected ${
                 selectedCount === 1 ? "student" : "students"
               } from roster`}
             >
-              <Trash2 className="w-3.5 h-3.5 sm:mr-1.5 shrink-0" />
+              <Trash2 data-icon="inline-start" aria-hidden="true" />
               <span className="hidden sm:inline">Remove</span>
-              <span className="sm:hidden hidden min-[360px]:inline">
+              <span className="hidden min-[360px]:inline sm:hidden">
                 Remove
               </span>
             </Button>

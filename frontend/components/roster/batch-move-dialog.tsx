@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from "@/components/ui/field";
+import { Badge } from "@/components/ui/badge";
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   Combobox,
   ComboboxInput,
@@ -123,7 +124,7 @@ export function BatchMoveDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
           <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">Move to Section</DialogTitle>
           <DialogDescription className="sr-only">
@@ -133,10 +134,10 @@ export function BatchMoveDialog({
         </DialogHeader>
 
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1">
-          <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+          <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             {/* Target Section */}
             <FieldGroup>
-              <Field data-invalid={!!sectionError}>
+              <Field data-invalid={Boolean(sectionError) || undefined}>
                 <FieldLabel htmlFor="batch_target_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Destination Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
@@ -185,7 +186,7 @@ export function BatchMoveDialog({
                               ))}
                               {isCustomSection && (
                                 <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
-                                  <Plus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                  <Plus aria-hidden="true" />
                                   Create section &ldquo;{trimmedInput}&rdquo;
                                 </ComboboxItem>
                               )}
@@ -196,36 +197,33 @@ export function BatchMoveDialog({
                     );
                   })()}
                 </FieldContent>
-                <p id="batch_section_hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                <FieldDescription id="batch_section_hint" className="text-xs mt-1">
                   Type a new section name or select from existing sections.
-                </p>
+                </FieldDescription>
                 {sectionError && <FieldError id="batch_target_section_error">{sectionError}</FieldError>}
               </Field>
             </FieldGroup>
 
             {/* Student Names Summary Preview */}
-            <div className="p-3 bg-muted/30 dark:bg-muted/10 rounded-xl border border-border/70 max-h-36 overflow-y-auto text-xs space-y-1.5">
+            <div className="p-3 bg-muted/30 rounded-xl border border-border/70 max-h-36 overflow-y-auto text-xs flex flex-col gap-1.5">
               <span className="font-semibold text-foreground block">
                 Selected Students ({selectedStudents.length}):
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {selectedStudents.map((s) => (
-                  <span
-                    key={s.id}
-                    className="inline-flex items-center gap-1 bg-background px-2.5 py-1 rounded-md border border-border/80 text-foreground font-medium text-xs shadow-2xs"
-                  >
+                  <Badge key={s.id} variant="outline" className="bg-background font-medium">
                     {s.full_name} <span className="text-[10px] text-muted-foreground font-normal">({s.section})</span>
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>
 
             {/* Progress Indicator */}
             {isProcessing && (
-              <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
+              <div className="flex flex-col gap-2 p-3 bg-muted/40 rounded-xl border border-border">
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="flex items-center gap-1.5 text-foreground">
-                    <Spinner className="w-3.5 h-3.5 text-primary" />
+                    <Spinner className="size-3.5 text-primary" />
                     Moving students to {targetSection}...
                   </span>
                   <span className="text-muted-foreground">{progress}%</span>
@@ -235,7 +233,7 @@ export function BatchMoveDialog({
             )}
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-3.5 sm:pt-4 mt-2 border-t border-border shrink-0">
+          <DialogFooter className="pt-3.5 sm:pt-4 mt-2 border-t border-border sm:justify-between shrink-0">
             <Button
               type="button"
               variant="ghost"
@@ -250,21 +248,21 @@ export function BatchMoveDialog({
               type="button"
               disabled={isProcessing || !targetSection.trim()}
               onClick={handleMove}
-              className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
+              className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
             >
               {isProcessing ? (
                 <>
-                  <Spinner className="w-4 h-4 mr-2" />
+                  <Spinner data-icon="inline-start" />
                   Moving...
                 </>
               ) : (
                 <>
-                  <Check className="w-4 h-4 mr-1.5" />
+                  <Check data-icon="inline-start" aria-hidden="true" />
                   Confirm Move
                 </>
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

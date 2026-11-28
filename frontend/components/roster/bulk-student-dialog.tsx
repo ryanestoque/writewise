@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from "@/components/ui/field";
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   Combobox,
   ComboboxInput,
@@ -155,7 +157,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl sm:max-w-[520px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-xl sm:max-w-[520px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-card">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
           <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">Bulk Add Students</DialogTitle>
           <DialogDescription className="sr-only">
@@ -164,10 +166,10 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
         </DialogHeader>
 
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1">
-          <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+          <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
             <FieldGroup>
               {/* Target Section */}
-              <Field data-invalid={!!sectionError}>
+              <Field data-invalid={Boolean(sectionError) || undefined}>
                 <FieldLabel htmlFor="bulk_section" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Target Section <span className="text-destructive" aria-hidden="true">*</span>
                 </FieldLabel>
@@ -216,7 +218,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                               ))}
                               {isCustomSection && (
                                 <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
-                                  <UserPlus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                  <UserPlus aria-hidden="true" />
                                   <span className="truncate max-w-full">
                                     Create section &ldquo;{trimmedInput}&rdquo;
                                   </span>
@@ -229,21 +231,21 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                     );
                   })()}
                 </FieldContent>
-                <p id="bulk_section_hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                <FieldDescription id="bulk_section_hint" className="text-xs mt-1">
                   Type a new section name or select from existing sections.
-                </p>
+                </FieldDescription>
                 {sectionError && <FieldError id="bulk_section_error">{sectionError}</FieldError>}
               </Field>
 
               {/* Student Names Textarea */}
-              <Field data-invalid={!!namesError}>
+              <Field data-invalid={Boolean(namesError) || undefined}>
                 <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                   <FieldLabel htmlFor="bulk_names" className="inline-block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Student Names (One per line)<span className="text-destructive ml-1" aria-hidden="true">*</span>
                   </FieldLabel>
-                  <span className="text-[11px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2.5 py-0.5 rounded-full border border-brand-200/60 dark:border-brand-900">
+                  <Badge variant="secondary" className="text-[11px] font-semibold tabular-nums">
                     {parsedNames.length} {parsedNames.length === 1 ? "student" : "students"} detected
-                  </span>
+                  </Badge>
                 </div>
                 <FieldContent>
                   <Textarea
@@ -266,29 +268,29 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
                   />
                 </FieldContent>
                 {namesError && <FieldError id="bulk_names_error">{namesError}</FieldError>}
-                <p id="bulk_names_tip" className="text-xs text-muted-foreground mt-1 leading-normal">
+                <FieldDescription id="bulk_names_tip" className="text-xs mt-1">
                   Tip: Copy and paste directly from an Excel column or roster sheet. Blank lines are ignored automatically.
-                </p>
+                </FieldDescription>
                 {duplicateNames.length > 0 && !isProcessing && (
-                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-900 text-xs mt-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                    <div>
+                  <Alert className="mt-2 bg-band-2/15 text-band-2-text border-band-2/30 py-2.5 px-3 text-xs">
+                    <AlertCircle aria-hidden="true" />
+                    <AlertDescription className="text-xs text-band-2-text">
                       <span className="font-semibold">Notice:</span>{" "}
                       {duplicateNames.length === 1 ? "1 student" : `${duplicateNames.length} students`} (
                       {duplicateNames.slice(0, 3).join(", ")}
                       {duplicateNames.length > 3 ? "..." : ""}) already enrolled in {section}. They will be added as additional entries.
-                    </div>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
               </Field>
             </FieldGroup>
 
             {/* Progress / Status feedback */}
             {isProcessing && (
-              <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
+              <div className="flex flex-col gap-2 p-3 bg-muted/40 rounded-xl border border-border">
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="flex items-center gap-1.5 text-foreground">
-                    <Spinner className="w-3.5 h-3.5 text-primary" />
+                    <Spinner className="size-3.5 text-primary" />
                     {statusMessage}
                   </span>
                   <span className="text-muted-foreground">{progress}%</span>
@@ -298,14 +300,16 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
             )}
 
             {!isProcessing && statusMessage && (
-              <div className="flex items-center gap-2 p-3 text-xs rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{statusMessage}</span>
-              </div>
+              <Alert className="bg-band-2/15 text-band-2-text border-band-2/30 py-2.5 px-3 text-xs">
+                <AlertCircle aria-hidden="true" />
+                <AlertDescription className="text-xs text-band-2-text">
+                  {statusMessage}
+                </AlertDescription>
+              </Alert>
             )}
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-3.5 sm:pt-4 mt-2 border-t border-border shrink-0">
+          <DialogFooter className="pt-3.5 sm:pt-4 mt-2 border-t border-border sm:justify-between shrink-0">
             <Button
               type="button"
               variant="ghost"
@@ -320,21 +324,21 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
               type="button"
               disabled={isProcessing || parsedNames.length === 0 || !section.trim()}
               onClick={handleBulkSubmit}
-              className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
+              className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
             >
               {isProcessing ? (
                 <>
-                  <Spinner className="w-4 h-4 mr-2" />
+                  <Spinner data-icon="inline-start" />
                   Enrolling...
                 </>
               ) : (
                 <>
-                  <UserPlus className="w-4 h-4 mr-1.5" />
+                  <UserPlus data-icon="inline-start" aria-hidden="true" />
                   Enroll {parsedNames.length > 0 ? `${parsedNames.length} ${parsedNames.length === 1 ? "Student" : "Students"}` : "Students"}
                 </>
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

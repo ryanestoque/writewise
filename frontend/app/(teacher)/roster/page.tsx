@@ -6,12 +6,16 @@ import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { cn } from "@/lib/utils";
 import {
   MoreHorizontal,
   Plus,
@@ -40,6 +44,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -345,7 +350,7 @@ export default function RosterPage() {
               onClick={() => refetch()}
               className="min-h-11 md:min-h-9 shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10 cursor-pointer"
             >
-              <RotateCcw className="mr-1.5 size-4" aria-hidden="true" />
+              <RotateCcw data-icon="inline-start" aria-hidden="true" />
               Retry
             </Button>
           </AlertDescription>
@@ -355,7 +360,7 @@ export default function RosterPage() {
   }
 
   return (
-    <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-20 sm:pb-16">
+    <div className="w-full min-w-0 flex flex-col gap-5 sm:gap-6 pb-20 sm:pb-16">
       {/* Header section with title and actions */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -369,9 +374,9 @@ export default function RosterPage() {
             <Button
               onClick={handleExportRoster}
               variant="outline"
-              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
+              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
             >
-              <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
+              <Download data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
               Export CSV
             </Button>
           )}
@@ -379,36 +384,36 @@ export default function RosterPage() {
           <Button
             onClick={() => setIsManageSectionsOpen(true)}
             variant="outline"
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
           >
-            <FolderKanban className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
+            <FolderKanban data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
             Manage Sections
           </Button>
 
           <Button
             onClick={handleOpenBulk}
             variant="outline"
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
           >
-            <UserPlus className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
+            <UserPlus data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
             Bulk Add
           </Button>
 
           <Button
             onClick={handleOpenNew}
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
+            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl"
           >
-            <Plus className="w-4 h-4 mr-1.5 shrink-0" />
+            <Plus data-icon="inline-start" aria-hidden="true" />
             Add Student
           </Button>
         </div>
       </div>
 
       {/* Main Roster Container */}
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {/* Search and Section Filters Bar */}
         {students && students.length > 0 && (
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
             {/* Search Input */}
             <SearchInput
               ref={searchInputRef}
@@ -454,16 +459,16 @@ export default function RosterPage() {
 
         {/* Loading state */}
         {isLoading ? (
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground shadow-warm">
-            <Spinner className="w-6 h-6 text-primary" />
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground shadow-warm">
+            <Spinner className="size-6 text-primary" />
             <span className="text-sm font-medium">Loading class roster...</span>
           </div>
         ) : students?.length === 0 ? (
           /* Empty Roster State */
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
             <Empty className="py-14 border-0">
-              <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
-                <Users className="w-6 h-6" />
+              <EmptyMedia variant="icon" className="bg-secondary text-secondary-foreground">
+                <Users aria-hidden="true" />
               </EmptyMedia>
               <EmptyHeader>
                 <EmptyTitle className="text-lg sm:text-xl">No students yet</EmptyTitle>
@@ -477,14 +482,14 @@ export default function RosterPage() {
                   variant="outline"
                   className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
                 >
-                  <UserPlus className="w-4 h-4 mr-2" />
+                  <UserPlus data-icon="inline-start" aria-hidden="true" />
                   Bulk Add
                 </Button>
                 <Button
                   onClick={handleOpenNew}
-                  className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
+                  className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus data-icon="inline-start" aria-hidden="true" />
                   Add Student
                 </Button>
               </EmptyContent>
@@ -492,10 +497,10 @@ export default function RosterPage() {
           </div>
         ) : filteredStudents.length === 0 ? (
           /* Filter Empty State */
-          <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
             <Empty className="py-12 border-0">
               <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                <SearchX className="w-6 h-6" />
+                <SearchX aria-hidden="true" />
               </EmptyMedia>
               <EmptyHeader>
                 <EmptyTitle className="text-lg sm:text-xl">No matching students</EmptyTitle>
@@ -514,7 +519,7 @@ export default function RosterPage() {
         ) : (
           <>
             {/* Desktop & Tablet Table View (md and up) */}
-            <div className="hidden md:block bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
+            <div className="hidden md:block bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
               <div role="region" aria-label="Class roster table" className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-muted/40">
@@ -538,18 +543,18 @@ export default function RosterPage() {
                           type="button"
                           variant="ghost"
                           onClick={() => handleSort("full_name")}
-                          className="w-full h-full px-3 py-3 justify-start gap-1.5 rounded-none font-medium text-foreground hover:text-primary hover:bg-transparent dark:hover:bg-transparent focus-visible:ring-inset select-none cursor-pointer"
+                          className="w-full h-full px-3 py-3 justify-start gap-1.5 rounded-none font-medium text-foreground hover:text-primary hover:bg-transparent focus-visible:ring-inset select-none cursor-pointer"
                           aria-label={`Sort by student name, currently ${sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
                         >
                           <span>Student Name</span>
                           {sortField === "full_name" ? (
                             sortDirection === "asc" ? (
-                              <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <ArrowUp data-icon="inline-end" className="text-primary" aria-hidden="true" />
                             ) : (
-                              <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <ArrowDown data-icon="inline-end" className="text-primary" aria-hidden="true" />
                             )
                           ) : (
-                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                            <ArrowUpDown data-icon="inline-end" className="text-muted-foreground/60" aria-hidden="true" />
                           )}
                         </Button>
                       </TableHead>
@@ -563,18 +568,18 @@ export default function RosterPage() {
                           type="button"
                           variant="ghost"
                           onClick={() => handleSort("section")}
-                          className="w-full h-full px-3 py-3 justify-start gap-1.5 rounded-none font-medium text-foreground hover:text-primary hover:bg-transparent dark:hover:bg-transparent focus-visible:ring-inset select-none cursor-pointer"
+                          className="w-full h-full px-3 py-3 justify-start gap-1.5 rounded-none font-medium text-foreground hover:text-primary hover:bg-transparent focus-visible:ring-inset select-none cursor-pointer"
                           aria-label={`Sort by class section, currently ${sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
                         >
                           <span>Class Section</span>
                           {sortField === "section" ? (
                             sortDirection === "asc" ? (
-                              <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <ArrowUp data-icon="inline-end" className="text-primary" aria-hidden="true" />
                             ) : (
-                              <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <ArrowDown data-icon="inline-end" className="text-primary" aria-hidden="true" />
                             )
                           ) : (
-                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                            <ArrowUpDown data-icon="inline-end" className="text-muted-foreground/60" aria-hidden="true" />
                           )}
                         </Button>
                       </TableHead>
@@ -588,18 +593,18 @@ export default function RosterPage() {
                           type="button"
                           variant="ghost"
                           onClick={() => handleSort("created_at")}
-                          className="w-full h-full px-3 py-3 justify-start gap-1.5 rounded-none font-medium text-foreground hover:text-primary hover:bg-transparent dark:hover:bg-transparent focus-visible:ring-inset select-none cursor-pointer"
+                          className="w-full h-full px-3 py-3 justify-start gap-1.5 rounded-none font-medium text-foreground hover:text-primary hover:bg-transparent focus-visible:ring-inset select-none cursor-pointer"
                           aria-label={`Sort by date enrolled, currently ${sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "unsorted"}`}
                         >
                           <span>Date Enrolled</span>
                           {sortField === "created_at" ? (
                             sortDirection === "asc" ? (
-                              <ArrowUp className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <ArrowUp data-icon="inline-end" className="text-primary" aria-hidden="true" />
                             ) : (
-                              <ArrowDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <ArrowDown data-icon="inline-end" className="text-primary" aria-hidden="true" />
                             )
                           ) : (
-                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+                            <ArrowUpDown data-icon="inline-end" className="text-muted-foreground/60" aria-hidden="true" />
                           )}
                         </Button>
                       </TableHead>
@@ -613,8 +618,10 @@ export default function RosterPage() {
                       return (
                         <TableRow
                           key={student.id}
-                          className={`border-b border-border/60 transition-colors group ${isSelected ? "bg-brand-50/70 dark:bg-brand-950/40" : "hover:bg-muted/30"
-                            }`}
+                          className={cn(
+                            "border-b border-border/60 transition-colors group",
+                            isSelected ? "bg-primary/5" : "hover:bg-muted/30"
+                          )}
                         >
                           {/* Checkbox Column */}
                           <TableCell className="w-10 px-3 py-3">
@@ -632,16 +639,16 @@ export default function RosterPage() {
                                 {student.parent_email ? (
                                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                     <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
-                                      <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
+                                      <Mail className="size-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
                                       {student.parent_email}
                                     </span>
                                     {student.parent_status === "active" ? (
-                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80">
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-band-4/15 text-band-4-text border-band-4/30">
                                         Active
                                       </Badge>
                                     ) : (
                                       <div className="inline-flex items-center gap-1">
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80">
+                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-band-2/15 text-band-2-text border-band-2/30">
                                           Pending
                                         </Badge>
                                         <Button
@@ -654,9 +661,9 @@ export default function RosterPage() {
                                           className="h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer"
                                         >
                                           {resendingStudentId === student.id ? (
-                                            <Spinner className="size-3" />
+                                            <Spinner data-icon="inline-start" />
                                           ) : (
-                                            <Send className="size-2.5" />
+                                            <Send data-icon="inline-start" aria-hidden="true" />
                                           )}
                                           <span>Resend</span>
                                         </Button>
@@ -673,7 +680,7 @@ export default function RosterPage() {
 
                           {/* Section Badge */}
                           <TableCell className="text-muted-foreground py-3">
-                            <Badge variant="outline" className="font-semibold text-xs bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border-brand-200/80 dark:border-brand-900">
+                            <Badge variant="secondary" className="font-semibold text-xs">
                               {student.section}
                             </Badge>
                           </TableCell>
@@ -701,9 +708,9 @@ export default function RosterPage() {
             </div>
 
             {/* Mobile Card List View (< md) */}
-            <div className="block md:hidden space-y-2.5">
+            <div className="flex flex-col gap-2.5 md:hidden">
               {/* Mobile Select All & Sort Bar */}
-              <div className="flex items-center justify-between px-3 py-2 bg-surface dark:bg-card border border-border rounded-xl text-xs">
+              <div className="flex items-center justify-between gap-2 px-3 py-2 bg-card border border-border rounded-xl text-xs">
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={allFilteredSelected}
@@ -718,77 +725,65 @@ export default function RosterPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1 text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <ToggleGroup
+                    multiple={false}
+                    value={[sortField]}
+                    onValueChange={(vals) => {
+                      if (vals.length > 0) handleSort(vals[0] as SortField);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    spacing={0}
+                    aria-label="Sort students by"
+                  >
+                    <ToggleGroupItem
+                      value="full_name"
+                      className="text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                    >
+                      Name
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="section"
+                      className="text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                    >
+                      Section
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                   <Button
                     type="button"
-                    variant={sortField === "full_name" ? "secondary" : "ghost"}
-                    size="xs"
-                    onClick={() => handleSort("full_name")}
-                    aria-pressed={sortField === "full_name"}
-                    aria-label={`Sort by student name, currently ${
-                      sortField === "full_name"
-                        ? sortDirection === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "unsorted"
-                    }`}
-                    className={`relative px-2.5 py-1 min-h-[30px] rounded-md text-xs font-medium cursor-pointer after:absolute after:-inset-1 after:content-[''] ${
-                      sortField === "full_name"
-                        ? "bg-brand-100 text-brand-800 hover:bg-brand-100 dark:bg-brand-950 dark:text-brand-300 dark:hover:bg-brand-950 font-semibold shadow-2xs"
-                        : "text-muted-foreground"
-                    }`}
+                    variant="outline"
+                    size="icon-sm"
+                    onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+                    aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                    title={sortDirection === "asc" ? "Ascending" : "Descending"}
                   >
-                    <span>Name</span>
-                    {sortField === "full_name" && (
-                      <span aria-hidden="true" className="ml-1 font-bold">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={sortField === "section" ? "secondary" : "ghost"}
-                    size="xs"
-                    onClick={() => handleSort("section")}
-                    aria-pressed={sortField === "section"}
-                    aria-label={`Sort by class section, currently ${
-                      sortField === "section"
-                        ? sortDirection === "asc"
-                          ? "ascending"
-                          : "descending"
-                        : "unsorted"
-                    }`}
-                    className={`relative px-2.5 py-1 min-h-[30px] rounded-md text-xs font-medium cursor-pointer after:absolute after:-inset-1 after:content-[''] ${
-                      sortField === "section"
-                        ? "bg-brand-100 text-brand-800 hover:bg-brand-100 dark:bg-brand-950 dark:text-brand-300 dark:hover:bg-brand-950 font-semibold shadow-2xs"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    <span>Section</span>
-                    {sortField === "section" && (
-                      <span aria-hidden="true" className="ml-1 font-bold">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
+                    {sortDirection === "asc" ? (
+                      <ArrowUp aria-hidden="true" />
+                    ) : (
+                      <ArrowDown aria-hidden="true" />
                     )}
                   </Button>
                 </div>
               </div>
 
               {/* Mobile Student Cards */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {filteredStudents.map((student) => {
                   const isSelected = selectedStudentIds.has(student.id);
                   return (
-                    <div
+                    <Card
                       key={student.id}
-                      className={`p-3.5 rounded-xl border transition-all ${
+                      size="sm"
+                      className={cn(
+                        "transition-all",
                         isSelected
-                          ? "bg-brand-50/80 dark:bg-brand-950/40 border-brand-300 dark:border-brand-700 shadow-warm-sm ring-1 ring-brand-500/30 dark:ring-brand-400/30"
-                          : "bg-surface dark:bg-card border-border/80 hover:border-border shadow-warm-sm"
-                      }`}
+                          ? "bg-primary/5 border-primary/50 ring-1 ring-primary/30"
+                          : "hover:border-border"
+                      )}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <CardHeader>
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="p-2 -ml-2 -my-1.5 flex items-center justify-center">
                             <Checkbox
                               checked={isSelected}
@@ -796,68 +791,69 @@ export default function RosterPage() {
                               aria-label={`Select ${student.full_name}`}
                             />
                           </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-foreground tracking-tight text-sm truncate">
-                                {student.full_name}
-                              </span>
-                              <Badge
-                                variant="secondary"
-                                className="font-normal text-[11px] px-2 py-0.2 bg-brand-100/80 text-brand-800 border-brand-200/70 dark:bg-brand-950 dark:text-brand-300 dark:border-brand-900 shrink-0"
-                              >
-                                {student.section}
-                              </Badge>
-                            </div>
-
-                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                              {student.parent_email ? (
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="flex items-center gap-1 truncate font-normal">
-                                    <Mail className="w-3 h-3 text-muted-foreground/70 shrink-0" />
-                                    {student.parent_email}
-                                  </span>
-                                  {student.parent_status === "active" ? (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-200/80">
-                                      Active
-                                    </Badge>
-                                  ) : (
-                                    <div className="inline-flex items-center gap-1">
-                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-200/80">
-                                        Pending
-                                      </Badge>
-                                      <Button
-                                        type="button"
-                                        variant="link"
-                                        size="xs"
-                                        onClick={() => handleResendInvite(student)}
-                                        disabled={resendingStudentId === student.id}
-                                        title="Resend invitation email"
-                                        className="h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer"
-                                      >
-                                        {resendingStudentId === student.id ? (
-                                          <Spinner className="size-3" />
-                                        ) : (
-                                          <Send className="size-2.5" />
-                                        )}
-                                        <span>Resend</span>
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="italic font-normal text-[11px]">No parent email linked</span>
-                              )}
-                            </div>
-                          </div>
+                          <CardTitle className="text-sm font-semibold tracking-tight truncate">
+                            {student.full_name}
+                          </CardTitle>
                         </div>
-
-                        <div className="shrink-0 -mr-1">
+                        <CardAction className="-mr-1">
                           <RowActions student={student} onEdit={() => handleEdit(student)} />
-                        </div>
-                      </div>
+                        </CardAction>
+                      </CardHeader>
 
-                      <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <CardContent className="flex flex-col gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant="secondary" className="font-normal text-[11px] shrink-0">
+                            {student.section}
+                          </Badge>
+                          {student.parent_email && (
+                            student.parent_status === "active" ? (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 font-medium bg-band-4/15 text-band-4-text border-band-4/30"
+                              >
+                                Active
+                              </Badge>
+                            ) : (
+                              <div className="inline-flex items-center gap-1">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0 font-medium bg-band-2/15 text-band-2-text border-band-2/30"
+                                >
+                                  Pending
+                                </Badge>
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="xs"
+                                  onClick={() => handleResendInvite(student)}
+                                  disabled={resendingStudentId === student.id}
+                                  title="Resend invitation email"
+                                  className="h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer"
+                                >
+                                  {resendingStudentId === student.id ? (
+                                    <Spinner data-icon="inline-start" />
+                                  ) : (
+                                    <Send data-icon="inline-start" aria-hidden="true" />
+                                  )}
+                                  <span>Resend</span>
+                                </Button>
+                              </div>
+                            )
+                          )}
+                        </div>
+                        {student.parent_email ? (
+                          <span className="flex items-center gap-1 truncate font-normal">
+                            <Mail className="size-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
+                            {student.parent_email}
+                          </span>
+                        ) : (
+                          <span className="italic font-normal text-[11px]">No parent email linked</span>
+                        )}
+                      </CardContent>
+
+                      <Separator />
+
+                      <CardFooter className="justify-between text-[11px] text-muted-foreground">
                         <span>Enrolled</span>
                         <time dateTime={student.created_at} className="font-medium text-foreground/80">
                           {new Date(student.created_at).toLocaleDateString(undefined, {
@@ -865,8 +861,8 @@ export default function RosterPage() {
                             month: "short",
                             day: "numeric" })}
                         </time>
-                      </div>
-                    </div>
+                      </CardFooter>
+                    </Card>
                   );
                 })}
               </div>
@@ -936,11 +932,10 @@ export default function RosterPage() {
               onClick={handleBatchRemoveConfirm}
               disabled={isBatchRemoving}
               variant="destructive"
-              className="gap-2"
             >
               {isBatchRemoving ? (
                 <>
-                  <Spinner className="size-4" />
+                  <Spinner data-icon="inline-start" />
                   <span>Removing...</span>
                 </>
               ) : (
@@ -984,27 +979,29 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
             <Button
               variant="ghost"
               size="icon"
-              className="relative h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground after:absolute after:-inset-2 after:content-['']"
+              className="relative size-9 sm:size-8 text-muted-foreground hover:text-foreground after:absolute after:-inset-2 after:content-['']"
               aria-label={`Actions for ${student.full_name}`}
             />
           }
         >
           <span className="sr-only">Actions for {student.full_name}</span>
-          <MoreHorizontal className="h-4 w-4" />
+          <MoreHorizontal aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="rounded-xl min-w-36 p-1 shadow-lg">
-          <DropdownMenuItem onClick={onEdit} className="cursor-pointer py-2 px-2.5 text-sm">
-            <Edit2 className="w-4 h-4 mr-2 text-muted-foreground" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => setIsAlertOpen(true)}
-            className="cursor-pointer py-2 px-2.5 text-sm text-destructive focus:text-destructive"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Remove
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={onEdit} className="cursor-pointer py-2 px-2.5 text-sm">
+              <Edit2 data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => setIsAlertOpen(true)}
+              className="cursor-pointer py-2 px-2.5 text-sm"
+            >
+              <Trash2 data-icon="inline-start" aria-hidden="true" />
+              Remove
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -1024,11 +1021,10 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
               onClick={handleRemove}
               disabled={isPending}
               variant="destructive"
-              className="gap-2"
             >
               {isPending ? (
                 <>
-                  <Spinner className="size-4" />
+                  <Spinner data-icon="inline-start" />
                   <span>Removing...</span>
                 </>
               ) : (

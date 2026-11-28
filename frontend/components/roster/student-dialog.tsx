@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Field, FieldLabel, FieldGroup, FieldError, FieldContent } from "@/components/ui/field";
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   Combobox,
   ComboboxInput,
@@ -216,7 +216,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
+        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-card">
           <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
             <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
               {isEditing ? "Edit Student" : "Add Student"}
@@ -317,7 +317,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                                   ))}
                                   {isCustomSection && (
                                     <ComboboxItem value={trimmedInput} className="py-2.5 px-3 text-primary font-medium">
-                                      <Plus className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                                      <Plus aria-hidden="true" />
                                       <span className="truncate max-w-full">
                                         Create section &ldquo;{trimmedInput}&rdquo;
                                       </span>
@@ -331,9 +331,9 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                       }}
                     />
                   </FieldContent>
-                  <p id="section-hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                  <FieldDescription id="section-hint" className="text-xs mt-1">
                     Type a new section name or select from existing sections.
-                  </p>
+                  </FieldDescription>
                   <FieldError id="section-error" errors={[form.formState.errors.section]} />
                 </Field>
 
@@ -362,15 +362,15 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                       className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
                     />
                   </FieldContent>
-                  <p id="parent_email_hint" className="text-xs text-muted-foreground mt-1 leading-normal">
+                  <FieldDescription id="parent_email_hint" className="text-xs mt-1">
                     Parent will receive an invitation to access their child&apos;s handwriting progress portal.
-                  </p>
+                  </FieldDescription>
                   <FieldError id="parent_email-error" errors={[form.formState.errors.parent_email]} />
                 </Field>
               </FieldGroup>
             </div>
             
-            <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-3.5 sm:pt-4 mt-2 border-t border-border shrink-0">
+            <DialogFooter className="pt-3.5 sm:pt-4 mt-2 border-t border-border sm:justify-between shrink-0">
               <Button 
                 type="button" 
                 variant="ghost" 
@@ -389,24 +389,28 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                     onClick={form.handleSubmit((data) => onSubmit(data, true))}
                     className="h-10 sm:h-9 w-full sm:w-auto text-xs font-medium rounded-lg sm:rounded-xl border-border hover:bg-muted/60"
                   >
-                    {isCreating ? <Spinner className="w-3.5 h-3.5 mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                    {isCreating ? (
+                      <Spinner data-icon="inline-start" />
+                    ) : (
+                      <Plus data-icon="inline-start" aria-hidden="true" />
+                    )}
                     Save & Add Another
                   </Button>
                 )}
                 <Button 
                   type="submit" 
                   disabled={isPending || (isEditing && !hasChanges)}
-                  className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
+                  className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
                 >
                   {isPending ? (
-                    <Spinner className="w-4 h-4 mr-2" />
+                    <Spinner data-icon="inline-start" />
                   ) : (
-                    <Check className="w-4 h-4 mr-1.5" />
+                    <Check data-icon="inline-start" aria-hidden="true" />
                   )}
                   {isEditing ? "Save Changes" : "Add Student"}
                 </Button>
               </div>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
