@@ -383,6 +383,7 @@ export function ClassTable({
           </FieldLabel>
           <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
             <Select
+              items={COLUMNS.map((col) => ({ value: col.field, label: col.label }))}
               value={sortField}
               onValueChange={(value) => {
                 if (value) onSortChange(value as SortField, "asc");
@@ -391,7 +392,7 @@ export function ClassTable({
               <SelectTrigger
                 id="mobile-student-sort"
                 aria-label="Sort by"
-                className="min-h-10 min-w-0 flex-1 max-w-[200px]"
+                className="min-h-10 min-w-0 flex-1 max-w-[200px] border-border bg-background"
               >
                 <SelectValue />
               </SelectTrigger>
