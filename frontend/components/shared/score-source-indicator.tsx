@@ -1,11 +1,11 @@
-import { cn } from "@/lib/utils";
-
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface ScoreSourceIndicatorProps {
   source: "manual" | "calibrated";
@@ -19,33 +19,53 @@ export function ScoreSourceIndicator({
   className,
 }: ScoreSourceIndicatorProps) {
   const isManual = source === "manual";
+  const isCalibrated = source === "calibrated";
+  const label = compact
+    ? isManual
+      ? "Teacher rubric"
+      : "Auto-calibrated"
+    : isManual
+      ? "Teacher-assessed"
+      : "Auto-calibrated";
 
   return (
     <TooltipProvider delay={150}>
       <Tooltip>
         <TooltipTrigger
-          type="button"
-          tabIndex={-1}
-          title={isManual ? "Teacher-Assessed Rubric: Evaluated directly by classroom teacher" : "Automated Diagnostic Engine: Evaluated automatically across 5 cursive standards"}
-          aria-label={isManual ? "Teacher-assessed score: click for details" : "Auto-calibrated score: click for details"}
-          className={cn(
-            "inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground/80 hover:text-foreground transition-all cursor-pointer rounded-sm px-1 -mx-1 focus-visible:outline-hidden focus-visible:ring-1.5 focus-visible:ring-ring focus-visible:ring-offset-1 select-none",
-            className
-          )}
+          render={
+            <Button
+              type="button"
+              variant="link"
+              size="xs"
+              title={
+                isManual
+                  ? "Teacher-Assessed Rubric: Evaluated directly by classroom teacher"
+                  : "Automated Diagnostic Engine: Evaluated automatically across 5 cursive standards"
+              }
+              aria-label={
+                isManual
+                  ? "Teacher-assessed score: click for details"
+                  : "Auto-calibrated score: click for details"
+              }
+              className={cn(
+                "h-auto p-0 text-xs font-medium",
+                isCalibrated ? "text-primary" : "text-band-2-text",
+                className
+              )}
+            />
+          }
         >
-          <span className="text-muted-foreground/40 font-normal">•</span>
-          <span className={cn(
-            "font-medium underline decoration-dotted underline-offset-2 decoration-current/40 hover:decoration-current",
-            isManual ? "text-brand-600 dark:text-brand-400" : "text-amber-600 dark:text-amber-400"
-          )}>
-            {compact ? (isManual ? "Teacher rubric" : "Auto-calibrated") : (isManual ? "Teacher-assessed" : "Auto-calibrated")}
-          </span>
+          {label}
         </TooltipTrigger>
-        <TooltipContent side="top" align="end" className="text-xs max-w-xs p-3 leading-relaxed shadow-warm border border-border">
-          <p className="font-semibold text-foreground mb-1">
+        <TooltipContent
+          side="top"
+          align="end"
+          className="flex-col items-start gap-1 max-w-xs p-3 text-xs leading-relaxed"
+        >
+          <p className="font-semibold">
             {isManual ? "Teacher-Assessed Rubric" : "Automated Diagnostic Engine"}
           </p>
-          <p className="text-muted-foreground text-[11px]">
+          <p className="text-background/80 text-xs">
             {isManual
               ? "Evaluated directly by your child's classroom teacher using standardized cursive rubric criteria."
               : "Evaluated automatically by WriteWise's calibrated computer vision pipeline across 5 cursive penmanship standards."}

@@ -43,7 +43,7 @@ export function BandBadge({
         <span
           className={cn(
             "rounded-full shrink-0",
-            size === "sm" ? "w-1.5 h-1.5" : "w-2 h-2",
+            size === "sm" ? "size-1.5" : "size-2",
             meta.dotColor
           )}
           aria-hidden="true"

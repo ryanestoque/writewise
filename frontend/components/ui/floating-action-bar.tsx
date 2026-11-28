@@ -73,89 +73,87 @@ export const FloatingActionBar = memo(function FloatingActionBar({
             role="region"
             aria-label={regionLabel}
             className={cn(
-              "fixed inset-x-0 bottom-0 md:bottom-6 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 z-40 w-full md:w-auto md:max-w-2xl animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none motion-reduce:transition-none duration-200 select-none",
+              "fixed inset-x-0 bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:pb-2.5 z-40 w-full md:w-auto md:max-w-2xl bg-popover text-popover-foreground border-t border-x-0 border-b-0 md:border border-border shadow-lg rounded-none md:rounded-full px-3 pt-2 sm:px-4 md:px-3.5 md:pt-2.5 flex items-center justify-between gap-1.5 sm:gap-2.5 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none motion-reduce:transition-none duration-200 select-none",
               className
             )}
           >
-            <div className="bg-card/95 dark:bg-card/95 backdrop-blur-md border-t border-x-0 border-b-0 md:border border-border/80 dark:border-border/60 shadow-[0_-4px_24px_rgba(27,107,99,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)] md:shadow-[0_12px_36px_rgba(27,107,99,0.1),0_4px_16px_rgba(0,0,0,0.06)] dark:md:shadow-[0_12px_36px_rgba(0,0,0,0.45)] md:ring-1 md:ring-primary/10 dark:md:ring-white/10 rounded-none md:rounded-full px-3 py-2 sm:px-4 md:px-3.5 md:py-2 pb-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.5rem))] md:pb-2 flex items-center justify-between gap-1.5 sm:gap-2.5 text-foreground">
-          {/* Left: Count Badge & Context */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-            <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs px-2.5 py-1 rounded-full shadow-2xs shrink-0 flex items-center gap-1 transition-colors">
-              <span className="tabular-nums font-bold font-sans">{selectedCount}</span>
-              <span className="hidden sm:inline">Selected</span>
-              <span className="sm:hidden text-xs">Sel.</span>
-            </Badge>
+            {/* Left: Count Badge & Context */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+              <Badge className="font-semibold text-xs px-2.5 py-1 rounded-full shrink-0 flex items-center gap-1">
+                <span className="tabular-nums font-bold font-sans">{selectedCount}</span>
+                <span className="hidden sm:inline">Selected</span>
+                <span className="sm:hidden text-xs">Sel.</span>
+              </Badge>
 
-            {typeof totalCount === "number" && (
-              <span className="text-xs text-muted-foreground hidden min-[480px]:inline truncate">
-                of {totalCount}
-              </span>
-            )}
-
-            {onSelectAll &&
-              !allSelected &&
-              typeof totalCount === "number" &&
-              totalCount > selectedCount && (
-                <Button
-                  type="button"
-                  variant="link"
-                  size="xs"
-                  onClick={onSelectAll}
-                  className="h-auto gap-1 text-xs font-medium ml-0.5 cursor-pointer shrink-0 px-1 py-0.5"
-                  title={`Select all ${totalCount} ${plural}`}
-                >
-                  <CheckCheck data-icon="inline-start" aria-hidden="true" />
-                  <span className="hidden sm:inline">
-                    Select all ({totalCount})
-                  </span>
-                  <span className="sm:hidden">All ({totalCount})</span>
-                </Button>
+              {typeof totalCount === "number" && (
+                <span className="text-xs text-muted-foreground hidden min-[480px]:inline truncate">
+                  of {totalCount}
+                </span>
               )}
-          </div>
 
-          {/* Divider on larger screens if there are children actions */}
-          {children && (
-            <Separator
-              orientation="vertical"
-              className="h-4 hidden md:block"
-              aria-hidden="true"
-            />
-          )}
-
-          {/* Right: Action Buttons Group & Clear Selection */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            {children}
-
-            {/* Clear Selection Button with Expanded Touch Target and Esc Shortcut */}
-            <Tooltip>
-              <TooltipTrigger
-                render={
+              {onSelectAll &&
+                !allSelected &&
+                typeof totalCount === "number" &&
+                totalCount > selectedCount && (
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={onClearSelection}
-                    className="relative size-8 sm:size-7 rounded-full text-muted-foreground hover:text-foreground ml-0.5 after:absolute after:-inset-2.5 after:content-[''] shrink-0 cursor-pointer"
-                    aria-label="Clear selection (Esc)"
+                    variant="link"
+                    size="xs"
+                    onClick={onSelectAll}
+                    className="h-auto gap-1 text-xs font-medium ml-0.5 cursor-pointer shrink-0 px-1 py-0.5"
+                    title={`Select all ${totalCount} ${plural}`}
                   >
-                    <X aria-hidden="true" />
+                    <CheckCheck data-icon="inline-start" aria-hidden="true" />
+                    <span className="hidden sm:inline">
+                      Select all ({totalCount})
+                    </span>
+                    <span className="sm:hidden">All ({totalCount})</span>
                   </Button>
-                }
+                )}
+            </div>
+
+            {/* Divider on larger screens if there are children actions */}
+            {children && (
+              <Separator
+                orientation="vertical"
+                className="h-4 hidden md:block"
+                aria-hidden="true"
               />
-              <TooltipContent
-                side="top"
-                sideOffset={6}
-                className="text-xs font-normal flex items-center gap-1.5"
-              >
-                <span>Clear selection</span>
-                <Kbd className="text-xs h-5 px-1.5 py-0 bg-popover text-popover-foreground border border-border/80 font-mono shadow-2xs">
-                  Esc
-                </Kbd>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      </aside>
+            )}
+
+            {/* Right: Action Buttons Group & Clear Selection */}
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+              {children}
+
+              {/* Clear Selection Button with Expanded Touch Target and Esc Shortcut */}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={onClearSelection}
+                      className="relative size-8 sm:size-7 rounded-full text-muted-foreground hover:text-foreground ml-0.5 after:absolute after:-inset-2.5 after:content-[''] shrink-0 cursor-pointer"
+                      aria-label="Clear selection (Esc)"
+                    >
+                      <X aria-hidden="true" />
+                    </Button>
+                  }
+                />
+                <TooltipContent
+                  side="top"
+                  sideOffset={6}
+                  className="text-xs font-normal flex items-center gap-1.5"
+                >
+                  <span>Clear selection</span>
+                  <Kbd className="text-xs h-5 px-1.5 py-0 bg-popover text-popover-foreground border border-border font-mono shadow-2xs">
+                    Esc
+                  </Kbd>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </aside>
     </TooltipProvider>
   )}
 </>

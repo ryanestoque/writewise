@@ -81,7 +81,7 @@ export function SearchInput({
   return (
     <InputGroup
       className={cn(
-        "w-full sm:w-72 h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-lg sm:rounded-xl border border-border bg-background dark:bg-input/30",
+        "w-full sm:w-72 h-11 sm:h-9 min-h-11 sm:min-h-9 rounded-lg sm:rounded-xl border border-border bg-background",
         containerClassName
       )}
       data-slot="search-input-container"
@@ -115,7 +115,6 @@ export function SearchInput({
               disabled={disabled}
               className="relative rounded-full text-muted-foreground hover:text-foreground cursor-pointer after:absolute after:-inset-2 after:content-['']"
               aria-label="Clear search"
-              tabIndex={-1}
             >
               <X aria-hidden="true" />
             </InputGroupButton>
