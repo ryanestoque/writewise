@@ -331,7 +331,7 @@ export function CriterionTrendChart({
                     variant="ghost"
                     size="xs"
                     onClick={resetCriteria}
-                    className="h-auto min-h-9 sm:min-h-7 px-2 -my-1 ml-0.5 text-[11px] font-medium text-primary hover:text-primary hover:underline hover:bg-muted/30 cursor-pointer"
+                    className="h-auto min-h-11 md:min-h-7 px-2 -my-1 ml-0.5 text-xs font-medium text-primary hover:text-primary hover:underline hover:bg-muted/30 cursor-pointer"
                   >
                     Reset
                   </Button>
@@ -341,7 +341,7 @@ export function CriterionTrendChart({
                     variant="ghost"
                     size="xs"
                     onClick={showAllSkills}
-                    className="h-auto min-h-9 sm:min-h-7 px-2 -my-1 ml-0.5 text-[11px] font-medium text-primary hover:text-primary hover:underline hover:bg-muted/30 cursor-pointer"
+                    className="h-auto min-h-11 md:min-h-7 px-2 -my-1 ml-0.5 text-xs font-medium text-primary hover:text-primary hover:underline hover:bg-muted/30 cursor-pointer"
                   >
                     Show all
                   </Button>
@@ -352,7 +352,7 @@ export function CriterionTrendChart({
                     variant="outline"
                     pressed={showScoreDetails}
                     onPressedChange={onToggleScoreDetails}
-                    className="h-auto min-h-9 sm:min-h-7 rounded-md px-2 py-0.5 ml-1 text-[11px] font-medium text-primary border-primary/25 bg-secondary/50 aria-pressed:bg-secondary/70 cursor-pointer"
+                    className="h-auto min-h-11 md:min-h-7 rounded-md px-2 py-0.5 ml-1 text-xs font-medium text-primary border-primary/25 bg-secondary/50 aria-pressed:bg-secondary/70 cursor-pointer"
                   >
                     {showScoreDetails ? "Hide scores" : "Show scores"}
                   </Toggle>
@@ -368,18 +368,18 @@ export function CriterionTrendChart({
           {/* Only 1 Tab Control in the entire component: [Chart] [Table] */}
           <TabsList
             aria-label="Progress view mode"
-            className="h-auto rounded-lg bg-muted/40 p-1 border border-border/60 gap-1 shrink-0"
+            className="group-data-horizontal/tabs:h-auto rounded-full bg-muted/60 p-1 border border-border/60 gap-1 shrink-0"
           >
             <TabsTrigger
               value="chart"
-              className="min-h-9 sm:min-h-8 h-auto px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs font-medium gap-1.5 cursor-pointer data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
+              className="min-h-11 md:min-h-8 h-auto px-3.5 py-1.5 sm:px-3 sm:py-1 text-xs font-medium gap-1.5 cursor-pointer data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
             >
               <LineChartIcon data-icon="inline-start" aria-hidden="true" />
               <span>Chart</span>
             </TabsTrigger>
             <TabsTrigger
               value="table"
-              className="min-h-9 sm:min-h-8 h-auto px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs font-medium gap-1.5 cursor-pointer data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
+              className="min-h-11 md:min-h-8 h-auto px-3.5 py-1.5 sm:px-3 sm:py-1 text-xs font-medium gap-1.5 cursor-pointer data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
             >
               <Table2 data-icon="inline-start" aria-hidden="true" />
               <span>Table</span>
@@ -409,7 +409,7 @@ export function CriterionTrendChart({
                     key={c.key}
                     value={c.key}
                     className={cn(
-                      "h-auto min-h-9 sm:min-h-8 gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer select-none shrink-0",
+                      "h-auto min-h-11 md:min-h-8 gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-colors cursor-pointer select-none shrink-0",
                       isSelected
                         ? "bg-card aria-pressed:bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50 hover:bg-card"
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground hover:border-border/90"
