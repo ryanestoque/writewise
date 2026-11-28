@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { Fragment, useState, useMemo, useEffect, useRef } from "react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetFooter,
 } from "@/components/ui/sheet";
 import {
   Accordion,
@@ -31,7 +32,25 @@ import {
 } from "@/components/ui/empty";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemHeader,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import {
   type StudentScoreSummary,
   useStudentScoreHistory,
@@ -239,9 +258,9 @@ export function StudentDrillDownDrawer({
           className="flex flex-col h-full gap-0 overflow-hidden"
         >
           {/* Drawer Header with Clean Metadata & Tab Navigation */}
-          <SheetHeader className={cn("p-5 sm:p-6 bg-card border-b border-border shrink-0 space-y-4", hasSubmissions ? "pb-0 sm:pb-0" : "pb-5 sm:pb-6")}>
+          <SheetHeader className={cn("p-5 sm:p-6 bg-card border-b border-border shrink-0 flex flex-col gap-4", hasSubmissions ? "pb-0 sm:pb-0" : "pb-5 sm:pb-6")}>
             <div className="flex items-start justify-between gap-3 pr-14 sm:pr-12">
-              <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <SheetTitle className="font-heading text-lg sm:text-xl font-bold text-foreground leading-snug break-words">
                   {student.fullName}
                 </SheetTitle>
@@ -268,9 +287,9 @@ export function StudentDrillDownDrawer({
                     disabled={!onPreviousStudent}
                     title="Previous student (Alt + Left)"
                     aria-label="Previous student"
-                    className="min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] cursor-pointer touch-manipulation"
+                    className="min-h-10 min-w-10 sm:min-h-9 sm:min-w-9 cursor-pointer"
                   >
-                    <ChevronLeft className="size-4" aria-hidden="true" />
+                    <ChevronLeft aria-hidden="true" />
                   </Button>
                   <span className="text-xs font-medium text-muted-foreground tabular-nums px-1">
                     {studentPosition.current}/{studentPosition.total}
@@ -283,9 +302,9 @@ export function StudentDrillDownDrawer({
                     disabled={!onNextStudent}
                     title="Next student (Alt + Right)"
                     aria-label="Next student"
-                    className="min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] cursor-pointer touch-manipulation"
+                    className="min-h-10 min-w-10 sm:min-h-9 sm:min-w-9 cursor-pointer"
                   >
-                    <ChevronRight className="size-4" aria-hidden="true" />
+                    <ChevronRight aria-hidden="true" />
                   </Button>
                 </div>
               )}
@@ -302,9 +321,9 @@ export function StudentDrillDownDrawer({
                     value="overview"
                     title="Overview (Alt + 1)"
                     aria-keyshortcuts="Alt+1"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-11 sm:min-h-10 data-active:text-primary data-active:after:bg-primary"
                   >
-                    <LayoutDashboard className="size-3.5 shrink-0" aria-hidden="true" />
+                    <LayoutDashboard data-icon="inline-start" aria-hidden="true" />
                     <span>Overview</span>
                   </TabsTrigger>
 
@@ -312,9 +331,9 @@ export function StudentDrillDownDrawer({
                     value="trends"
                     title="Score Trends (Alt + 2)"
                     aria-keyshortcuts="Alt+2"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-11 sm:min-h-10 data-active:text-primary data-active:after:bg-primary"
                   >
-                    <LineChart className="size-3.5 shrink-0" aria-hidden="true" />
+                    <LineChart data-icon="inline-start" aria-hidden="true" />
                     <span>
                       <span className="sm:hidden">Trends</span>
                       <span className="hidden sm:inline">Score Trends</span>
@@ -325,9 +344,9 @@ export function StudentDrillDownDrawer({
                     value="history"
                     title="History (Alt + 3)"
                     aria-keyshortcuts="Alt+3"
-                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-[40px] data-active:text-primary data-active:after:bg-primary"
+                    className="inline-flex items-center justify-center gap-1.5 px-1.5 sm:px-3 py-2 text-xs font-semibold cursor-pointer whitespace-nowrap min-h-11 sm:min-h-10 data-active:text-primary data-active:after:bg-primary"
                   >
-                    <History className="size-3.5 shrink-0" aria-hidden="true" />
+                    <History data-icon="inline-start" aria-hidden="true" />
                     <span>History</span>
                     <Badge variant="secondary" className="ml-0.5 h-5 px-1.5 text-xs font-bold tabular-nums">
                       {history.length}
@@ -339,9 +358,9 @@ export function StudentDrillDownDrawer({
           </SheetHeader>
 
           {/* Scrollable Drawer Body with Custom Slim Scrollbar */}
-          <div className={cn("flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 min-w-0 flex flex-col [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30", hasSubmissions && "space-y-6")}>
+          <div className={cn("flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 min-w-0 flex flex-col [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30", hasSubmissions && "gap-6")}>
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="flex flex-col gap-4">
                 <Skeleton className="h-32 w-full rounded-xl" />
                 <Skeleton className="h-64 w-full rounded-xl" />
                 <Skeleton className="h-32 w-full rounded-xl" />
@@ -349,7 +368,7 @@ export function StudentDrillDownDrawer({
             ) : error ? (
               /* Dedicated Error State */
               <Alert variant="destructive" className="my-auto">
-                <AlertCircle className="size-4" aria-hidden="true" />
+                <AlertCircle aria-hidden="true" />
                 <AlertTitle className="font-semibold">
                   Couldn&apos;t load worksheet history
                 </AlertTitle>
@@ -361,18 +380,22 @@ export function StudentDrillDownDrawer({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="min-h-[44px] sm:min-h-[36px] px-4 text-xs font-semibold gap-1.5 cursor-pointer border-destructive/30 bg-background hover:bg-destructive/10 text-destructive rounded-lg"
+                    className="min-h-11 sm:min-h-9 px-4 text-xs font-semibold cursor-pointer"
                     onClick={() => refetch()}
                     disabled={isRefetching}
                   >
-                    <RefreshCw className={cn("size-3.5 shrink-0", isRefetching && "animate-spin motion-reduce:animate-none")} aria-hidden="true" />
+                    {isRefetching ? (
+                      <Spinner data-icon="inline-start" />
+                    ) : (
+                      <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                    )}
                     <span>{isRefetching ? "Retrying…" : "Try again"}</span>
                   </Button>
                 </AlertDescription>
               </Alert>
             ) : !hasSubmissions ? (
               /* Actionable Pedagogical Onboarding & Criteria Preview Empty State */
-              <div className="space-y-6">
+              <div className="flex flex-col gap-6">
                 {/* Hero Upload Prompt Card using Standard Empty Primitives */}
                 <Empty className="p-4 sm:p-6 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center shadow-warm-xs">
                   <EmptyHeader>
@@ -387,7 +410,7 @@ export function StudentDrillDownDrawer({
                     <Button
                       type="button"
                       size="default"
-                      className="text-xs font-semibold gap-2 cursor-pointer shadow-warm-xs min-h-[44px] sm:min-h-[40px] px-4"
+                      className="text-xs font-semibold cursor-pointer shadow-warm-xs min-h-11 sm:min-h-10 px-4"
                       onClick={() => {
                         onOpenChange(false);
                         if (onUpload && student.studentId) {
@@ -397,107 +420,117 @@ export function StudentDrillDownDrawer({
                         }
                       }}
                     >
-                      <UploadCloud className="size-4" aria-hidden="true" />
+                      <UploadCloud data-icon="inline-start" aria-hidden="true" />
                       <span>Upload Worksheet</span>
                     </Button>
                   </EmptyContent>
                 </Empty>
 
                 {/* Inactive 5-Criteria Pedagogical Framework Scaffolding */}
-                <section aria-labelledby="diagnostic-framework-title" className="space-y-3">
+                <section aria-labelledby="diagnostic-framework-title" className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <h3 id="diagnostic-framework-title" className="font-heading text-sm font-semibold text-foreground">
                       Diagnostic Criteria Framework
                     </h3>
                   </div>
 
-                  <ul role="list" className="rounded-xl border border-border bg-card divide-y divide-border shadow-warm-xs overflow-hidden">
-                    {RUBRIC_CRITERIA.map((criterion) => (
-                      <li key={criterion.key} className="p-3.5 sm:p-4 space-y-1.5">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-xs font-semibold text-foreground">
-                            {criterion.shortName}
-                          </span>
-                          <Badge variant="secondary" className="text-xs font-medium shrink-0">
-                            Awaiting Assessment
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-normal">
-                          {criterion.hint}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
+                  <Card size="sm" className="p-0 shadow-warm-xs">
+                    <CardContent className="p-0">
+                      <ItemGroup className="gap-0">
+                        {RUBRIC_CRITERIA.map((criterion, index) => (
+                          <Fragment key={criterion.key}>
+                            <Item size="sm" className="rounded-none">
+                              <ItemContent>
+                                <ItemHeader>
+                                  <ItemTitle className="text-xs font-semibold">
+                                    {criterion.shortName}
+                                  </ItemTitle>
+                                  <Badge variant="secondary" className="text-xs font-medium shrink-0">
+                                    Awaiting Assessment
+                                  </Badge>
+                                </ItemHeader>
+                                <ItemDescription className="text-xs leading-normal">
+                                  {criterion.hint}
+                                </ItemDescription>
+                              </ItemContent>
+                            </Item>
+                            {index < RUBRIC_CRITERIA.length - 1 && <ItemSeparator className="my-0" />}
+                          </Fragment>
+                        ))}
+                      </ItemGroup>
+                    </CardContent>
+                  </Card>
                 </section>
               </div>
             ) : (
               <>
-                <TabsContent value="overview" className="mt-0 focus-visible:outline-none space-y-6">
+                <TabsContent value="overview" className="mt-0 focus-visible:outline-none flex flex-col gap-6">
               {/* Integrated Overall Performance & Highlights Hero Card */}
               {student.scores.composite !== null && (
                 <Card size="sm" className="shadow-warm-xs">
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-medium text-muted-foreground block">
-                          Overall Performance
-                        </span>
-                        <div>
-                          <span className="font-sans text-2xl sm:text-3xl font-bold tabular-nums text-foreground">
-                            {student.scores.composite.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
+                  <CardHeader>
+                    <CardTitle as="h3" className="font-sans text-xs font-medium text-muted-foreground">
+                      Overall Performance
+                    </CardTitle>
+                    <CardAction>
                       <BandBadge score={student.scores.composite} size="default" showDot />
-                    </div>
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4">
+                    <span className="font-sans text-2xl sm:text-3xl font-bold tabular-nums text-foreground">
+                      {student.scores.composite.toFixed(1)}%
+                    </span>
 
                     {(topStrength || focusArea) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3.5 border-t border-border/60">
-                        {topStrength && (
-                          <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
-                            <span className="text-xs font-medium text-muted-foreground block">
-                              Top Strength
-                            </span>
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-semibold truncate text-foreground">
-                                {topStrength.shortName}
+                      <>
+                        <Separator />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {topStrength && (
+                            <div className="p-3 rounded-lg bg-muted/20 border border-border/60 flex flex-col gap-1.5 min-w-0">
+                              <span className="text-xs font-medium text-muted-foreground block">
+                                Top Strength
                               </span>
-                              <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
-                                {topStrength.score.toFixed(1)}%
-                              </span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-semibold truncate text-foreground">
+                                  {topStrength.shortName}
+                                </span>
+                                <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
+                                  {topStrength.score.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div>
+                                <BandBadge score={topStrength.score} band={topStrength.band} size="sm" showDot />
+                              </div>
                             </div>
-                            <div>
-                              <BandBadge score={topStrength.score} band={topStrength.band} size="sm" showDot />
-                            </div>
-                          </div>
-                        )}
+                          )}
 
-                        {focusArea && (
-                          <div className="p-3 rounded-lg bg-muted/20 border border-border/60 space-y-1.5 min-w-0">
-                            <span className="text-xs font-medium text-muted-foreground block">
-                              Priority Focus
-                            </span>
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-sm font-semibold truncate text-foreground">
-                                {focusArea.shortName}
+                          {focusArea && (
+                            <div className="p-3 rounded-lg bg-muted/20 border border-border/60 flex flex-col gap-1.5 min-w-0">
+                              <span className="text-xs font-medium text-muted-foreground block">
+                                Priority Focus
                               </span>
-                              <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
-                                {focusArea.score.toFixed(1)}%
-                              </span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-semibold truncate text-foreground">
+                                  {focusArea.shortName}
+                                </span>
+                                <span className="font-sans text-sm font-bold tabular-nums text-foreground shrink-0">
+                                  {focusArea.score.toFixed(1)}%
+                                </span>
+                              </div>
+                              <div>
+                                <BandBadge score={focusArea.score} band={focusArea.band} size="sm" showDot />
+                              </div>
                             </div>
-                            <div>
-                              <BandBadge score={focusArea.score} band={focusArea.band} size="sm" showDot />
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      </>
                     )}
                   </CardContent>
                 </Card>
               )}
 
               {/* 5-Criteria Diagnostic Breakdown */}
-              <section className="space-y-3">
+              <section className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-heading text-sm font-semibold text-foreground">
                     Diagnostic Breakdown
@@ -510,7 +543,7 @@ export function StudentDrillDownDrawer({
                       onClick={toggleExpandAll}
                       aria-expanded={accordionValue.length === allCriteriaKeys.length}
                       aria-controls="diagnostic-breakdown-accordion"
-                      className="min-h-[40px] px-2 -my-2.5 font-medium cursor-pointer"
+                      className="min-h-10 px-2 -my-2.5 font-medium cursor-pointer"
                     >
                       {accordionValue.length === allCriteriaKeys.length ? "Collapse all" : "Expand all"}
                     </Button>
@@ -529,7 +562,7 @@ export function StudentDrillDownDrawer({
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   <Accordion
                     id="diagnostic-breakdown-accordion"
                     multiple
@@ -573,15 +606,17 @@ export function StudentDrillDownDrawer({
                             </div>
                           </AccordionTrigger>
 
-                          <AccordionContent className="px-3.5 sm:px-4 pb-4 space-y-3.5 border-0">
+                          <AccordionContent className="px-3.5 sm:px-4 pb-4 flex flex-col gap-3.5 border-0">
                             <BandPositionBar score={score} showLabel={false} height="sm" />
                             {diagnosticNote && (
-                              <div className="p-3 sm:p-3.5 rounded-lg bg-muted/40 text-xs text-muted-foreground leading-relaxed space-y-1">
-                                <p className="font-semibold text-foreground/90">
-                                  Diagnostic Note
-                                </p>
-                                <p className="text-muted-foreground/90">{diagnosticNote}</p>
-                              </div>
+                              <Alert className="bg-muted/40 border-border/60">
+                                <AlertTitle className="text-xs font-semibold">
+                                  Diagnostic note
+                                </AlertTitle>
+                                <AlertDescription className="text-xs leading-relaxed">
+                                  {diagnosticNote}
+                                </AlertDescription>
+                              </Alert>
                             )}
                           </AccordionContent>
                         </AccordionItem>
@@ -592,7 +627,7 @@ export function StudentDrillDownDrawer({
               </section>
 
               {/* Recent Submissions Preview (Capped to 3 items with 'View All' affordance) */}
-              <section className="space-y-3">
+              <section className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-heading text-sm font-semibold text-foreground">
                     Recent Worksheets
@@ -603,60 +638,27 @@ export function StudentDrillDownDrawer({
                       variant="link"
                       size="xs"
                       onClick={() => setActiveTab("history")}
-                      className="min-h-[40px] px-2 -my-2.5 font-semibold cursor-pointer"
+                      className="min-h-10 px-2 -my-2.5 font-semibold cursor-pointer"
                     >
                       <span>View all {history.length}</span>
-                      <ChevronRight className="size-3" aria-hidden="true" />
+                      <ChevronRight data-icon="inline-end" aria-hidden="true" />
                     </Button>
                   )}
                 </div>
 
-                <ul role="list" className="space-y-2.5">
+                <ItemGroup className="gap-2.5">
                   {recentHistoryPreview.map((item) => (
-                    <li key={item.submissionId}>
-                      <button
-                        type="button"
-                        onClick={() => onOpenSubmission(item.submissionId, item.activityId)}
-                        aria-label={`View worksheet submission for "${item.targetText}", scored ${item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}`}
-                        className="w-full text-left group p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 hover:border-primary/30 hover:shadow-warm-xs transition-all flex items-center justify-between gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-[48px]"
-                      >
-                        <div className="space-y-1 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                              &quot;{item.targetText}&quot;
-                            </span>
-                            {item.isTakeHome && (
-                              <Badge variant="secondary" className="text-xs font-medium shrink-0">
-                                Take-Home
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-xs font-medium text-muted-foreground tabular-nums">
-                            {new Date(item.submissionDate).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div className="text-right space-y-0.5">
-                            <span className="font-sans text-xs sm:text-sm font-bold tabular-nums text-foreground block">
-                              {item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}
-                            </span>
-                            <BandBadge score={item.compositeScore} size="sm" showDot={false} />
-                          </div>
-                          <ChevronRight className="size-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
-                        </div>
-                      </button>
-                    </li>
+                    <SubmissionHistoryItem
+                      key={item.submissionId}
+                      item={item}
+                      onOpenSubmission={onOpenSubmission}
+                    />
                   ))}
-                </ul>
+                </ItemGroup>
               </section>
             </TabsContent>
 
-            <TabsContent value="trends" className="mt-0 focus-visible:outline-none space-y-4">
+            <TabsContent value="trends" className="mt-0 focus-visible:outline-none flex flex-col gap-4">
               {/* Tab 2: TRENDS PANEL */}
               <div className="flex items-center justify-between min-w-0">
                 <div>
@@ -734,7 +736,7 @@ export function StudentDrillDownDrawer({
                       variant="link"
                       size="xs"
                       onClick={() => setActiveTab("overview")}
-                      className="min-h-[40px] sm:min-h-[32px] px-3 font-semibold cursor-pointer touch-manipulation"
+                      className="min-h-10 sm:min-h-8 px-3 font-semibold cursor-pointer"
                     >
                       View latest breakdown in Overview &rarr;
                     </Button>
@@ -742,6 +744,11 @@ export function StudentDrillDownDrawer({
                 </Empty>
               ) : (
                 <Card size="sm" className="shadow-warm-xs">
+                  <CardHeader>
+                    <CardTitle as="h4" className="text-sm font-semibold">
+                      Skill Trajectories
+                    </CardTitle>
+                  </CardHeader>
                   <CardContent>
                     <CriterionTrendChart history={history} showBandLegend={false} />
                   </CardContent>
@@ -749,7 +756,7 @@ export function StudentDrillDownDrawer({
               )}
             </TabsContent>
 
-            <TabsContent value="history" className="mt-0 focus-visible:outline-none space-y-3">
+            <TabsContent value="history" className="mt-0 focus-visible:outline-none flex flex-col gap-3">
               {/* Tab 3: FULL HISTORY PANEL */}
               <div className="flex items-center justify-between">
                 <h3 className="font-heading text-sm font-semibold text-foreground">
@@ -757,55 +764,23 @@ export function StudentDrillDownDrawer({
                 </h3>
               </div>
 
-              <ul role="list" className="space-y-2.5">
+              <ItemGroup className="gap-2.5">
                 {reversedHistory.map((item) => (
-                  <li key={item.submissionId}>
-                    <button
-                      type="button"
-                      onClick={() => onOpenSubmission(item.submissionId, item.activityId)}
-                      aria-label={`View worksheet submission for "${item.targetText}", scored ${item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}`}
-                      className="w-full text-left group p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 hover:border-primary/30 hover:shadow-warm-xs transition-all flex items-center justify-between gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-[48px]"
-                    >
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                            &quot;{item.targetText}&quot;
-                          </span>
-                          {item.isTakeHome && (
-                            <Badge variant="secondary" className="text-xs font-medium shrink-0">
-                              Take-Home
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="text-xs font-medium text-muted-foreground tabular-nums">
-                          {new Date(item.submissionDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right space-y-0.5">
-                          <span className="font-sans text-xs sm:text-sm font-bold tabular-nums text-foreground block">
-                            {item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}
-                          </span>
-                          <BandBadge score={item.compositeScore} size="sm" showDot={false} />
-                        </div>
-                        <ChevronRight className="size-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all" aria-hidden="true" />
-                      </div>
-                    </button>
-                  </li>
+                  <SubmissionHistoryItem
+                    key={item.submissionId}
+                    item={item}
+                    onOpenSubmission={onOpenSubmission}
+                  />
                 ))}
-              </ul>
+              </ItemGroup>
             </TabsContent>
           </>
         )}
       </div>
 
       {/* Persistent Rubric Score Bands Footer */}
-      <footer className="shrink-0 border-t border-border bg-card/95 backdrop-blur-xs px-4 sm:px-6 py-2.5 sm:py-3">
+      <Separator />
+      <SheetFooter className="shrink-0 mt-0 bg-card/95 backdrop-blur-xs px-4 sm:px-6 py-2.5 sm:py-3">
         <div className="flex flex-col gap-1.5 sm:gap-2">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider shrink-0">
             Rubrics
@@ -828,11 +803,74 @@ export function StudentDrillDownDrawer({
             })}
           </div>
         </div>
-      </footer>
+      </SheetFooter>
     </Tabs>
   </SheetContent>
 </Sheet>
 );
+}
+
+function SubmissionHistoryItem({
+  item,
+  onOpenSubmission,
+}: {
+  item: {
+    submissionId: string;
+    activityId: string;
+    targetText: string;
+    isTakeHome?: boolean;
+    submissionDate: string;
+    compositeScore: number | null;
+  };
+  onOpenSubmission: (submissionId: string, activityId: string) => void;
+}) {
+  return (
+    <Item
+      variant="outline"
+      size="sm"
+      render={
+        <button
+          type="button"
+          onClick={() => onOpenSubmission(item.submissionId, item.activityId)}
+          aria-label={`View worksheet submission for "${item.targetText}", scored ${item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}`}
+          className="group min-h-11 w-full bg-card text-left hover:bg-muted/50 cursor-pointer"
+        />
+      }
+    >
+      <ItemContent className="min-w-0">
+        <ItemTitle className="w-full">
+          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+            &quot;{item.targetText}&quot;
+          </span>
+          {item.isTakeHome && (
+            <Badge variant="secondary" className="text-xs font-medium shrink-0">
+              Take-Home
+            </Badge>
+          )}
+        </ItemTitle>
+        <ItemDescription className="text-xs font-medium tabular-nums line-clamp-1">
+          {new Date(item.submissionDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </ItemDescription>
+      </ItemContent>
+
+      <ItemActions className="shrink-0 gap-3">
+        <div className="flex flex-col items-end gap-0.5 text-right">
+          <span className="font-sans text-xs sm:text-sm font-bold tabular-nums text-foreground">
+            {item.compositeScore != null ? `${item.compositeScore.toFixed(1)}%` : "—"}
+          </span>
+          <BandBadge score={item.compositeScore} size="sm" showDot={false} />
+        </div>
+        <ChevronRight
+          className="size-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+          aria-hidden="true"
+        />
+      </ItemActions>
+    </Item>
+  );
 }
 
 

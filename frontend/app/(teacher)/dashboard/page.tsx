@@ -19,6 +19,7 @@ import { SubmissionDetailDialog } from "@/components/submissions/submission-deta
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { getBandFromScore } from "@/lib/utils/scoring";
 import {
   RotateCcw,
@@ -214,7 +215,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="w-full min-w-0 space-y-6">
+    <div className="w-full min-w-0 flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -227,9 +228,9 @@ export default function DashboardPage() {
           <Button
             type="button"
             onClick={() => openUpload()}
-            className="sm:hidden w-full min-h-[44px] bg-primary hover:bg-brand-700 text-primary-foreground text-sm font-semibold shadow-warm-xs rounded-lg cursor-pointer touch-manipulation"
+            className="sm:hidden w-full min-h-11 text-sm font-semibold shadow-warm-xs cursor-pointer"
           >
-            <UploadCloud className="w-4 h-4 mr-2 shrink-0" aria-hidden="true" />
+            <UploadCloud data-icon="inline-start" aria-hidden="true" />
             <span>Upload Worksheet</span>
           </Button>
 
@@ -237,14 +238,14 @@ export default function DashboardPage() {
             variant="outline"
             onClick={handleExportCSV}
             disabled={isLoading || exportableStudents.length === 0}
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
+            className="min-h-11 sm:min-h-9 flex-1 sm:flex-none text-xs sm:text-sm font-medium cursor-pointer"
             title={
               isTableFiltered
                 ? `Export ${exportableStudents.length} filtered student scores as CSV`
                 : "Export all student scores as CSV"
             }
           >
-            <Download className="w-4 h-4 mr-1.5 text-muted-foreground shrink-0" />
+            <Download data-icon="inline-start" aria-hidden="true" />
             <span>
               {isTableFiltered ? `Export Filtered (${exportableStudents.length})` : "Export CSV"}
             </span>
@@ -254,13 +255,13 @@ export default function DashboardPage() {
             variant="outline"
             onClick={() => refetch()}
             disabled={isLoading || isRefetching}
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-none border-border text-foreground hover:bg-muted text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
+            className="min-h-11 sm:min-h-9 flex-1 sm:flex-none text-xs sm:text-sm font-medium cursor-pointer"
           >
-            <RotateCcw
-              className={`w-4 h-4 mr-1.5 text-muted-foreground shrink-0 ${
-                isRefetching ? "animate-spin" : ""
-              }`}
-            />
+            {isRefetching ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <RotateCcw data-icon="inline-start" aria-hidden="true" />
+            )}
             <span>Refresh</span>
           </Button>
         </div>
@@ -269,7 +270,7 @@ export default function DashboardPage() {
       {/* Error Alert */}
       {error && (
         <Alert variant="destructive">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle className="text-sm font-semibold">
             Couldn&apos;t load class analytics
           </AlertTitle>
@@ -283,16 +284,17 @@ export default function DashboardPage() {
               size="sm"
               onClick={() => refetch()}
               disabled={isRefetching}
-              className="min-h-[40px] sm:min-h-[32px] px-3 text-xs font-medium rounded-lg border-destructive/30 hover:bg-destructive/10 text-destructive cursor-pointer"
+              className="min-h-10 sm:min-h-8 text-xs font-medium cursor-pointer"
             >
-              {isRefetching ? "Retrying…" : "Try again"}
+              {isRefetching && <Spinner data-icon="inline-start" />}
+              <span>{isRefetching ? "Retrying…" : "Try again"}</span>
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
       {/* Section 1: Summary Cards Grid */}
-      <section className="space-y-3">
+      <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Class Averages
@@ -307,7 +309,7 @@ export default function DashboardPage() {
       </section>
 
       {/* Section 2: Student Performance Table */}
-      <section className="space-y-3 pt-2">
+      <section className="flex flex-col gap-3 pt-2">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             Students

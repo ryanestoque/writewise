@@ -3,7 +3,14 @@
 import type { ClassAverages } from "@/lib/hooks/use-dashboard";
 import { BandBadge } from "@/components/shared/band-badge";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -40,20 +47,28 @@ export function SummaryCards({
     return (
       <div className={cn("grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-4", className)}>
         <Card size="sm" className="xl:col-span-4 py-4 sm:py-5 shadow-warm">
-          <CardContent className="px-4 sm:px-5 space-y-3">
+          <CardHeader>
             <Skeleton className="h-4 w-28" />
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
             <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-4 w-48" />
           </CardContent>
+          <CardFooter>
+            <Skeleton className="h-4 w-48" />
+          </CardFooter>
         </Card>
         <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} size="sm" className="py-4 shadow-warm">
-              <CardContent className="px-4 space-y-3">
+            <Card key={i} size="sm" className="shadow-warm">
+              <CardHeader>
                 <Skeleton className="h-4 w-20" />
+              </CardHeader>
+              <CardContent>
                 <Skeleton className="h-7 w-16" />
-                <Skeleton className="h-5 w-24 rounded-full" />
               </CardContent>
+              <CardFooter>
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </CardFooter>
             </Card>
           ))}
         </div>
@@ -78,24 +93,25 @@ export function SummaryCards({
       {/* Lead Classroom Triage Anchor Card */}
       <Card
         size="sm"
-        className="xl:col-span-4 border-brand-200/80 dark:border-brand-800 bg-gradient-to-b from-brand-50/40 via-card to-card dark:from-brand-950/30 dark:via-card dark:to-card shadow-warm ring-1 ring-brand-500/20 justify-between gap-3 py-4 sm:py-5"
+        className="xl:col-span-4 border-primary/25 bg-linear-to-b from-secondary/35 via-card to-card shadow-warm ring-1 ring-primary/15 justify-between gap-3"
       >
-        <CardContent className="px-4 sm:px-5 flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-muted-foreground block">
-              Class Average
-            </span>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
-                {compositeScore !== null ? `${compositeScore.toFixed(1)}%` : "—"}
-              </span>
-              <BandBadge score={compositeScore} size="sm" />
-            </div>
-          </div>
+        <CardHeader>
+          <CardTitle as="h3" className="font-sans text-xs font-semibold text-muted-foreground">
+            Class Average
+          </CardTitle>
+          <CardAction>
+            <BandBadge score={compositeScore} size="sm" />
+          </CardAction>
+        </CardHeader>
+
+        <CardContent>
+          <span className="font-sans text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
+            {compositeScore !== null ? `${compositeScore.toFixed(1)}%` : "—"}
+          </span>
         </CardContent>
 
         {/* Single-line Pedagogical Focus Summary */}
-        <CardFooter className="px-4 sm:px-5 [.border-t]:pt-3 border-t border-border/60 text-xs text-muted-foreground leading-relaxed">
+        <CardFooter className="border-t border-border/60 text-xs text-muted-foreground leading-relaxed">
           {scoredCount === 0 ? (
             <span>Upload and grade a worksheet to see class-wide focus areas.</span>
           ) : lowestCriterion ? (
@@ -108,7 +124,7 @@ export function SummaryCards({
               {needsSupportCount > 0 && (
                 <>
                   <span aria-hidden="true">•</span>
-                  <span className="text-band-1-text dark:text-amber-300 font-medium tabular-nums">
+                  <span className="text-band-1-text font-medium tabular-nums">
                     {needsSupportCount} {needsSupportCount === 1 ? "student needs" : "students need"} support
                   </span>
                 </>
@@ -134,36 +150,35 @@ export function SummaryCards({
               key={card.key}
               size="sm"
               className={cn(
-                "py-4 shadow-warm justify-between gap-2 transition-colors hover:border-brand-300/60 dark:hover:border-brand-800",
-                isFocus
-                  ? "border-band-1/40 dark:border-band-1/50"
-                  : "border-border"
+                "bg-card shadow-warm justify-between gap-2 transition-colors hover:border-primary/40",
+                isFocus ? "border-band-1/50" : "border-border"
               )}
             >
-              <CardContent className="px-4 flex flex-col justify-between gap-2 h-full">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-semibold text-muted-foreground truncate">
-                    {card.title}
-                  </span>
-                  {isFocus && (
+              <CardHeader className="gap-1">
+                <CardTitle as="h3" className="font-sans text-xs font-semibold text-muted-foreground truncate">
+                  {card.title}
+                </CardTitle>
+                {isFocus && (
+                  <CardAction>
                     <Badge
                       variant="outline"
-                      className="h-auto rounded-full px-1.5 py-0 text-[11px] font-semibold border-band-1/40 bg-band-1/10 text-band-1-text dark:text-amber-300 shrink-0"
+                      className="rounded-full px-1.5 py-0 text-[11px] font-semibold border-band-1/40 bg-band-1/10 text-band-1-text shrink-0"
                     >
                       Focus
                     </Badge>
-                  )}
-                </div>
+                  </CardAction>
+                )}
+              </CardHeader>
 
-                <div className="space-y-1.5">
-                  <span className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground tabular-nums block">
-                    {score !== null ? `${score.toFixed(1)}%` : "—"}
-                  </span>
-                  <div>
-                    <BandBadge score={score} size="sm" />
-                  </div>
-                </div>
+              <CardContent>
+                <span className="font-sans text-xl sm:text-2xl font-bold tracking-tight text-foreground tabular-nums block">
+                  {score !== null ? `${score.toFixed(1)}%` : "—"}
+                </span>
               </CardContent>
+
+              <CardFooter>
+                <BandBadge score={score} size="sm" />
+              </CardFooter>
             </Card>
           );
         })}

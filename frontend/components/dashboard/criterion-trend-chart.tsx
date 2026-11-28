@@ -25,11 +25,22 @@ import { BandBadge } from "@/components/shared/band-badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartContainer,
   ChartTooltip,
+  ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 import {
@@ -51,6 +62,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { LineChart as LineChartIcon, Info, Table2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -73,90 +85,6 @@ const CHART_CONFIG: ChartConfig = Object.fromEntries(
     },
   ])
 );
-
-interface TooltipPayloadItem {
-  payload: {
-    fullDate: string;
-    activity: string;
-    [key: string]: string | number | null | undefined;
-  };
-}
-
-function TrendChartTooltip({
-  active,
-  payload,
-  isDark,
-  showScoreDetails = true,
-  activeCriteria,
-}: {
-  active?: boolean;
-  payload?: TooltipPayloadItem[];
-  isDark: boolean;
-  showScoreDetails?: boolean;
-  activeCriteria?: Record<string, boolean>;
-}) {
-  if (!active || !payload || !payload.length) return null;
-  const data = payload[0].payload;
-  const submissionIndex = data.submissionIndex as number | undefined;
-
-  return (
-    <div className="p-3 bg-popover text-popover-foreground rounded-xl shadow-warm border border-border text-xs space-y-2 min-w-[230px] z-50">
-      <div className="border-b border-border/60 pb-1.5">
-        <p className="font-semibold text-foreground">
-          {submissionIndex ? `Worksheet #${submissionIndex} · ` : ""}
-          {data.fullDate}
-        </p>
-        <p className="text-xs text-muted-foreground truncate max-w-[220px]">
-          &quot;{data.activity}&quot;
-        </p>
-      </div>
-
-      <div className="space-y-1.5">
-        {CRITERION_CONFIG.map((c) => {
-          if (activeCriteria && !activeCriteria[c.key]) return null;
-          const val = data[c.key];
-          if (val === null || val === undefined) return null;
-          const numericVal = typeof val === "number" ? val : Number(val);
-          if (isNaN(numericVal)) return null;
-          const band = getBandFromScore(numericVal);
-          const meta = getBandMeta(band);
-          const color = isDark ? c.darkColor : c.lightColor;
-          return (
-            <div
-              key={c.key}
-              className="flex items-center justify-between gap-3 text-xs"
-            >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: color }}
-                  aria-hidden="true"
-                />
-                <span className="text-muted-foreground truncate">{c.label}:</span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {showScoreDetails && (
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {numericVal.toFixed(1)}%
-                  </span>
-                )}
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "h-auto text-xs px-1.5 py-0.5 rounded font-medium whitespace-nowrap",
-                    meta.badgeClass
-                  )}
-                >
-                  {meta.label}
-                </Badge>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 interface CriterionTrendChartProps {
   history: StudentScoreHistoryItem[];
@@ -183,14 +111,9 @@ export function CriterionTrendChart({
 
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
   const [isDark, setIsDark] = useState(false);
-  const [activeCriteria, setActiveCriteria] = useState<Record<string, boolean>>(() => ({
-    composite: true,
-    letter_formation: !isParent,
-    size_consistency: false,
-    spacing: false,
-    slant: false,
-    baseline_alignment: false,
-  }));
+  const [visibleSeries, setVisibleSeries] = useState<Set<string>>(() =>
+    isParent ? new Set(["composite"]) : new Set(["composite", "letter_formation"])
+  );
 
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -224,50 +147,23 @@ export function CriterionTrendChart({
   const getCriterionColor = (c: (typeof CRITERION_CONFIG)[number]) =>
     isDark ? c.darkColor : c.lightColor;
 
-  const toggleCriterion = (key: string) => {
-    setActiveCriteria((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
   const resetCriteria = () => {
-    setActiveCriteria({
-      composite: true,
-      letter_formation: !isParent,
-      size_consistency: false,
-      spacing: false,
-      slant: false,
-      baseline_alignment: false,
-    });
+    setVisibleSeries(
+      isParent ? new Set(["composite"]) : new Set(["composite", "letter_formation"])
+    );
   };
 
   const showAllSkills = () => {
-    const allActive: Record<string, boolean> = {};
-    CRITERION_CONFIG.forEach((c) => {
-      allActive[c.key] = true;
-    });
-    setActiveCriteria(allActive);
+    setVisibleSeries(new Set(CRITERION_CONFIG.map((c) => c.key)));
   };
 
   const isCustomized = isParent
-    ? !activeCriteria.composite ||
-      activeCriteria.letter_formation ||
-      activeCriteria.size_consistency ||
-      activeCriteria.spacing ||
-      activeCriteria.slant ||
-      activeCriteria.baseline_alignment
-    : !activeCriteria.composite ||
-      !activeCriteria.letter_formation ||
-      activeCriteria.size_consistency ||
-      activeCriteria.spacing ||
-      activeCriteria.slant ||
-      activeCriteria.baseline_alignment;
+    ? visibleSeries.size !== 1 || !visibleSeries.has("composite")
+    : visibleSeries.size !== 2 ||
+      !visibleSeries.has("composite") ||
+      !visibleSeries.has("letter_formation");
 
-  const hasActiveCriteria = useMemo(
-    () => Object.values(activeCriteria).some(Boolean),
-    [activeCriteria]
-  );
+  const hasActiveCriteria = visibleSeries.size > 0;
 
   const chartData = useMemo(() => {
     const dateCounts: Record<string, number> = {};
@@ -340,10 +236,10 @@ export function CriterionTrendChart({
       ? "Overall comparison is not available."
       : `${getScoreProgressLabel(difference, "first")}${showScoreDetails ? ` (${formatScoreDifference(difference)})` : ""}.`;
 
-    const activeList = CRITERION_CONFIG.filter((c) => activeCriteria[c.key]).map((c) => c.label).join(", ");
+    const activeList = CRITERION_CONFIG.filter((c) => visibleSeries.has(c.key)).map((c) => c.label).join(", ");
 
     return `Across ${history.length} worksheets from ${startDate} to ${endDate}. ${trendDesc} Currently showing lines for: ${activeList || "none"}.`;
-  }, [history, activeCriteria, showScoreDetails]);
+  }, [history, visibleSeries, showScoreDetails]);
 
   const trajectoryStats = useMemo(() => {
     if (!history || history.length < 2) return null;
@@ -390,19 +286,20 @@ export function CriterionTrendChart({
     });
     return (
       <Card size="sm" className={cn("shadow-warm-xs", className)}>
-        <CardContent className="space-y-3.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-0.5">
-              <h4 className="text-sm font-semibold text-foreground">First Worksheet Recorded</h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Completed on {dateStr} • &ldquo;{single.targetText}&rdquo;
-              </p>
-            </div>
+        <CardHeader>
+          <CardTitle as="h4" className="text-sm font-semibold">
+            First Worksheet Recorded
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Completed on {dateStr} • &ldquo;{single.targetText}&rdquo;
+          </CardDescription>
+          <CardAction>
             <BandBadge score={single.compositeScore} size="sm" />
-          </div>
-
-          <Alert className="bg-muted/20 border-border/40 px-3 py-2 text-xs">
-            <Info className="size-3.5 text-primary" aria-hidden="true" />
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <Alert className="bg-muted/20 border-border/40 text-xs">
+            <Info className="text-primary" aria-hidden="true" />
             <AlertDescription className="text-xs text-muted-foreground">
               The progress chart will unlock automatically once a second worksheet is checked.
             </AlertDescription>
@@ -416,10 +313,10 @@ export function CriterionTrendChart({
     <Tabs
       value={viewMode}
       onValueChange={(value) => setViewMode(value as "chart" | "table")}
-      className={cn("space-y-4 gap-0", className)}
+      className={cn("flex flex-col gap-4", className)}
     >
       {/* Controls Bar */}
-      <div className="flex flex-col gap-3 border-b border-border/50 pb-3 min-w-0">
+      <div className="flex flex-col gap-3 min-w-0">
         {/* Header Row: Label/Action on Left, Tabs on Right */}
         <div className="flex items-center justify-between gap-3 min-w-0">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0 flex-wrap">
@@ -455,7 +352,7 @@ export function CriterionTrendChart({
                     variant="outline"
                     pressed={showScoreDetails}
                     onPressedChange={onToggleScoreDetails}
-                    className="h-auto min-h-9 sm:min-h-7 rounded-md px-2 py-0.5 ml-1 text-[11px] font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 border-brand-200/70 dark:border-brand-800/70 bg-brand-50/50 dark:bg-brand-950/30 aria-pressed:bg-brand-50/50 dark:aria-pressed:bg-brand-950/30 cursor-pointer touch-manipulation"
+                    className="h-auto min-h-9 sm:min-h-7 rounded-md px-2 py-0.5 ml-1 text-[11px] font-medium text-primary border-primary/25 bg-secondary/50 aria-pressed:bg-secondary/70 cursor-pointer"
                   >
                     {showScoreDetails ? "Hide scores" : "Show scores"}
                   </Toggle>
@@ -475,16 +372,16 @@ export function CriterionTrendChart({
           >
             <TabsTrigger
               value="chart"
-              className="min-h-9 sm:min-h-8 h-auto px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs font-medium gap-1.5 cursor-pointer touch-manipulation data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
+              className="min-h-9 sm:min-h-8 h-auto px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs font-medium gap-1.5 cursor-pointer data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
             >
-              <LineChartIcon className="size-3.5" aria-hidden="true" />
+              <LineChartIcon data-icon="inline-start" aria-hidden="true" />
               <span>Chart</span>
             </TabsTrigger>
             <TabsTrigger
               value="table"
-              className="min-h-9 sm:min-h-8 h-auto px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs font-medium gap-1.5 cursor-pointer touch-manipulation data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
+              className="min-h-9 sm:min-h-8 h-auto px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-md text-xs font-medium gap-1.5 cursor-pointer data-active:bg-card data-active:text-foreground data-active:font-semibold data-active:shadow-xs"
             >
-              <Table2 className="size-3.5" aria-hidden="true" />
+              <Table2 data-icon="inline-start" aria-hidden="true" />
               <span>Table</span>
             </TabsTrigger>
           </TabsList>
@@ -492,20 +389,27 @@ export function CriterionTrendChart({
 
         {/* Level 2: Skill Filter Chips (Single-line horizontal rail) */}
         {viewMode === "chart" && (
-          <div className="overflow-x-auto no-scrollbar [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5 -mx-1 px-1">
-            <div className="flex items-center gap-1.5 min-w-max">
+          <ScrollArea orientation="horizontal" className="w-full -mx-1 px-1">
+            <ToggleGroup
+              multiple
+              value={[...visibleSeries]}
+              onValueChange={(vals) => {
+                if (vals.length > 0) setVisibleSeries(new Set(vals));
+              }}
+              aria-label="Visible handwriting criteria"
+              variant="outline"
+              size="sm"
+              className="w-max gap-1.5 py-0.5"
+            >
               {CRITERION_CONFIG.map((c) => {
-                const isSelected = Boolean(activeCriteria[c.key]);
+                const isSelected = visibleSeries.has(c.key);
                 const color = getCriterionColor(c);
                 return (
-                  <Toggle
+                  <ToggleGroupItem
                     key={c.key}
-                    size="sm"
-                    variant="outline"
-                    pressed={isSelected}
-                    onPressedChange={() => toggleCriterion(c.key)}
+                    value={c.key}
                     className={cn(
-                      "h-auto min-h-9 sm:min-h-8 gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer select-none shrink-0 touch-manipulation",
+                      "h-auto min-h-9 sm:min-h-8 gap-1.5 px-3 py-1.5 sm:py-1 rounded-full text-xs font-medium transition-all cursor-pointer select-none shrink-0",
                       isSelected
                         ? "bg-card aria-pressed:bg-card text-foreground border-border/90 shadow-2xs font-semibold ring-1 ring-border/50 hover:bg-card"
                         : "bg-muted/20 text-muted-foreground border-dashed border-border/60 hover:bg-muted/40 hover:text-foreground hover:border-border/90"
@@ -532,77 +436,83 @@ export function CriterionTrendChart({
                     {practiceFocusKey && c.key === practiceFocusKey && (
                       <Badge
                         variant="outline"
-                        className="h-auto text-[10px] font-semibold text-brand-700 dark:text-brand-300 bg-brand-100/90 dark:bg-brand-950/90 px-1.5 py-0.5 rounded-full border-brand-200/80 dark:border-brand-800/80"
+                        className="h-auto text-[10px] font-semibold text-secondary-foreground bg-secondary px-1.5 py-0.5 rounded-full border-primary/25"
                       >
                         Focus
                       </Badge>
                     )}
-                  </Toggle>
+                  </ToggleGroupItem>
                 );
               })}
-            </div>
-          </div>
+            </ToggleGroup>
+          </ScrollArea>
         )}
       </div>
 
-      <TabsContent value="chart" className="space-y-4">
+      <Separator />
+
+      <TabsContent value="chart" className="flex flex-col gap-4">
         {/* High-level Trajectory Summary */}
         {trajectoryStats && (
-          <div className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60 text-xs">
-            {/* Trend metric (order-first on mobile to provide headline context, 3rd column on desktop) */}
-            <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:space-y-1 pb-2 sm:pb-0 border-b sm:border-b-0 border-border/50 min-w-0">
-              <span className="text-xs text-muted-foreground font-medium shrink-0">
-                <span className="sm:hidden">{trajectoryStats.totalCount} worksheets</span>
-                <span className="hidden sm:inline">Trend · {trajectoryStats.totalCount} worksheets</span>
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "h-auto px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
-                    trajectoryStats.direction === "improving"
-                      ? "bg-band-4/15 dark:bg-band-4/25 text-band-4-text border-band-4/30 dark:border-band-4/40"
-                      : trajectoryStats.direction === "lower"
-                        ? "bg-band-2/15 dark:bg-band-2/25 text-band-2-text border-band-2/30 dark:border-band-2/40"
-                        : "bg-muted text-muted-foreground border-border/60"
+          <Card size="sm" className="bg-muted/20 shadow-none">
+            <CardContent className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-2.5 text-xs">
+              {/* Trend metric (order-first on mobile to provide headline context, 3rd column on desktop) */}
+              <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
+                <span className="text-xs text-muted-foreground font-medium shrink-0">
+                  <span className="sm:hidden">{trajectoryStats.totalCount} worksheets</span>
+                  <span className="hidden sm:inline">Trend · {trajectoryStats.totalCount} worksheets</span>
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-auto px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
+                      trajectoryStats.direction === "improving"
+                        ? "bg-band-4/15 text-band-4-text border-band-4/30"
+                        : trajectoryStats.direction === "lower"
+                          ? "bg-band-2/15 text-band-2-text border-band-2/30"
+                          : "bg-muted text-muted-foreground border-border/60"
+                    )}
+                  >
+                    {trajectoryStats.label}
+                    {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
+                  </Badge>
+                </div>
+              </div>
+
+              <Separator className="sm:hidden" />
+
+              {/* Baseline (First) milestone */}
+              <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
+                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+                  First ({trajectoryStats.firstDate})
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {showScoreDetails && (
+                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                      {trajectoryStats.baselineScore.toFixed(1)}%
+                    </span>
                   )}
-                >
-                  {trajectoryStats.label}
-                  {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
-                </Badge>
+                  <BandBadge score={trajectoryStats.baselineScore} size="sm" />
+                </div>
               </div>
-            </div>
 
-            {/* Baseline (First) milestone */}
-            <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-1 min-w-0">
-              <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
-                First ({trajectoryStats.firstDate})
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {showScoreDetails && (
-                  <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
-                    {trajectoryStats.baselineScore.toFixed(1)}%
-                  </span>
-                )}
-                <BandBadge score={trajectoryStats.baselineScore} size="sm" />
+              {/* Latest milestone */}
+              <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
+                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+                  Latest ({trajectoryStats.latestDate})
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {showScoreDetails && (
+                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                      {trajectoryStats.latestScore.toFixed(1)}%
+                    </span>
+                  )}
+                  <BandBadge score={trajectoryStats.latestScore} size="sm" />
+                </div>
               </div>
-            </div>
-
-            {/* Latest milestone */}
-            <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-1 min-w-0">
-              <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
-                Latest ({trajectoryStats.latestDate})
-              </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {showScoreDetails && (
-                  <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
-                    {trajectoryStats.latestScore.toFixed(1)}%
-                  </span>
-                )}
-                <BandBadge score={trajectoryStats.latestScore} size="sm" />
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         <p className="sr-only">
@@ -625,7 +535,7 @@ export function CriterionTrendChart({
                 type="button"
                 size="sm"
                 onClick={resetCriteria}
-                className="min-h-11 sm:min-h-8 h-auto px-3.5 py-1.5 text-xs font-medium cursor-pointer touch-manipulation"
+                className="min-h-11 sm:min-h-8 h-auto px-3.5 py-1.5 text-xs font-medium cursor-pointer"
               >
                 Show overall progress
               </Button>
@@ -697,16 +607,78 @@ export function CriterionTrendChart({
 
               <ChartTooltip
                 content={
-                  <TrendChartTooltip
-                    isDark={isDark}
-                    showScoreDetails={showScoreDetails}
-                    activeCriteria={activeCriteria}
+                  <ChartTooltipContent
+                    indicator="dot"
+                    className="min-w-[230px] p-3"
+                    labelFormatter={(_, payloadItems) => {
+                      const row = payloadItems?.[0]?.payload as
+                        | {
+                            submissionIndex?: number;
+                            fullDate?: string;
+                            activity?: string;
+                          }
+                        | undefined;
+                      if (!row) return null;
+                      return (
+                        <div className="flex flex-col gap-0.5 pb-1">
+                          <span className="font-semibold text-foreground">
+                            {row.submissionIndex ? `Worksheet #${row.submissionIndex} · ` : ""}
+                            {row.fullDate}
+                          </span>
+                          {row.activity && (
+                            <span className="text-xs font-normal text-muted-foreground truncate max-w-[220px]">
+                              &quot;{row.activity}&quot;
+                            </span>
+                          )}
+                        </div>
+                      );
+                    }}
+                    formatter={(value, name, item) => {
+                      if (value === null || value === undefined) return null;
+                      const numericVal = typeof value === "number" ? value : Number(value);
+                      if (Number.isNaN(numericVal)) return null;
+                      const criterionKey = String(item.dataKey ?? "");
+                      const criterion = CRITERION_CONFIG.find((c) => c.key === criterionKey);
+                      const color = criterion ? getCriterionColor(criterion) : item.color;
+                      const meta = getBandMeta(getBandFromScore(numericVal));
+
+                      return (
+                        <div className="flex flex-1 items-center justify-between gap-3">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="size-2 rounded-full shrink-0"
+                              style={{ backgroundColor: color }}
+                              aria-hidden="true"
+                            />
+                            <span className="text-muted-foreground truncate">
+                              {criterion?.label ?? String(name)}:
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {showScoreDetails && (
+                              <span className="font-semibold tabular-nums text-foreground">
+                                {numericVal.toFixed(1)}%
+                              </span>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "h-auto text-xs px-1.5 py-0.5 font-medium whitespace-nowrap",
+                                meta.badgeClass
+                              )}
+                            >
+                              {meta.label}
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    }}
                   />
                 }
               />
 
               {CRITERION_CONFIG.map((c) => {
-                if (!activeCriteria[c.key]) return null;
+                if (!visibleSeries.has(c.key)) return null;
                 const color = getCriterionColor(c);
                 return (
                   <Line
@@ -739,38 +711,42 @@ export function CriterionTrendChart({
 
         {/* Band Zones Legend */}
         {showBandLegend && (
-          <div className="flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 max-w-fit mx-auto pt-2.5 sm:pt-3 text-[11px] sm:text-xs text-muted-foreground border-t border-border/50">
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-4/60 border border-band-4/80" />
-              <span className="font-medium text-foreground/90">
-                Excellent{showScoreDetails ? " (75–100%)" : ""}
+          <>
+            <Separator />
+            <div className="flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 max-w-fit mx-auto text-[11px] sm:text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-4/60 border border-band-4/80" />
+                <span className="font-medium text-foreground/90">
+                  Excellent{showScoreDetails ? " (75–100%)" : ""}
+                </span>
               </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-3/60 border border-band-3/80" />
-              <span className="font-medium text-foreground/90">
-                Satisfactory{showScoreDetails ? " (50–74%)" : ""}
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-3/60 border border-band-3/80" />
+                <span className="font-medium text-foreground/90">
+                  Satisfactory{showScoreDetails ? " (50–74%)" : ""}
+                </span>
               </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-2/60 border border-band-2/80" />
-              <span className="font-medium text-foreground/90">
-                Developing{showScoreDetails ? " (25–49%)" : ""}
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-2/60 border border-band-2/80" />
+                <span className="font-medium text-foreground/90">
+                  Developing{showScoreDetails ? " (25–49%)" : ""}
+                </span>
               </span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-xs bg-band-1/60 border border-band-1/80" />
-              <span className="font-medium text-foreground/90">
-                Needs Improvement{showScoreDetails ? " (0–24%)" : ""}
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded-xs bg-band-1/60 border border-band-1/80" />
+                <span className="font-medium text-foreground/90">
+                  Needs Improvement{showScoreDetails ? " (0–24%)" : ""}
+                </span>
               </span>
-            </span>
-          </div>
+            </div>
+          </>
         )}
       </TabsContent>
 
       <TabsContent value="table">
         <Card className="p-0 gap-0 shadow-none">
-          <Table className="text-xs">
+          <CardContent className="p-0">
+            <Table className="text-xs">
             <TableCaption className="sr-only">
               Chronological list of completed cursive worksheets and individual handwriting skill scores
             </TableCaption>
@@ -827,9 +803,11 @@ export function CriterionTrendChart({
               })}
             </TableBody>
           </Table>
-          <div className="sm:hidden px-3 py-1.5 bg-muted/20 border-t border-border/50 text-xs text-muted-foreground text-center">
+          </CardContent>
+          <Separator className="sm:hidden" />
+          <CardFooter className="sm:hidden justify-center bg-muted/20 py-2 text-xs text-muted-foreground">
             Scroll horizontally to view all columns &rarr;
-          </div>
+          </CardFooter>
         </Card>
       </TabsContent>
     </Tabs>

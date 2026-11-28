@@ -10,9 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
@@ -268,50 +278,45 @@ export function ClassTable({
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="size-3.5 text-muted-foreground/40 ml-1 shrink-0" />;
+      return <ArrowUpDown data-icon="inline-end" className="text-muted-foreground/40" aria-hidden="true" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="size-3.5 text-brand-600 dark:text-brand-400 ml-1 shrink-0" />
+      <ArrowUp data-icon="inline-end" className="text-primary" aria-hidden="true" />
     ) : (
-      <ArrowDown className="size-3.5 text-brand-600 dark:text-brand-400 ml-1 shrink-0" />
+      <ArrowDown data-icon="inline-end" className="text-primary" aria-hidden="true" />
     );
   };
 
   if (!isLoading && students.length === 0) {
     return (
-      <div className="p-8 rounded-xl border border-border bg-card shadow-warm">
-        <Empty>
-          <EmptyMedia>
-            <div className="p-3 bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300 rounded-full">
-              <Users className="size-8" />
-            </div>
-          </EmptyMedia>
-          <EmptyHeader>
-            <EmptyTitle>No Students on Roster</EmptyTitle>
-            <EmptyDescription>
-              Add students to your roster to start tracking handwriting scores.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Link
-              href="/roster"
-              className={cn(
-                buttonVariants({ variant: "default" }),
-                "bg-primary hover:bg-brand-700 text-primary-foreground font-semibold rounded-xl"
-              )}
-            >
-              <Users className="size-4 mr-2" /> Go to Class Roster
-            </Link>
-          </EmptyContent>
-        </Empty>
-      </div>
+      <Card>
+        <CardContent className="p-8">
+          <Empty>
+            <EmptyMedia variant="icon" className="bg-secondary text-secondary-foreground rounded-full size-14 [&_svg:not([class*='size-'])]:size-7">
+              <Users aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyHeader>
+              <EmptyTitle>No Students on Roster</EmptyTitle>
+              <EmptyDescription>
+                Add students to your roster to start tracking handwriting scores.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button nativeButton={false} render={<Link href="/roster" />}>
+                <Users data-icon="inline-start" aria-hidden="true" />
+                Go to Class Roster
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={cn("space-y-3.5", className)}>
+    <div className={cn("flex flex-col gap-3.5", className)}>
       {/* Search and Filter Controls */}
-      <div className="space-y-2.5">
+      <div className="flex flex-col gap-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="w-full sm:w-72">
             <SearchInput
@@ -363,12 +368,12 @@ export function ClassTable({
       </div>
 
       {/* Mobile Student Cards (<640px) — avoids horizontal scrolling a 9-column table on phones */}
-      <div className="sm:hidden space-y-2.5">
+      <div className="sm:hidden flex flex-col gap-2.5">
         {/* Compact mobile sort bar */}
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
+        <Field orientation="horizontal" className="justify-between gap-2">
+          <FieldLabel htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
             Sort by
-          </Label>
+          </FieldLabel>
           <div className="flex items-center gap-1.5 flex-1 max-w-[240px]">
             <NativeSelect
               id="mobile-student-sort"
@@ -389,50 +394,52 @@ export function ClassTable({
               size="icon"
               onClick={() => onSortChange(sortField, sortDirection === "asc" ? "desc" : "asc")}
               aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}. Click to toggle.`}
-              className="min-h-[40px] min-w-[40px] rounded-lg cursor-pointer touch-manipulation"
+              className="min-h-10 min-w-10 cursor-pointer"
             >
               {sortDirection === "asc" ? (
-                <ArrowUp className="size-4 text-primary" aria-hidden="true" />
+                <ArrowUp className="text-primary" aria-hidden="true" />
               ) : (
-                <ArrowDown className="size-4 text-primary" aria-hidden="true" />
+                <ArrowDown className="text-primary" aria-hidden="true" />
               )}
             </Button>
           </div>
-        </div>
+        </Field>
 
         {isLoading ? (
-          <div className="space-y-2.5">
+          <div className="flex flex-col gap-2.5">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-20 w-full rounded-xl" />
             ))}
           </div>
         ) : filteredStudents.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card">
-            <Empty className="py-10 px-4 gap-3">
-              <EmptyMedia variant="icon">
-                <SearchX aria-hidden="true" />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-base">No students match your filter</EmptyTitle>
-                <EmptyDescription className="text-xs">
-                  Try clearing your search or filters.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onClearFilters}
-                  className="min-h-[44px] px-4 rounded-lg text-xs cursor-pointer touch-manipulation"
-                >
-                  Reset filters
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </div>
+          <Card size="sm">
+            <CardContent className="p-0">
+              <Empty className="py-10 px-4 gap-3">
+                <EmptyMedia variant="icon">
+                  <SearchX aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-base">No students match your filter</EmptyTitle>
+                  <EmptyDescription className="text-xs">
+                    Try clearing your search or filters.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onClearFilters}
+                    className="min-h-11 px-4 text-xs cursor-pointer"
+                  >
+                    Reset filters
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            </CardContent>
+          </Card>
         ) : (
-          <ul role="list" className="space-y-2">
+          <ItemGroup className="gap-2.5 sm:hidden">
             {filteredStudents.map((student) => {
               const hasScores = student.scores.composite !== null;
               const lowestCriterion = hasScores
@@ -445,50 +452,55 @@ export function ClassTable({
                 : null;
 
               return (
-                <li key={student.studentId}>
-                  <button
-                    type="button"
-                    onClick={() => onSelectStudent(student)}
-                    className="w-full text-left p-3.5 rounded-xl border border-border bg-card active:bg-muted/40 transition-colors flex items-center justify-between gap-3 cursor-pointer touch-manipulation min-h-[68px] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm font-semibold text-foreground truncate">
-                          {student.fullName}
-                        </span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {student.section}
-                        </span>
-                      </div>
-                      {lowestCriterion ? (
-                        <p className="text-xs text-muted-foreground truncate tabular-nums">
-                          Focus: <span className="font-medium text-foreground">{lowestCriterion.shortName}</span> ({lowestCriterion.score.toFixed(1)}%)
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground/70 italic">
-                          Not yet graded
-                        </p>
-                      )}
-                    </div>
+                <Item
+                  key={student.studentId}
+                  variant="outline"
+                  size="sm"
+                  render={
+                    <button
+                      type="button"
+                      onClick={() => onSelectStudent(student)}
+                      className="min-h-11 w-full bg-card text-left hover:bg-muted/50 cursor-pointer"
+                    />
+                  }
+                >
+                  <ItemContent className="min-w-0">
+                    <ItemTitle className="w-full">
+                      <span className="text-sm font-semibold text-foreground truncate">
+                        {student.fullName}
+                      </span>
+                      <span className="text-xs font-normal text-muted-foreground shrink-0">
+                        {student.section}
+                      </span>
+                    </ItemTitle>
+                    {lowestCriterion ? (
+                      <ItemDescription className="text-xs tabular-nums line-clamp-1">
+                        Focus: <span className="font-medium text-foreground">{lowestCriterion.shortName}</span> ({lowestCriterion.score.toFixed(1)}%)
+                      </ItemDescription>
+                    ) : (
+                      <ItemDescription className="text-xs italic line-clamp-1">
+                        Not yet graded
+                      </ItemDescription>
+                    )}
+                  </ItemContent>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      {hasScores && student.scores.composite !== null ? (
-                        <div className="text-right space-y-1">
-                          <span className="font-sans text-sm font-bold tabular-nums text-foreground block">
-                            {student.scores.composite.toFixed(1)}%
-                          </span>
-                          <BandBadge score={student.scores.composite} size="sm" showDot={false} />
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/70">Unrated</span>
-                      )}
-                      <ChevronRight className="size-4 text-muted-foreground/60 shrink-0" aria-hidden="true" />
-                    </div>
-                  </button>
-                </li>
+                  <ItemActions className="shrink-0">
+                    {hasScores && student.scores.composite !== null ? (
+                      <div className="flex flex-col items-end gap-1 text-right">
+                        <span className="font-sans text-sm font-bold tabular-nums text-foreground">
+                          {student.scores.composite.toFixed(1)}%
+                        </span>
+                        <BandBadge score={student.scores.composite} size="sm" showDot={false} />
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/70">Unrated</span>
+                    )}
+                    <ChevronRight className="size-4 text-muted-foreground/60 shrink-0" aria-hidden="true" />
+                  </ItemActions>
+                </Item>
               );
             })}
-          </ul>
+          </ItemGroup>
         )}
 
         <p className="text-xs text-muted-foreground px-1">
@@ -498,8 +510,8 @@ export function ClassTable({
       </div>
 
       {/* Main Table (Tablet & Desktop >=640px) — flat 1px border per DESIGN.md elevation rule */}
-      <div className="hidden sm:block relative rounded-xl border border-border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
+      <Card className="hidden sm:block p-0 gap-0 shadow-none">
+        <CardContent className="p-0 overflow-x-auto">
           <TooltipProvider delay={200}>
             <Table>
               <TableHeader className="bg-muted/40">
@@ -522,11 +534,18 @@ export function ClassTable({
                     >
                       <Tooltip>
                         <TooltipTrigger
-                          onClick={() => handleSort(col.field)}
-                          className={cn(
-                            "w-full h-full inline-flex items-center gap-0.5 cursor-pointer bg-transparent border-0 p-0 text-inherit font-inherit transition-colors hover:text-brand-700 dark:hover:text-brand-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm",
-                            col.isNumeric ? "justify-end" : "justify-start"
-                          )}
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => handleSort(col.field)}
+                              className={cn(
+                                "w-full h-auto py-1 px-0 font-semibold hover:bg-transparent hover:text-primary",
+                                col.isNumeric ? "justify-end" : "justify-start"
+                              )}
+                            />
+                          }
                         >
                           <span>{col.label}</span>
                           {getSortIcon(col.field)}
@@ -548,123 +567,127 @@ export function ClassTable({
                 </TableRow>
               </TableHeader>
 
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="border-b border-border/50">
-                    <TableCell colSpan={9} className="py-4 px-4">
-                      <Skeleton className="h-6 w-full rounded-md" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : filteredStudents.length === 0 ? (
-                <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={9} className="p-0">
-                    <Empty className="py-12 px-4 gap-3">
-                      <EmptyMedia variant="icon">
-                        <SearchX aria-hidden="true" />
-                      </EmptyMedia>
-                      <EmptyHeader>
-                        <EmptyTitle className="text-base">No students match your filter</EmptyTitle>
-                        <EmptyDescription className="text-xs">
-                          Try clearing your search or filters.
-                        </EmptyDescription>
-                      </EmptyHeader>
-                      <EmptyContent>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={onClearFilters}
-                          className="min-h-[36px] rounded-lg text-xs cursor-pointer"
-                        >
-                          Reset filters
-                        </Button>
-                      </EmptyContent>
-                    </Empty>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredStudents.map((student) => {
-                  const hasScores = student.scores.composite !== null;
-
-                  return (
-                    <TableRow
-                      key={student.studentId}
-                      onClick={() => onSelectStudent(student)}
-                      className="group cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/60"
-                    >
-                      {/* Student Name — semantic <button> keeps <tr> as a native table row for screen readers */}
-                      <TableCell className="py-3 px-4 font-medium">
-                        <div className="min-w-0">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSelectStudent(student);
-                            }}
-                            aria-label={`View handwriting diagnostics for ${student.fullName}`}
-                            className="text-left text-xs font-semibold text-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors truncate max-w-full block cursor-pointer rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            {student.fullName}
-                          </button>
-                        </div>
-                      </TableCell>
-
-                      {/* Section */}
-                      <TableCell className="py-3 px-4 text-xs text-muted-foreground">
-                        <span className="truncate block max-w-[120px]">{student.section}</span>
-                      </TableCell>
-
-                      {/* Letter Formation */}
-                      <TableCell className="py-3 px-4 text-right">
-                        <ScoreCell score={student.scores.letter_formation} />
-                      </TableCell>
-
-                      {/* Size Consistency */}
-                      <TableCell className="py-3 px-4 text-right">
-                        <ScoreCell score={student.scores.size_consistency} />
-                      </TableCell>
-
-                      {/* Spacing */}
-                      <TableCell className="py-3 px-4 text-right">
-                        <ScoreCell score={student.scores.spacing} />
-                      </TableCell>
-
-                      {/* Slant */}
-                      <TableCell className="py-3 px-4 text-right">
-                        <ScoreCell score={student.scores.slant} />
-                      </TableCell>
-
-                      {/* Baseline */}
-                      <TableCell className="py-3 px-4 text-right">
-                        <ScoreCell score={student.scores.baseline_alignment} />
-                      </TableCell>
-
-                      {/* Overall Composite */}
-                      <TableCell className="py-3 px-4 text-right">
-                        {hasScores ? (
-                          <ScoreCell score={student.scores.composite} />
-                        ) : (
-                          <span className="text-xs text-muted-foreground/60 italic">Unrated</span>
-                        )}
-                      </TableCell>
-
-                      {/* Action Chevron */}
-                      <TableCell className="py-3 pr-4 pl-0 text-right">
-                        <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all inline-block" aria-hidden="true" />
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i} className="border-b border-border/50">
+                      <TableCell colSpan={9} className="py-4 px-4">
+                        <Skeleton className="h-6 w-full rounded-md" />
                       </TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                  ))
+                ) : filteredStudents.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={9} className="p-0">
+                      <Empty className="py-12 px-4 gap-3">
+                        <EmptyMedia variant="icon">
+                          <SearchX aria-hidden="true" />
+                        </EmptyMedia>
+                        <EmptyHeader>
+                          <EmptyTitle className="text-base">No students match your filter</EmptyTitle>
+                          <EmptyDescription className="text-xs">
+                            Try clearing your search or filters.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={onClearFilters}
+                            className="min-h-9 text-xs cursor-pointer"
+                          >
+                            Reset filters
+                          </Button>
+                        </EmptyContent>
+                      </Empty>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredStudents.map((student) => {
+                    const hasScores = student.scores.composite !== null;
+
+                    return (
+                      <TableRow
+                        key={student.studentId}
+                        onClick={() => onSelectStudent(student)}
+                        className="group cursor-pointer hover:bg-muted/30 transition-colors border-b border-border/60"
+                      >
+                        {/* Student Name — semantic Button keeps <tr> as a native table row for screen readers */}
+                        <TableCell className="py-3 px-4 font-medium">
+                          <div className="min-w-0">
+                            <Button
+                              type="button"
+                              variant="link"
+                              size="xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectStudent(student);
+                              }}
+                              aria-label={`View handwriting diagnostics for ${student.fullName}`}
+                              className="h-auto p-0 text-left font-semibold text-foreground group-hover:text-primary max-w-full justify-start overflow-hidden"
+                            >
+                              <span className="truncate">{student.fullName}</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+
+                        {/* Section */}
+                        <TableCell className="py-3 px-4 text-xs text-muted-foreground">
+                          <span className="truncate block max-w-[120px]">{student.section}</span>
+                        </TableCell>
+
+                        {/* Letter Formation */}
+                        <TableCell className="py-3 px-4 text-right">
+                          <ScoreCell score={student.scores.letter_formation} />
+                        </TableCell>
+
+                        {/* Size Consistency */}
+                        <TableCell className="py-3 px-4 text-right">
+                          <ScoreCell score={student.scores.size_consistency} />
+                        </TableCell>
+
+                        {/* Spacing */}
+                        <TableCell className="py-3 px-4 text-right">
+                          <ScoreCell score={student.scores.spacing} />
+                        </TableCell>
+
+                        {/* Slant */}
+                        <TableCell className="py-3 px-4 text-right">
+                          <ScoreCell score={student.scores.slant} />
+                        </TableCell>
+
+                        {/* Baseline */}
+                        <TableCell className="py-3 px-4 text-right">
+                          <ScoreCell score={student.scores.baseline_alignment} />
+                        </TableCell>
+
+                        {/* Overall Composite */}
+                        <TableCell className="py-3 px-4 text-right">
+                          {hasScores ? (
+                            <ScoreCell score={student.scores.composite} />
+                          ) : (
+                            <span className="text-xs text-muted-foreground/60 italic">Unrated</span>
+                          )}
+                        </TableCell>
+
+                        {/* Action Chevron */}
+                        <TableCell className="py-3 pr-4 pl-0 text-right">
+                          <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all inline-block" aria-hidden="true" />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
           </TooltipProvider>
-        </div>
+        </CardContent>
+
+        <Separator />
 
         {/* Table Footer Count & Dual-Signal 4-Band Legend */}
-        <div className="px-4 py-2.5 bg-muted/20 border-t border-border/60 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <CardFooter className="px-4 py-2.5 bg-muted/20 flex-wrap justify-between gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <span>
             Showing <strong className="text-foreground">{filteredStudents.length}</strong> of{" "}
             {students.length} students
@@ -688,8 +711,8 @@ export function ClassTable({
               );
             })}
           </div>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
@@ -708,7 +731,7 @@ function ScoreCell({ score }: { score: number | null | undefined }) {
       </span>
       <span className="sr-only">({meta.label})</span>
       <span
-        className={cn("w-2 h-2 rounded-full shrink-0", meta.dotColor)}
+        className={cn("size-2 rounded-full shrink-0", meta.dotColor)}
         aria-hidden="true"
         title={meta.label}
       />
