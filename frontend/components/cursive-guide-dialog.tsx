@@ -688,7 +688,7 @@ export function CursiveGuideDialog({
               )}
 
               {/* Dedicated Zone / Category Filter Strip (Desktop) */}
-              <ScrollArea orientation="horizontal" viewportClassName="pb-2" className="hidden w-full sm:flex">
+              <ScrollArea orientation="horizontal" hideScrollbar className="hidden w-full sm:flex">
                 <ToggleGroup
                   value={[zoneFilter]}
                   multiple={false}

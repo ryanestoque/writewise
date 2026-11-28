@@ -389,7 +389,7 @@ export function CriterionTrendChart({
 
         {/* Level 2: Skill Filter Chips (Single-line horizontal rail) */}
         {viewMode === "chart" && (
-          <ScrollArea orientation="horizontal" className="w-full -mx-1 px-1">
+          <ScrollArea orientation="horizontal" hideScrollbar className="w-full -mx-1 px-1">
             <ToggleGroup
               multiple
               value={[...visibleSeries]}

@@ -465,7 +465,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             <div className="min-w-0 flex-1">
               <ScrollArea
                 orientation="horizontal"
-                viewportClassName="pb-2"
+                hideScrollbar
                 className="w-full min-w-0 @min-[640px]:hidden"
               >
                 <ToggleGroup

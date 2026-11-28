@@ -284,8 +284,9 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
               <ScrollArea
                 ref={scrollAreaRef}
                 orientation="horizontal"
+                hideScrollbar
                 style={maskStyle}
-                viewportClassName="overscroll-x-contain pb-2"
+                viewportClassName="overscroll-x-contain"
                 className="w-full min-w-0 touch-pan-x touch-pan-y transition-[mask-image]"
               >
                 <div className="flex w-max items-center gap-1.5 py-0.5">

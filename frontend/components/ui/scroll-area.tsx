@@ -9,11 +9,13 @@ function ScrollArea({
   className,
   viewportClassName,
   orientation = "vertical",
+  hideScrollbar = false,
   children,
   ...props
 }: ScrollAreaPrimitive.Root.Props & {
   viewportClassName?: string;
   orientation?: "vertical" | "horizontal" | "both";
+  hideScrollbar?: boolean;
 }) {
   return (
     <ScrollAreaPrimitive.Root
@@ -25,13 +27,14 @@ function ScrollArea({
         data-slot="scroll-area-viewport"
         className={cn(
           "focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1",
+          hideScrollbar && "no-scrollbar",
           viewportClassName
         )}
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
-      {(orientation === "vertical" || orientation === "both") && <ScrollBar />}
-      {(orientation === "horizontal" || orientation === "both") && (
+      {!hideScrollbar && (orientation === "vertical" || orientation === "both") && <ScrollBar />}
+      {!hideScrollbar && (orientation === "horizontal" || orientation === "both") && (
         <ScrollBar orientation="horizontal" />
       )}
       <ScrollAreaPrimitive.Corner />

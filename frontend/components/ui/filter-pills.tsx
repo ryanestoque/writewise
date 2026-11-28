@@ -190,8 +190,9 @@ export function FilterPills<T extends string = string>({
       <ScrollArea
         ref={scrollAreaRef}
         orientation="horizontal"
+        hideScrollbar
         style={maskStyle}
-        viewportClassName="overscroll-x-contain pb-2"
+        viewportClassName="overscroll-x-contain"
         className={cn(
           "w-full min-w-0 touch-pan-x touch-pan-y transition-[mask-image]",
           className
