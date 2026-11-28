@@ -106,13 +106,13 @@ export function SubmissionCommentTabs({
         >
           <TabsTrigger
             value="details"
-            className="flex-1 min-h-11 sm:min-h-0 h-auto group-data-[variant=default]/tabs-list:h-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation data-active:bg-surface dark:data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
+            className="flex-1 min-h-11 sm:min-h-0 h-auto group-data-[variant=default]/tabs-list:h-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
           >
             {detailsLabel}
           </TabsTrigger>
           <TabsTrigger
             value="comments"
-            className="flex-1 min-h-11 sm:min-h-0 h-auto group-data-[variant=default]/tabs-list:h-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold gap-1.5 sm:gap-2 cursor-pointer touch-manipulation data-active:bg-surface dark:data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
+            className="flex-1 min-h-11 sm:min-h-0 h-auto group-data-[variant=default]/tabs-list:h-auto py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold gap-1.5 sm:gap-2 cursor-pointer touch-manipulation data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
           >
             <span>{commentsLabel}</span>
             {hasUnread && (
@@ -137,7 +137,7 @@ export function SubmissionCommentTabs({
             <div
               className={cn(
                 "flex min-h-72 min-w-0 flex-1 flex-col",
-                variant === "default" && "rounded-xl border border-border/80 bg-surface dark:bg-card shadow-xs overflow-hidden"
+                variant === "default" && "rounded-xl border border-border/80 bg-card shadow-xs overflow-hidden"
               )}
             >
               <SubmissionCommentThread
@@ -152,7 +152,7 @@ export function SubmissionCommentTabs({
               />
             </div>
           ) : (
-            <div className="p-4 space-y-3" role="status" aria-label="Loading comments">
+            <div className="flex flex-col gap-3 p-4" role="status" aria-label="Loading comments">
               <Skeleton className="h-6 w-48 rounded-md" />
               <Skeleton className="h-16 w-full rounded-xl" />
             </div>

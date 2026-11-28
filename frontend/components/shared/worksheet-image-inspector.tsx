@@ -11,10 +11,14 @@ import {
   type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Kbd } from "@/components/ui/kbd";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Toggle } from "@/components/ui/toggle";
 import {
   ZoomIn,
   ZoomOut,
@@ -577,147 +581,146 @@ export function WorksheetImageInspector({
 
   const useImageToolsCollapsible = imageToolsDisclosure && showImageTools;
 
+  const imageToolsControls = (
+    <>
+      {/* Left tools: Contrast & Loupe */}
+      <div className="flex items-center gap-1">
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={isHighContrast}
+          onPressedChange={handleToggleContrast}
+          className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 aria-pressed:bg-secondary aria-pressed:text-secondary-foreground aria-pressed:border-primary/30 aria-pressed:font-semibold"
+          aria-label="Toggle high contrast ink enhancement (Key: C)"
+          title="Enhance faint pencil ink (C)"
+        >
+          <Contrast data-icon="inline-start" aria-hidden="true" />
+          <span className="hidden sm:inline">Ink Contrast</span>
+        </Toggle>
+
+        <Toggle
+          variant="outline"
+          size="sm"
+          pressed={isLoupeActive}
+          onPressedChange={handleToggleLoupe}
+          className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 aria-pressed:bg-secondary aria-pressed:text-secondary-foreground aria-pressed:border-primary/30 aria-pressed:font-semibold"
+          aria-label="Toggle stroke magnify (Key: L)"
+          title="Hover to magnify handwriting strokes (L)"
+        >
+          <Search data-icon="inline-start" aria-hidden="true" />
+          <span className="hidden sm:inline">Magnify</span>
+        </Toggle>
+      </div>
+
+      {/* Right tools: Zoom controls */}
+      <ButtonGroup aria-label="Worksheet zoom controls">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          disabled={zoomScale <= 1}
+          onClick={handleZoomOut}
+          className="size-11 sm:size-7"
+          aria-label="Zoom out (Key: -)"
+          title="Zoom out (-)"
+        >
+          <ZoomOut aria-hidden="true" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleResetZoom}
+          className="h-11 sm:h-7 px-2.5 sm:px-2 text-xs font-sans tabular-nums font-semibold"
+          title="Click to reset zoom (Key: 0)"
+          aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
+        >
+          {Math.round(zoomScale * 100)}%
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          disabled={zoomScale >= 2.5}
+          onClick={handleZoomIn}
+          className="size-11 sm:size-7"
+          aria-label="Zoom in (Key: +)"
+          title="Zoom in (+)"
+        >
+          <ZoomIn aria-hidden="true" />
+        </Button>
+      </ButtonGroup>
+    </>
+  );
+
   const diagnosticDeckBody = diagnosticToolbar ? (
     <>
       <div className="p-1 sm:p-1.5">
         {diagnosticToolbar}
       </div>
-      {showImageTools && collapsibleImageTools && !imageToolsExpanded && (
-        <div className="w-full flex items-center justify-between gap-2 px-2 py-1 text-xs">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setImageToolsExpanded(true)}
-            className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer touch-manipulation gap-1.5"
-            aria-expanded={false}
-          >
-            <SlidersHorizontal className="size-3.5" aria-hidden="true" />
-            <span>Image tools</span>
-            {(isHighContrast || isLoupeActive || zoomScale > 1) && (
-              <span className="inline-flex items-center rounded-full bg-brand-100 dark:bg-brand-900 px-1.5 py-0.5 text-[10px] font-semibold text-brand-800 dark:text-brand-200 tabular-nums">
-                {[
-                  isHighContrast ? "Contrast" : null,
-                  isLoupeActive ? "Magnify" : null,
-                  zoomScale > 1 ? `${Math.round(zoomScale * 100)}%` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+      {showImageTools && collapsibleImageTools && (
+        <Collapsible open={imageToolsExpanded} onOpenChange={setImageToolsExpanded}>
+          <div className="w-full flex items-center justify-between gap-2 px-2 py-1 text-xs">
+            <CollapsibleTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/70"
+                />
+              }
+            >
+              <SlidersHorizontal data-icon="inline-start" aria-hidden="true" />
+              <span>{imageToolsExpanded ? "Hide image tools" : "Image tools"}</span>
+              {!imageToolsExpanded && (isHighContrast || isLoupeActive || zoomScale > 1) && (
+                <Badge variant="secondary" className="px-1.5 py-0 h-4 text-[10px] font-semibold tabular-nums">
+                  {[
+                    isHighContrast ? "Contrast" : null,
+                    isLoupeActive ? "Magnify" : null,
+                    zoomScale > 1 ? `${Math.round(zoomScale * 100)}%` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Badge>
+              )}
+              <ChevronDown
+                data-icon="inline-end"
+                className={cn("opacity-70 transition-transform duration-150", imageToolsExpanded && "rotate-180")}
+                aria-hidden="true"
+              />
+            </CollapsibleTrigger>
+            {!imageToolsExpanded && showShortcutsLegend && (
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">C</Kbd> ink ·{" "}
+                <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">L</Kbd> magnify ·{" "}
+                <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">+/-</Kbd> zoom
               </span>
             )}
-            <ChevronDown className="size-3.5 opacity-70" aria-hidden="true" />
-          </Button>
-          {showShortcutsLegend && (
-            <span className="text-[11px] text-muted-foreground hidden sm:inline">
-              <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">C</Kbd> ink ·{" "}
-              <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">L</Kbd> magnify ·{" "}
-              <Kbd className="h-auto min-w-0 font-mono text-[10px] px-1 py-0.5 rounded bg-background border border-border">+/-</Kbd> zoom
-            </span>
-          )}
-        </div>
-      )}
-      {showImageTools && (!collapsibleImageTools || imageToolsExpanded) && (
-        <div className={cn(
-        "w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs",
-        imageToolsDisclosure && "flex-wrap gap-y-2"
-      )}>
-        {/* Left tools: Contrast & Loupe */}
-        <div className="flex items-center gap-1">
-          {collapsibleImageTools && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setImageToolsExpanded(false)}
-              className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs rounded-lg gap-1 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
-              aria-expanded={true}
-              aria-label="Hide image tools"
-              title="Hide image tools"
+          </div>
+          <CollapsibleContent>
+            <div
+              className={cn(
+                "w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs",
+                imageToolsDisclosure && "flex-wrap gap-y-2"
+              )}
             >
-              <ChevronDown className="size-3.5 rotate-180" aria-hidden="true" />
-              <span className="hidden sm:inline">Hide</span>
-            </Button>
+              {imageToolsControls}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+      {showImageTools && !collapsibleImageTools && (
+        <div
+          className={cn(
+            "w-full flex items-center justify-between gap-1 p-1 sm:p-1.5 text-xs",
+            imageToolsDisclosure && "flex-wrap gap-y-2"
           )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleContrast}
-            className={cn(
-              "h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-              isHighContrast
-                ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-pressed={isHighContrast}
-            aria-label="Toggle high contrast ink enhancement (Key: C)"
-            title="Enhance faint pencil ink (C)"
-          >
-            <Contrast className="size-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Ink Contrast</span>
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleToggleLoupe}
-            className={cn(
-              "h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-              isLoupeActive
-                ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-pressed={isLoupeActive}
-            aria-label="Toggle stroke magnify (Key: L)"
-            title="Hover to magnify handwriting strokes (L)"
-          >
-            <Search className="size-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Magnify</span>
-          </Button>
+        >
+          {imageToolsControls}
         </div>
-
-        {/* Right tools: Zoom controls & frame toggle */}
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={zoomScale <= 1}
-            onClick={handleZoomOut}
-            className="size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
-            aria-label="Zoom out (Key: -)"
-            title="Zoom out (-)"
-          >
-            <ZoomOut className="size-3.5" aria-hidden="true" />
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleResetZoom}
-            className="px-2.5 sm:px-2 py-1 sm:py-0.5 h-11 sm:h-7 min-h-11 sm:min-h-0 text-xs font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation"
-            title="Click to reset zoom (Key: 0)"
-            aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
-          >
-            {Math.round(zoomScale * 100)}%
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={zoomScale >= 2.5}
-            onClick={handleZoomIn}
-            className="size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation flex items-center justify-center"
-            aria-label="Zoom in (Key: +)"
-            title="Zoom in (+)"
-          >
-            <ZoomIn className="size-3.5" aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
       )}
     </>
   ) : null;
@@ -753,11 +756,21 @@ export function WorksheetImageInspector({
             )}
           >
             <CollapsibleTrigger
-              type="button"
-              className="flex w-full min-h-11 items-center justify-between px-3 py-3 text-left text-sm font-semibold cursor-pointer touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&[data-panel-open]>svg]:rotate-180"
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="flex w-full min-h-11 items-center justify-between rounded-none px-3 py-3 text-left text-sm font-semibold [&[data-panel-open]>svg]:rotate-180"
+                />
+              }
             >
               <span>Image tools</span>
-              <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200" aria-hidden="true" />
+              <ChevronDown
+                data-icon="inline-end"
+                className="text-muted-foreground transition-transform duration-200"
+                aria-hidden="true"
+              />
             </CollapsibleTrigger>
             <CollapsibleContent className="divide-y divide-border/60">
               {diagnosticDeckBody}
@@ -777,87 +790,7 @@ export function WorksheetImageInspector({
       ) : showImageTools ? (
         /* Standalone Inspector Action Controls */
         <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
-          {/* Left tools: Contrast & Loupe */}
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleContrast}
-              className={cn(
-                "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-                isHighContrast
-                  ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              aria-pressed={isHighContrast}
-              aria-label="Toggle high contrast ink enhancement (Key: C)"
-              title="Enhance faint pencil ink (C)"
-            >
-              <Contrast className="size-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Ink Contrast</span>
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleLoupe}
-              className={cn(
-                "h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-3 sm:px-2 text-xs rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-                isLoupeActive
-                  ? "bg-brand-100 text-brand-900 dark:bg-brand-900 dark:text-brand-200 font-semibold"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              aria-pressed={isLoupeActive}
-              aria-label="Toggle stroke magnify (Key: L)"
-              title="Hover to magnify handwriting strokes (L)"
-            >
-              <Search className="size-3.5" aria-hidden="true" />
-              <span className="hidden sm:inline">Magnify</span>
-            </Button>
-          </div>
-
-          {/* Right tools: Zoom controls & frame toggle */}
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={zoomScale <= 1}
-              onClick={handleZoomOut}
-              className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
-              aria-label="Zoom out (Key: -)"
-              title="Zoom out (-)"
-            >
-              <ZoomOut className="size-3.5" aria-hidden="true" />
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleResetZoom}
-              className="px-2.5 sm:px-2 py-2 sm:py-0.5 h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] text-xs sm:text-[11px] font-sans tabular-nums font-semibold text-foreground hover:text-brand-700 dark:hover:text-brand-300 transition-colors cursor-pointer rounded-lg touch-manipulation"
-              title="Click to reset zoom (Key: 0)"
-              aria-label={`Current zoom ${Math.round(zoomScale * 100)} percent. Click to reset (Shortcut: 0).`}
-            >
-              {Math.round(zoomScale * 100)}%
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={zoomScale >= 2.5}
-              onClick={handleZoomIn}
-              className="size-11 sm:size-8 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer touch-manipulation"
-              aria-label="Zoom in (Key: +)"
-              title="Zoom in (+)"
-            >
-              <ZoomIn className="size-3.5" aria-hidden="true" />
-            </Button>
-          </div>
+          {imageToolsControls}
         </div>
       ) : null}
 
@@ -906,7 +839,7 @@ export function WorksheetImageInspector({
         }}
         style={dynamicAspectStyle}
         className={cn(
-          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/20 overflow-hidden flex items-center justify-center select-none",
+          "relative w-full mx-auto rounded-xl sm:rounded-2xl border border-border/80 bg-muted/30 overflow-hidden flex items-center justify-center select-none",
           !flatFrame && "shadow-warm",
           isLoupeActive || zoomScale > 1 ? "touch-none" : "touch-pan-y",
           "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -971,43 +904,41 @@ export function WorksheetImageInspector({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-3 pointer-events-auto">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground/80 border border-border/80">
-              <FileText className="size-6 stroke-[1.5]" aria-hidden="true" />
-            </div>
-            <div className="space-y-1 max-w-xs">
-              <p className="text-xs sm:text-sm font-semibold text-foreground">
-                Worksheet photo unavailable
-              </p>
-              <p className="text-xs text-muted-foreground leading-normal">
+          <Empty className="p-6 border-none pointer-events-auto">
+            <EmptyMedia variant="icon">
+              <FileText aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyHeader>
+              <EmptyTitle className="text-sm">Worksheet photo unavailable</EmptyTitle>
+              <EmptyDescription className="text-xs">
                 We couldn&apos;t load this photo right now. Please try again.
-              </p>
-            </div>
+              </EmptyDescription>
+            </EmptyHeader>
             {onRetry && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setFailedImageUrl(null);
-                  onRetry();
-                }}
-                className="min-h-11 sm:min-h-9 h-11 sm:h-9 px-3 text-xs gap-1.5 cursor-pointer rounded-lg border-border hover:bg-muted/80 text-foreground shadow-2xs touch-manipulation"
-              >
-                <RotateCcw className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-                <span>Retry loading photo</span>
-              </Button>
+              <EmptyContent>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFailedImageUrl(null);
+                    onRetry();
+                  }}
+                  className="min-h-11 sm:min-h-9"
+                >
+                  <RotateCcw data-icon="inline-start" aria-hidden="true" />
+                  <span>Retry loading photo</span>
+                </Button>
+              </EmptyContent>
             )}
-          </div>
+          </Empty>
         )}
-
-
 
         {/* Stroke Magnifying Loupe Lens (Aria-Hidden to prevent duplicate reader announcements) */}
         {isLoupeActive && loupeState.visible && imageUrl && (
           <div
             aria-hidden="true"
-            className="absolute left-0 top-0 size-[130px] rounded-full border-2 border-brand-600 dark:border-brand-400 shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background will-change-transform"
+            className="absolute left-0 top-0 size-[130px] rounded-full border-2 border-primary shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background will-change-transform"
             style={{
               transform: `translate3d(${loupeState.x - 65}px, ${loupeState.y - 65}px, 0)`,
             }}
@@ -1031,7 +962,7 @@ export function WorksheetImageInspector({
               className="max-w-none object-contain will-change-transform"
             />
             {/* Center target reticle */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full border border-brand-600/80 dark:border-brand-300/80 bg-brand-500/20 shadow-2xs pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full border border-primary/80 bg-primary/20 shadow-2xs pointer-events-none" />
           </div>
         )}
 
@@ -1047,10 +978,10 @@ export function WorksheetImageInspector({
               e.stopPropagation();
               handleResetZoom();
             }}
-            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 dark:bg-card/95 text-foreground px-3 py-2 rounded-lg border-border shadow-xs text-xs font-medium gap-1.5 hover:bg-muted transition-colors cursor-pointer h-auto min-h-11 sm:min-h-9 touch-manipulation"
+            className="absolute bottom-2.5 right-2.5 z-10 bg-background/95 text-foreground shadow-xs text-xs font-medium min-h-11 sm:min-h-9"
             title="Reset zoom & pan (Key: 0)"
           >
-            <RotateCcw className="size-3.5 text-muted-foreground" aria-hidden="true" />
+            <RotateCcw data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
             <span>Reset view</span>
           </Button>
         )}
@@ -1064,7 +995,7 @@ export function WorksheetImageInspector({
               Shortcuts: <Kbd className="h-auto min-w-0 px-1 py-0.5 rounded border border-border font-mono text-[10px]">+</Kbd> / <Kbd className="h-auto min-w-0 px-1 py-0.5 rounded border border-border font-mono text-[10px]">-</Kbd> zoom &middot; <Kbd className="h-auto min-w-0 px-1 py-0.5 rounded border border-border font-mono text-[10px]">L</Kbd> magnify &middot; <Kbd className="h-auto min-w-0 px-1 py-0.5 rounded border border-border font-mono text-[10px]">C</Kbd> contrast &middot; <Kbd className="h-auto min-w-0 px-1 py-0.5 rounded border border-border font-mono text-[10px]">0</Kbd> reset
             </span>
             {zoomScale > 1 && (
-              <span className="font-medium text-brand-700 dark:text-brand-300 text-xs">
+              <span className="font-medium text-primary text-xs">
                 Drag or use arrow keys to pan
               </span>
             )}
@@ -1073,7 +1004,7 @@ export function WorksheetImageInspector({
           <div className="sm:hidden flex items-center justify-center text-xs text-muted-foreground px-1 text-center shrink-0">
             <span>Pinch or use toolbar to zoom</span>
             {zoomScale > 1 && (
-              <span className="font-medium text-brand-700 dark:text-brand-300 ml-1.5">
+              <span className="font-medium text-primary ml-1.5">
                 &middot; Drag to pan
               </span>
             )}

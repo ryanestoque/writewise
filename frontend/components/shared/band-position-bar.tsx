@@ -31,7 +31,7 @@ export function BandPositionBar({
   const activeBand = band ?? getBandFromScore(numericScore);
 
   return (
-    <div className={cn("w-full space-y-1", className)}>
+    <div className={cn("flex w-full flex-col gap-1", className)}>
       <div className="w-full flex items-center gap-2.5">
         <div
           role="progressbar"
@@ -51,10 +51,10 @@ export function BandPositionBar({
           )}
         >
           {/* 4 Colored Band Zones: Clay, Gold, Sage, Forest */}
-          <div className="bg-band-1/40 dark:bg-band-1/45 rounded-l-full border-r border-background/80" />
-          <div className="bg-band-2/40 dark:bg-band-2/45 border-r border-background/80" />
-          <div className="bg-band-3/40 dark:bg-band-3/45 border-r border-background/80" />
-          <div className="bg-band-4/40 dark:bg-band-4/45 rounded-r-full" />
+          <div className="bg-band-1/45 rounded-l-full border-r border-background/80" />
+          <div className="bg-band-2/45 border-r border-background/80" />
+          <div className="bg-band-3/45 border-r border-background/80" />
+          <div className="bg-band-4/45 rounded-r-full" />
 
           {/* Marker indicator for current score */}
           {numericScore !== null && (
@@ -65,7 +65,7 @@ export function BandPositionBar({
               <div
                 className={cn(
                   "rounded-full bg-foreground shadow-xs border-2 border-background ring-1 ring-border/60",
-                  height === "sm" ? "w-2.5 h-2.5" : "w-3.5 h-3.5"
+                  height === "sm" ? "size-2.5" : "size-3.5"
                 )}
               />
             </div>

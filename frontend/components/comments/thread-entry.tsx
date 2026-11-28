@@ -1,11 +1,23 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { memo, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Message, MessageContent, MessageFooter, MessageHeader } from "@/components/ui/message";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Marker, MarkerContent } from "@/components/ui/marker";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { commentFeedback, formatTeacherLabel } from "@/lib/comments/presentation";
 import type { ThreadEntry } from "@/lib/comments/types";
 
@@ -39,18 +51,6 @@ export const ThreadEntryView = memo(function ThreadEntryView({
 }) {
   const [confirm, setConfirm] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const keepButtonRef = useRef<HTMLButtonElement>(null);
-  const wasConfirmingRef = useRef(false);
-
-  useEffect(() => {
-    if (confirm && !wasConfirmingRef.current) {
-      keepButtonRef.current?.focus();
-    } else if (!confirm && wasConfirmingRef.current) {
-      deleteButtonRef.current?.focus();
-    }
-    wasConfirmingRef.current = confirm;
-  }, [confirm]);
 
   const time = (
     <time dateTime={entry.event_at} className="font-sans tabular-nums">
@@ -99,66 +99,68 @@ export const ThreadEntryView = memo(function ThreadEntryView({
         </Bubble>
         <MessageFooter className="flex-wrap gap-2">
           {time}
-          {entry.is_mine && !entry.deleted_at && !confirm && (
-            <Button
-              ref={deleteButtonRef}
-              size="xs"
-              variant="ghost"
-              className="h-11 md:h-7 min-h-11 md:min-h-7 px-3 md:px-2.5 cursor-pointer touch-manipulation"
-              onClick={() => {
-                setDeleteError(null);
-                setConfirm(true);
+          {entry.is_mine && !entry.deleted_at && (
+            <AlertDialog
+              open={confirm}
+              onOpenChange={(next) => {
+                if (!deleting) {
+                  setDeleteError(null);
+                  setConfirm(next);
+                }
               }}
             >
-              Delete
-            </Button>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    className="h-11 md:h-7 min-h-11 md:min-h-7 px-3 md:px-2.5 cursor-pointer touch-manipulation"
+                  />
+                }
+              >
+                Delete
+              </AlertDialogTrigger>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this comment?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Its text will be removed for everyone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {deleteError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{deleteError}</AlertDescription>
+                  </Alert>
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleting}>Keep comment</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    disabled={deleting}
+                    onClick={async () => {
+                      setDeleteError(null);
+                      try {
+                        await onDelete(entry.id);
+                        setConfirm(false);
+                      } catch (error) {
+                        setDeleteError(commentFeedback(error));
+                      }
+                    }}
+                  >
+                    {deleting ? (
+                      <>
+                        <Spinner data-icon="inline-start" aria-hidden="true" />
+                        <span>Deleting…</span>
+                      </>
+                    ) : (
+                      "Delete comment"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </MessageFooter>
-        {confirm && !entry.deleted_at && (
-          <Alert role="group" aria-label="Delete your comment">
-            <AlertTitle>Delete this comment?</AlertTitle>
-            <AlertDescription className="flex flex-col gap-2.5">
-              <span>Its text will be removed for everyone.</span>
-              {deleteError && (
-                <span role="alert" className="text-destructive text-xs sm:text-sm">
-                  {deleteError}
-                </span>
-              )}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-11 md:h-8 min-h-11 md:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
-                  disabled={deleting}
-                  onClick={async () => {
-                    setDeleteError(null);
-                    try {
-                      await onDelete(entry.id);
-                      setConfirm(false);
-                    } catch (error) {
-                      setDeleteError(commentFeedback(error));
-                    }
-                  }}
-                >
-                  {deleting ? "Deleting…" : "Delete comment"}
-                </Button>
-                <Button
-                  ref={keepButtonRef}
-                  size="sm"
-                  variant="outline"
-                  className="h-11 md:h-8 min-h-11 md:min-h-8 w-full sm:w-auto cursor-pointer touch-manipulation"
-                  disabled={deleting}
-                  onClick={() => {
-                    setDeleteError(null);
-                    setConfirm(false);
-                  }}
-                >
-                  Keep comment
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
       </MessageContent>
     </Message>
   );

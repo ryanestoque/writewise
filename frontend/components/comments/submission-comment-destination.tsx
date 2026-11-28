@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, AlertCircle, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCommentAccountId, useCommentThread } from "@/lib/hooks/use-comments";
 import { SubmissionCommentTabs } from "./submission-comment-tabs";
 
@@ -22,7 +21,7 @@ export function SubmissionCommentDestination({
   const query = useCommentThread(userId ?? "", { submissionId }, !!userId);
   if (!userId || query.isPending)
     return (
-      <div className="space-y-4 p-4" role="status" aria-label="Loading conversation">
+      <div className="flex flex-col gap-4 p-4" role="status" aria-label="Loading conversation">
         <Skeleton className="h-6 w-32 rounded-md" />
         <Skeleton className="h-8 w-64 rounded-md" />
         <Skeleton className="h-48 w-full rounded-xl" />
@@ -30,9 +29,9 @@ export function SubmissionCommentDestination({
     );
   if (query.isError || !query.data || query.data.activity_id !== activityId)
     return (
-      <div className="flex flex-col gap-3 p-4" role="status">
+      <div className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle>Conversation unavailable</AlertTitle>
           <AlertDescription>
             This conversation is either no longer available or does not match the current activity.
@@ -46,15 +45,18 @@ export function SubmissionCommentDestination({
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-3 p-2 sm:p-4" aria-label="Submission conversation">
       <div>
-        <Link
-          href={`/activities/${activityId}`}
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-1.5 text-muted-foreground hover:text-foreground")}
+        <Button
+          nativeButton={false}
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          render={<Link href={`/activities/${activityId}`} />}
         >
-          <ArrowLeft className="size-4" aria-hidden="true" />
+          <ArrowLeft data-icon="inline-start" aria-hidden="true" />
           <span>Back to activity</span>
-        </Link>
+        </Button>
       </div>
-      <div className="space-y-1">
+      <div className="flex flex-col gap-1">
         <h1 className="font-heading text-xl font-semibold text-foreground">
           Private comments{studentName ? ` · ${studentName}` : ""}
         </h1>
@@ -73,13 +75,15 @@ export function SubmissionCommentDestination({
           <p className="text-muted-foreground text-sm">
             View student cursive stroke diagnostics, quality gate measurements, and rubric ratings.
           </p>
-          <Link
-            href={`/activities/${activityId}/submissions/${submissionId}`}
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-2")}
+          <Button
+            nativeButton={false}
+            variant="outline"
+            size="sm"
+            render={<Link href={`/activities/${activityId}/submissions/${submissionId}`} />}
           >
-            <FileText className="size-4 text-muted-foreground" aria-hidden="true" />
+            <FileText data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
             <span>Open full worksheet details &amp; scoring</span>
-          </Link>
+          </Button>
         </div>
       </SubmissionCommentTabs>
     </section>

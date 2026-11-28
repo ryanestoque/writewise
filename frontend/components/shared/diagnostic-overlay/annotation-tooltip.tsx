@@ -3,6 +3,8 @@
 import { memo, useEffect, useRef, useState, type RefObject } from "react";
 import type { ActiveAnnotationHover } from "./types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 
@@ -325,9 +327,7 @@ function TooltipCard({
             fill="currentColor"
             className={cn(
               "text-popover/95",
-              isAttention
-                ? "stroke-band-1/40 dark:stroke-band-1/50"
-                : "stroke-brand-600/40 dark:stroke-brand-500/50"
+              isAttention ? "stroke-band-1/45" : "stroke-primary/45"
             )}
             strokeWidth="1.2"
             strokeLinejoin="round"
@@ -343,19 +343,19 @@ function TooltipCard({
           isPinned ? "pointer-events-auto select-text" : "pointer-events-none select-none",
           "bg-popover/95 text-popover-foreground",
           isAttention
-            ? "border-band-1/40 dark:border-band-1/50 ring-2 ring-band-1/10"
-            : "border-brand-600/40 dark:border-brand-500/50 ring-2 ring-brand-600/10"
+            ? "border-band-1/45 ring-2 ring-band-1/10"
+            : "border-primary/45 ring-2 ring-primary/10"
         )}
       >
         <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
           {isAttention ? (
             <AlertCircle
-              className="size-3.5 sm:size-4 shrink-0 text-band-1 dark:text-band-1"
+              className="size-3.5 sm:size-4 shrink-0 text-band-1"
               aria-hidden="true"
             />
           ) : (
             <CheckCircle2
-              className="size-3.5 sm:size-4 shrink-0 text-brand-600 dark:text-brand-400"
+              className="size-3.5 sm:size-4 shrink-0 text-primary"
               aria-hidden="true"
             />
           )}
@@ -370,25 +370,27 @@ function TooltipCard({
             className={cn(
               "ml-auto text-[10px] sm:text-xs px-1.5 py-0 sm:py-0.5 h-auto font-medium border shrink-0 whitespace-nowrap",
               isAttention
-                ? "border-band-1/30 text-band-1-text dark:text-band-1-text bg-band-1/10 dark:bg-band-1/20"
-                : "border-brand-300 dark:border-brand-800 text-brand-800 dark:text-brand-300 bg-brand-50/90 dark:bg-brand-950/60"
+                ? "border-band-1/30 text-band-1-text bg-band-1/15"
+                : "border-primary/25 text-secondary-foreground bg-secondary"
             )}
           >
             {isAttention ? "Needs Attention" : "Consistent"}
           </Badge>
           {isPinned && onDismiss && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="relative !size-5 sm:!size-6 !min-h-0 !min-w-0 rounded-md p-0 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer pointer-events-auto touch-manipulation shrink-0 ml-0.5 hover:bg-muted/80 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-3 sm:after:-inset-2 after:content-['']"
-              aria-label="Dismiss pinned annotation details"
+              className="ml-0.5 shrink-0 pointer-events-auto text-muted-foreground hover:text-foreground"
+              aria-label="Close annotation"
               title="Close annotation details"
             >
-              <X className="size-3 sm:size-3.5" aria-hidden="true" />
-            </button>
+              <X aria-hidden="true" />
+            </Button>
           )}
         </div>
 
@@ -400,23 +402,26 @@ function TooltipCard({
         </p>
 
         {criterion === "letter_formation" && isAttention && showMeasurementDetails && (
-          <p className="text-[10px] sm:text-[11px] font-medium text-band-1-text dark:text-band-1-text mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0" />
+          <p className="text-[10px] sm:text-[11px] font-medium text-band-1-text mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
+            <span className="inline-block size-1.5 rounded-full bg-band-1 shrink-0" aria-hidden="true" />
             <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
           </p>
         )}
 
         {criterion === "spacing" && showMeasurementDetails && (
           <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-primary shrink-0" />
+            <span className="inline-block size-1.5 rounded-full bg-primary shrink-0" aria-hidden="true" />
             <span>Measured relative to midline ruling (x-height). Target range: 1.5× – 2.5× guideline for words, 0.3× – 0.5× for letters.</span>
           </p>
         )}
 
         {!isPinned && (
-          <div className="mt-1 pt-0.5 sm:mt-1.5 sm:pt-1 border-t border-border/40 text-[9px] sm:text-[10px] text-muted-foreground hidden sm:flex items-center justify-between">
-            <span>Click to pin details</span>
-          </div>
+          <>
+            <Separator className="mt-1 sm:mt-1.5 hidden sm:block" />
+            <div className="pt-0.5 sm:pt-1 text-[9px] sm:text-[10px] text-muted-foreground hidden sm:flex items-center justify-between">
+              <span>Click to pin details</span>
+            </div>
+          </>
         )}
       </div>
     </>

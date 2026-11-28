@@ -6,12 +6,15 @@ import { getAttentionItems } from "./types";
 import { OVERLAY_COLORS } from "./constants";
 import { PARENT_CRITERIA_METADATA, type CriterionKey } from "@/lib/utils/scoring";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import {
   Popover,
   PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ChevronLeft, ChevronRight, HelpCircle, X } from "lucide-react";
@@ -172,7 +175,7 @@ export const CalmOverlayToolbar = memo(function CalmOverlayToolbar({
       </div>
 
       {/* Left: Switch + Contextual Label / Filter Chip */}
-      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
+      <Field orientation="horizontal" className="w-auto min-w-0 shrink gap-1.5 sm:gap-2">
         <Switch
           id={switchId}
           size="sm"
@@ -194,71 +197,71 @@ export const CalmOverlayToolbar = memo(function CalmOverlayToolbar({
                 onChangeCriterion("all");
                 onSelectAttentionItem?.(null);
               }}
-              className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-brand-800 dark:text-brand-200 bg-brand-100/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-950 gap-1 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-brand-500 shrink min-w-0"
+              className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium shrink min-w-0"
               title="Filtering by this skill. Click to show all marks."
             >
               <span className="hidden sm:inline truncate max-w-[140px]">
                 {fullCriterionLabel}
               </span>
               <span className="sm:hidden font-medium">{shortCriterionLabel}</span>
-              <X className="size-3 opacity-70 shrink-0" aria-hidden="true" />
+              <X data-icon="inline-end" className="opacity-70" aria-hidden="true" />
               <span className="sr-only">Show all marks</span>
             </Button>
           </div>
         ) : (
-          <Label
+          <FieldLabel
             htmlFor={switchId}
             className="inline-flex items-center text-xs font-medium text-foreground cursor-pointer min-h-10 sm:min-h-8 touch-manipulation shrink-0"
           >
             <span className="hidden sm:inline">Show {marksNoun}</span>
             <span className="hidden min-[360px]:inline sm:hidden">{marksNounCap}</span>
             <span className="min-[360px]:hidden">Marks</span>
-          </Label>
+          </FieldLabel>
         )}
-      </div>
+      </Field>
 
       {/* Right: Optional Focus Stepper + Paper lines toggle + Guide Popover */}
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {showStepper && visible && attentionItems.length > 1 && (
-          <div
-            role="group"
+          <ButtonGroup
             aria-label="Practice areas sequential navigation stepper"
-            className="flex items-center gap-0.5 rounded-md border border-border/70 bg-background/80 dark:bg-card/80 px-1 py-0.5 text-xs shrink-0"
+            className="items-center shrink-0"
           >
             <Button
               type="button"
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="icon-sm"
               onClick={handlePrevAttention}
-              className="size-8 sm:size-6 min-h-9 sm:min-h-0 p-0 rounded text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              className="size-8 sm:size-7"
               aria-label="Previous practice area (Key: Alt+[ or [)"
               title="Previous practice area (Alt+[ or [)"
             >
-              <ChevronLeft className="size-3.5 sm:size-3" aria-hidden="true" />
+              <ChevronLeft aria-hidden="true" />
             </Button>
-            <span className="tabular-nums font-semibold text-foreground px-1 text-[11px] select-none">
+            <ButtonGroupText className="h-8 sm:h-7 bg-background px-2 text-xs font-semibold tabular-nums select-none">
               {currentIndex >= 0 ? currentIndex + 1 : 1}/{attentionItems.length}
-            </span>
+            </ButtonGroupText>
             <Button
               type="button"
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="icon-sm"
               onClick={handleNextAttention}
-              className="size-8 sm:size-6 min-h-9 sm:min-h-0 p-0 rounded text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              className="size-8 sm:size-7"
               aria-label="Next practice area (Key: Alt+] or ])"
               title="Next practice area (Alt+] or ])"
             >
-              <ChevronRight className="size-3.5 sm:size-3" aria-hidden="true" />
+              <ChevronRight aria-hidden="true" />
             </Button>
-          </div>
+          </ButtonGroup>
         )}
 
         {hasGuideLines && onToggleGuideLines && (
           <Toggle
             size="sm"
+            variant="outline"
             pressed={showGuideLines}
             onPressedChange={onToggleGuideLines}
-            className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-brand-100 aria-pressed:text-brand-900 dark:aria-pressed:bg-brand-950 dark:aria-pressed:text-brand-200 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
+            className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground aria-pressed:bg-secondary aria-pressed:text-secondary-foreground aria-pressed:font-semibold shrink-0"
             title="Toggle 3-line penmanship paper guides"
           >
             <span className="hidden sm:inline">Paper lines</span>
@@ -274,23 +277,25 @@ export const CalmOverlayToolbar = memo(function CalmOverlayToolbar({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-auto min-h-10 sm:min-h-8 rounded-md px-1.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 gap-1 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
+                  className="h-auto min-h-10 sm:min-h-8 rounded-md px-1.5 sm:px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground shrink-0"
                   aria-label={`What the ${marksNoun} mean`}
                   title={`What the ${marksNoun} mean`}
                 />
               }
             >
-              <HelpCircle className="size-3.5" aria-hidden="true" />
+              <HelpCircle data-icon="inline-start" aria-hidden="true" />
               <span className="hidden min-[380px]:inline">Guide</span>
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-72 max-w-[calc(100vw-2rem)] rounded-xl p-3.5 text-xs space-y-2.5 shadow-warm border border-border"
+              className="w-72 max-w-[calc(100vw-2rem)] rounded-xl p-3.5 text-xs flex flex-col gap-2.5 shadow-warm border border-border"
             >
-              <p className="font-semibold text-foreground">
-                {isParentView ? "What the marks mean" : "Diagnostic guide"}
-              </p>
-              <div className="space-y-2 text-muted-foreground leading-snug">
+              <PopoverHeader>
+                <PopoverTitle className="text-xs font-semibold text-foreground">
+                  {isParentView ? "What the marks mean" : "Diagnostic guide"}
+                </PopoverTitle>
+              </PopoverHeader>
+              <div className="flex flex-col gap-2 text-muted-foreground leading-snug">
                 <div className="flex items-start gap-2">
                   <span
                     className="mt-1 size-2.5 rounded-full shrink-0"

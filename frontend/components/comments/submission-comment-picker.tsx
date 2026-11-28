@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -60,7 +61,7 @@ export function SubmissionCommentPicker({
     return (
       <div className="p-4">
         <Alert role="status">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
           <AlertDescription>Sign in again to view comments.</AlertDescription>
         </Alert>
@@ -70,7 +71,7 @@ export function SubmissionCommentPicker({
     return (
       <div className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle>Could not load worksheet uploads</AlertTitle>
           <AlertDescription>Unable to retrieve upload attempts for this worksheet.</AlertDescription>
         </Alert>
@@ -171,10 +172,9 @@ function LoadedPicker({
         <span className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
           <span>{statusLabel}</span>
           {isUnread && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
-              <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
+            <Badge variant="secondary" className="bg-primary/15 text-primary">
               Unread
-            </span>
+            </Badge>
           )}
         </span>
       </span>
@@ -282,9 +282,14 @@ function LoadedPicker({
           open
         />
       ) : (
-        <p role="status" className="p-4 text-sm text-muted-foreground">
-          Choose an upload to view its comments. The previous upload may no longer be available.
-        </p>
+        <Empty className="p-6">
+          <EmptyHeader>
+            <EmptyTitle>No upload selected</EmptyTitle>
+            <EmptyDescription>
+              Choose an upload to view its comments. The previous upload may no longer be available.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   );

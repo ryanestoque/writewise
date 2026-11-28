@@ -92,7 +92,7 @@ export function WorkCommentsButton({
           }
         >
           <MessageSquare
-            className="size-3.5 shrink-0 text-primary"
+            className="text-primary"
             aria-hidden="true"
             data-icon="inline-start"
           />

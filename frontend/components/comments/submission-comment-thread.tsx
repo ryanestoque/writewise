@@ -22,6 +22,7 @@ import type { CommentLocation, CommentWorksheetContext, ThreadTarget } from "@/l
 import { matchesCommentLocation } from "@/lib/comments/selection";
 import { ApiError } from "@/lib/utils/api-error";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDate, getRelativeTime, normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
@@ -145,7 +146,7 @@ export function SubmissionCommentThread({
     return (
       <div className="p-4">
         <Alert role="status">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle>Conversation unavailable</AlertTitle>
           <AlertDescription>This conversation does not match the selected worksheet.</AlertDescription>
         </Alert>
@@ -155,7 +156,7 @@ export function SubmissionCommentThread({
     return (
       <div className="p-4">
         <Alert role="status">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle>Sign-in required</AlertTitle>
           <AlertDescription>Sign in again to view these comments.</AlertDescription>
         </Alert>
@@ -165,7 +166,7 @@ export function SubmissionCommentThread({
     return (
       <div className="flex flex-col gap-3 p-4">
         <Alert variant="destructive">
-          <AlertCircle className="size-4" aria-hidden="true" />
+          <AlertCircle aria-hidden="true" />
           <AlertTitle>Could not load comments</AlertTitle>
           <AlertDescription>
             {query.error instanceof ApiError && query.error.code === "NOT_FOUND"
@@ -304,7 +305,7 @@ export function SubmissionCommentThread({
                       aria-label="View worksheet"
                       className="h-11 md:h-8 min-h-11 md:min-h-8 px-3 md:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
                     >
-                      <Eye className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
+                      <Eye aria-hidden="true" data-icon="inline-start" />
                       <span className="min-[360px]:hidden">View</span>
                       <span className="hidden min-[360px]:inline sm:hidden">Worksheet</span>
                       <span className="hidden sm:inline">View worksheet</span>
@@ -319,7 +320,7 @@ export function SubmissionCommentThread({
                       aria-label="Send new photo"
                       className="h-11 md:h-8 min-h-11 md:min-h-8 px-3 md:px-2.5 text-xs gap-1.5 cursor-pointer touch-manipulation"
                     >
-                      <Camera className="size-3.5 shrink-0" aria-hidden="true" data-icon="inline-start" />
+                      <Camera aria-hidden="true" data-icon="inline-start" />
                       <span className="min-[360px]:hidden">Photo</span>
                       <span className="hidden min-[360px]:inline sm:hidden">New photo</span>
                       <span className="hidden sm:inline">Send new photo</span>
@@ -344,11 +345,16 @@ export function SubmissionCommentThread({
                 );
               }}
             >
-              {actions.setLocked.isPending
-                ? "Saving…"
-                : thread.comments_locked
-                  ? "Unlock comments"
-                  : "Lock comments"}
+              {actions.setLocked.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
+                  <span>Saving…</span>
+                </>
+              ) : thread.comments_locked ? (
+                "Unlock comments"
+              ) : (
+                "Lock comments"
+              )}
             </Button>
           )}
         </div>
@@ -357,7 +363,7 @@ export function SubmissionCommentThread({
       {(feedback || query.loadMoreError) && (
         <div className="shrink-0 border-b px-4 py-3">
           <Alert variant="destructive" className="py-3">
-            <AlertCircle className="size-4" aria-hidden="true" />
+            <AlertCircle aria-hidden="true" />
             <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
               <span>{feedback ?? "Could not load older comments."}</span>
               <Button
@@ -385,29 +391,40 @@ export function SubmissionCommentThread({
           >
             <MessageScrollerContent className="gap-4 p-4">
               {thread.next_cursor && (
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-11 md:h-8 min-h-11 md:min-h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
-                    disabled={query.isLoadingMore || query.isFetching}
-                    onClick={query.loadMore}
-                  >
-                    {query.isLoadingMore ? "Loading older comments…" : "Load older comments"}
-                  </Button>
-                </div>
+                <MessageScrollerItem messageId="load-older">
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-11 md:h-8 min-h-11 md:min-h-8 px-3.5 text-xs cursor-pointer touch-manipulation"
+                      disabled={query.isLoadingMore || query.isFetching}
+                      onClick={query.loadMore}
+                    >
+                      {query.isLoadingMore ? (
+                        <>
+                          <Spinner data-icon="inline-start" aria-hidden="true" />
+                          <span>Loading older comments…</span>
+                        </>
+                      ) : (
+                        "Load older comments"
+                      )}
+                    </Button>
+                  </div>
+                </MessageScrollerItem>
               )}
 
               {chronologicalEntries.length === 0 && (
-                <Empty className="my-auto p-6">
-                  <EmptyMedia variant="icon">
-                    <MessageSquare className="size-5 text-muted-foreground" aria-hidden="true" />
-                  </EmptyMedia>
-                  <EmptyHeader>
-                    <EmptyTitle>No comments yet</EmptyTitle>
-                    <EmptyDescription>{emptyDescription}</EmptyDescription>
-                  </EmptyHeader>
-                </Empty>
+                <MessageScrollerItem messageId="empty-thread" className="my-auto">
+                  <Empty className="p-6">
+                    <EmptyMedia variant="icon">
+                      <MessageSquare aria-hidden="true" />
+                    </EmptyMedia>
+                    <EmptyHeader>
+                      <EmptyTitle>No comments yet</EmptyTitle>
+                      <EmptyDescription>{emptyDescription}</EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </MessageScrollerItem>
               )}
 
               {chronologicalEntries.map((entry) => (
@@ -452,8 +469,12 @@ export function SubmissionCommentThread({
           }}
         />
       ) : (
-        <div className="bg-muted/35 text-muted-foreground shrink-0 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3 text-xs sm:text-sm">
-          {thread.read_only_reasons.map((reason) => READ_ONLY[reason]).join(" ")}
+        <div className="bg-muted/35 shrink-0 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3">
+          <Alert role="status">
+            <AlertDescription className="text-xs sm:text-sm">
+              {thread.read_only_reasons.map((reason) => READ_ONLY[reason]).join(" ")}
+            </AlertDescription>
+          </Alert>
         </div>
       )}
     </section>

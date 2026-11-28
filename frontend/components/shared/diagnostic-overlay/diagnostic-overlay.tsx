@@ -14,6 +14,7 @@ import { SlantLayer } from "./layers/slant-layer";
 import { FormationLayer } from "./layers/formation-layer";
 import { AnnotationTooltip } from "./annotation-tooltip";
 import { useInspectorContext } from "@/components/shared/worksheet-image-inspector";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 /**
@@ -346,10 +347,10 @@ export const DiagnosticOverlay = memo(function DiagnosticOverlay({
         role="status"
         aria-label="Loading handwriting diagnostic guidelines"
       >
-        <div className="absolute inset-x-8 top-1/4 bottom-1/4 flex flex-col justify-around opacity-30 animate-pulse motion-reduce:animate-none pointer-events-none">
-          <div className="w-full border-b border-dashed border-muted-foreground/50" />
-          <div className="w-full border-b border-dotted border-brand-600 dark:border-brand-400" />
-          <div className="w-full border-b border-solid border-brand-600 dark:border-brand-400" />
+        <div className="absolute inset-x-8 top-1/4 bottom-1/4 flex flex-col justify-around pointer-events-none">
+          <Skeleton className="h-1 w-full" />
+          <Skeleton className="h-1 w-5/6" />
+          <Skeleton className="h-1 w-4/5" />
         </div>
         <span className="sr-only">Loading handwriting diagnostic guidelines...</span>
       </div>

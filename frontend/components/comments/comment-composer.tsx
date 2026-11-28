@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { commentFeedback } from "@/lib/comments/presentation";
@@ -73,7 +74,11 @@ export function CommentComposer({
         }
       }}
     >
-      <Field data-invalid={overLimit || undefined} className="gap-1.5 sm:gap-2">
+      <Field
+        data-invalid={overLimit || Boolean(error) || undefined}
+        data-disabled={disabled || pending || busy || undefined}
+        className="gap-1.5 sm:gap-2"
+      >
         <FieldLabel htmlFor={id}>
           {recipientLabel ? `Comment for ${recipientLabel}` : "Your comment"}
         </FieldLabel>
@@ -108,18 +113,25 @@ export function CommentComposer({
             className="h-11 md:h-9 min-h-11 md:min-h-9 px-4 cursor-pointer touch-manipulation"
             disabled={disabled || pending || busy || !valid}
           >
-            {pending || busy ? "Sending…" : "Send comment"}
+            {pending || busy ? (
+              <>
+                <Spinner data-icon="inline-start" aria-hidden="true" />
+                <span>Sending…</span>
+              </>
+            ) : (
+              "Send comment"
+            )}
           </Button>
         </div>
         {overLimit ? (
-          <p id={`${id}-limit-error`} role="status" aria-live="polite" className="text-destructive text-xs sm:text-sm">
+          <FieldError id={`${id}-limit-error`} className="text-xs sm:text-sm">
             Shorten your comment to 1,000 characters or fewer.
-          </p>
+          </FieldError>
         ) : null}
         {error ? (
-          <p id={`${id}-error`} role="alert" className="text-destructive text-xs sm:text-sm">
+          <FieldError id={`${id}-error`} className="text-xs sm:text-sm">
             {error}
-          </p>
+          </FieldError>
         ) : null}
       </Field>
     </form>

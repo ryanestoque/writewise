@@ -5,15 +5,21 @@ import type { CriterionFilter, DiagnosticOverlayData, ActiveAnnotationHover } fr
 import { getAttentionItems } from "./types";
 import { OVERLAY_COLORS } from "./constants";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -111,42 +117,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 }: OverlayToolbarProps) {
   const [showLegend, setShowLegend] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const filterScrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
   const weakest = overlay?.summary.weakest_criterion;
-
-  const rafIdRef = useRef<number | null>(null);
-
-  const updateScrollState = useCallback(() => {
-    const el = filterScrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-
-  const handleResize = useCallback(() => {
-    if (rafIdRef.current !== null) return;
-    rafIdRef.current = requestAnimationFrame(() => {
-      rafIdRef.current = null;
-      updateScrollState();
-    });
-  }, [updateScrollState]);
-
-  useEffect(() => {
-    const el = filterScrollRef.current;
-    if (!el) return;
-    updateScrollState();
-    el.addEventListener("scroll", updateScrollState, { passive: true });
-    window.addEventListener("resize", handleResize);
-    return () => {
-      el.removeEventListener("scroll", updateScrollState);
-      window.removeEventListener("resize", handleResize);
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-    };
-  }, [updateScrollState, handleResize]);
 
   const attentionCounts = useMemo<Record<CriterionFilter, number>>(() => {
     if (!overlay) {
@@ -307,8 +278,65 @@ export const OverlayToolbar = memo(function OverlayToolbar({
     (hasGuideLines && Boolean(onToggleGuideLines)) ||
     visible;
 
+  const filterToggleItems = FILTERS.map((item) => {
+    const Icon = item.icon;
+    const isSelected = activeCriterion === item.id;
+    const count = attentionCounts[item.id] ?? 0;
+    const isWeakest = weakest === item.id;
+
+    return (
+      <ToggleGroupItem
+        key={item.id}
+        value={item.id}
+        size="sm"
+        disabled={!visible}
+        className={cn(
+          "shrink-0 h-11 @min-[540px]:h-8 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-colors",
+          isSelected
+            ? "bg-primary hover:bg-primary-hover text-primary-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground shadow-2xs font-semibold"
+            : "hover:bg-muted text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <Icon data-icon="inline-start" aria-hidden="true" />
+        <span className="hidden @min-[400px]:inline">{item.label}</span>
+        <span className="inline @min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
+        {isWeakest && !isSelected && count > 0 && (
+          <span
+            role="img"
+            className="size-1.5 rounded-full bg-band-1 shrink-0"
+            title="Recommended focus area"
+            aria-label="Recommended focus area"
+          >
+            <span className="sr-only">Recommended focus area</span>
+          </span>
+        )}
+        {count > 0 && (
+          <Badge
+            variant="secondary"
+            className={cn(
+              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+              isSelected
+                ? "bg-primary-foreground/20 text-primary-foreground"
+                : "bg-band-1/15 text-band-1-text border border-band-1/30"
+            )}
+          >
+            <span className="sr-only">({count} attention items)</span>
+            <span aria-hidden="true">{count}</span>
+          </Badge>
+        )}
+      </ToggleGroupItem>
+    );
+  });
+
   return (
-    <div ref={toolbarRef} className="@container flex flex-col gap-1.5 min-w-0 max-w-full">
+    <Collapsible
+      open={showLegend && visible}
+      onOpenChange={(next) => {
+        if (visible) setShowLegend(next);
+      }}
+      ref={toolbarRef}
+      className="@container flex flex-col gap-1.5 min-w-0 max-w-full"
+    >
       {/* Screen reader live region for practice area navigation announcements (WCAG 4.1.3) */}
       <div
         role="status"
@@ -349,16 +377,20 @@ export const OverlayToolbar = memo(function OverlayToolbar({
               <DropdownMenu>
                 <DropdownMenuTrigger
                   disabled={!visible}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 bg-surface dark:bg-card px-2.5 py-1.5 @min-[540px]:py-1 rounded-lg border border-border/70 text-xs shadow-2xs min-w-0 shrink-0 overflow-hidden cursor-pointer hover:bg-muted/70 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring touch-manipulation min-h-11 @min-[540px]:min-h-7",
-                    !visible && "opacity-50 cursor-not-allowed"
-                  )}
-                  aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
-                  title={visible ? "Select diagnostic criterion" : "Overlay is turned off"}
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-11 @min-[540px]:min-h-7 h-auto py-1.5 @min-[540px]:py-1 min-w-0 shrink-0 text-xs"
+                      aria-label={`Current guide: ${activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}. Click to select a diagnostic criterion.`}
+                      title={visible ? "Select diagnostic criterion" : "Overlay is turned off"}
+                    />
+                  }
                 >
                   {(() => {
                     const Icon = activeFilterMeta.icon;
-                    return <Icon className="size-3 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />;
+                    return <Icon data-icon="inline-start" className="text-primary" aria-hidden="true" />;
                   })()}
                   <span className="font-semibold text-foreground truncate min-w-0 max-w-[120px] @min-[380px]:max-w-[160px] @min-[600px]:max-w-none">
                     {activeCriterion === "all" ? "All Guides" : activeFilterMeta.label}
@@ -366,48 +398,50 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   {attentionCounts[activeCriterion] > 0 && (
                     <Badge
                       variant="secondary"
-                      className="px-1.5 py-0 h-4 text-[10px] font-bold tabular-nums rounded-full bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30 ml-0.5 shrink-0"
+                      className="px-1.5 py-0 h-4 text-[10px] font-bold tabular-nums rounded-full bg-band-1/15 text-band-1-text border border-band-1/30 shrink-0"
                     >
                       <span className="sr-only">({attentionCounts[activeCriterion]} attention items)</span>
                       <span aria-hidden="true">{attentionCounts[activeCriterion]}</span>
                     </Badge>
                   )}
-                  <ChevronDown className="size-3 text-muted-foreground shrink-0 ml-0.5 opacity-70" aria-hidden="true" />
+                  <ChevronDown data-icon="inline-end" className="text-muted-foreground opacity-70" aria-hidden="true" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-56 p-1 text-xs">
-                  {FILTERS.map((item) => {
-                    const ItemIcon = item.icon;
-                    const isSelected = activeCriterion === item.id;
-                    const count = attentionCounts[item.id] ?? 0;
-                    return (
-                      <DropdownMenuItem
-                        key={item.id}
-                        onClick={() => onChangeCriterion(item.id)}
-                        className={cn(
-                          "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer text-xs",
-                          isSelected && "bg-brand-50 dark:bg-brand-950/60 font-semibold text-brand-900 dark:text-brand-200"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <ItemIcon className="size-3.5 text-brand-700 dark:text-brand-300 shrink-0" aria-hidden="true" />
-                          <span className="truncate">{item.label}</span>
-                        </div>
-                        {count > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                              isSelected
-                                ? "bg-brand-200/60 text-brand-900 dark:bg-brand-900 dark:text-brand-200"
-                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
-                            )}
-                          >
-                            {count}
-                          </Badge>
-                        )}
-                      </DropdownMenuItem>
-                    );
-                  })}
+                  <DropdownMenuGroup>
+                    {FILTERS.map((item) => {
+                      const ItemIcon = item.icon;
+                      const isSelected = activeCriterion === item.id;
+                      const count = attentionCounts[item.id] ?? 0;
+                      return (
+                        <DropdownMenuItem
+                          key={item.id}
+                          onClick={() => onChangeCriterion(item.id)}
+                          className={cn(
+                            "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md cursor-pointer text-xs",
+                            isSelected && "bg-secondary font-semibold text-secondary-foreground"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <ItemIcon className="text-primary shrink-0" aria-hidden="true" />
+                            <span className="truncate">{item.label}</span>
+                          </div>
+                          {count > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                                isSelected
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-band-1/15 text-band-1-text border border-band-1/30"
+                              )}
+                            >
+                              {count}
+                            </Badge>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -417,45 +451,22 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                   variant="ghost"
                   size="sm"
                   onClick={() => onChangeCriterion("all")}
-                  className="h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors touch-manipulation shrink-0 flex items-center justify-center gap-1"
+                  className="h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground hover:text-foreground shrink-0"
                   title="Reset to show all guides"
                   aria-label="Reset to show all guides"
                 >
-                  <X className="size-3.5 @min-[540px]:size-3" aria-hidden="true" />
+                  <X data-icon="inline-start" aria-hidden="true" />
                   <span className="hidden @min-[380px]:inline">Show All</span>
                 </Button>
               )}
             </div>
             </>
           ) : (
-            <div className="relative min-w-0 flex-1 flex items-center">
-              {canScrollLeft && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  onClick={() => {
-                    filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
-                  }}
-                  aria-label="Scroll to see earlier criteria filters"
-                  className="@min-[640px]:hidden absolute left-0 z-10 size-8 min-h-11 min-w-11 rounded-full bg-background/95 text-muted-foreground shadow-xs border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
-                >
-                  <ChevronLeft aria-hidden="true" />
-                </Button>
-              )}
-
-              <div
-                ref={filterScrollRef}
-                className={cn(
-                  "flex items-center overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 @min-[640px]:overflow-visible transition-[mask-image]",
-                  canScrollLeft && canScrollRight
-                    ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] @min-[640px]:[mask-image:none]"
-                    : canScrollRight
-                      ? "[mask-image:linear-gradient(to_right,black_86%,transparent_100%)] @min-[640px]:[mask-image:none]"
-                      : canScrollLeft
-                        ? "[mask-image:linear-gradient(to_left,black_86%,transparent_100%)] @min-[640px]:[mask-image:none]"
-                        : "@min-[640px]:[mask-image:none]"
-                )}
+            <div className="min-w-0 flex-1">
+              <ScrollArea
+                orientation="horizontal"
+                viewportClassName="pb-2"
+                className="w-full min-w-0 @min-[640px]:hidden"
               >
                 <ToggleGroup
                   value={[activeCriterion]}
@@ -468,75 +479,27 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                     }
                   }}
                   aria-label="Worksheet diagnostic criteria filters"
-                  className="flex items-center gap-1 @min-[640px]:flex-wrap"
+                  className="flex w-max items-center gap-1"
                 >
-                  {FILTERS.map((item) => {
-                    const Icon = item.icon;
-                    const isSelected = activeCriterion === item.id;
-                    const count = attentionCounts[item.id] ?? 0;
-                    const isWeakest = weakest === item.id;
-
-                    return (
-                      <ToggleGroupItem
-                        key={item.id}
-                        value={item.id}
-                        size="sm"
-                        disabled={!visible}
-                        className={cn(
-                          "shrink-0 h-11 @min-[540px]:h-8 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-colors cursor-pointer touch-manipulation",
-                          isSelected
-                            ? "bg-primary hover:bg-primary-hover text-primary-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground shadow-2xs font-semibold"
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                          !visible && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <Icon className="size-3 shrink-0" aria-hidden="true" />
-                        <span className="hidden @min-[400px]:inline">{item.label}</span>
-                        <span className="inline @min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
-                        {isWeakest && !isSelected && count > 0 && (
-                          <span
-                            role="img"
-                            className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
-                            title="Recommended focus area"
-                            aria-label="Recommended focus area"
-                          >
-                            <span className="sr-only">Recommended focus area</span>
-                          </span>
-                        )}
-                        {count > 0 && (
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                              isSelected
-                                ? "bg-primary-foreground/20 text-primary-foreground"
-                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
-                            )}
-                          >
-                            <span className="sr-only">({count} attention items)</span>
-                            <span aria-hidden="true">{count}</span>
-                          </Badge>
-                        )}
-                      </ToggleGroupItem>
-                    );
-                  })}
+                  {filterToggleItems}
                 </ToggleGroup>
-              </div>
+              </ScrollArea>
 
-              {canScrollRight && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  onClick={() => {
-                    filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
-                  }}
-                  aria-label="Scroll to see more criteria filters"
-                  className="@min-[640px]:hidden absolute right-0 z-10 size-8 min-h-11 min-w-11 rounded-full bg-background/95 text-muted-foreground shadow-xs border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
-                >
-                  <ChevronRight aria-hidden="true" />
-                </Button>
-              )}
+              <ToggleGroup
+                value={[activeCriterion]}
+                multiple={false}
+                spacing={1}
+                disabled={!visible}
+                onValueChange={(vals) => {
+                  if (vals.length > 0) {
+                    onChangeCriterion(vals[0] as CriterionFilter);
+                  }
+                }}
+                aria-label="Worksheet diagnostic criteria filters"
+                className="hidden @min-[640px]:flex flex-wrap items-center gap-1"
+              >
+                {filterToggleItems}
+              </ToggleGroup>
             </div>
           )}
 
@@ -554,133 +517,130 @@ export const OverlayToolbar = memo(function OverlayToolbar({
 
         {/* Tier 2 / Secondary Controls: Stepper, Guideline Toggle, Legend, & Expanded Switch */}
         {hasSecondaryControls && (
-          <div className="flex items-center justify-between @min-[540px]:justify-end gap-1.5 pt-1.5 @min-[540px]:pt-0 border-t border-border/50 @min-[540px]:border-t-0 @min-[540px]:pl-2 @min-[540px]:border-l @min-[540px]:border-border/60 w-full @min-[540px]:w-auto shrink-0 min-w-0">
-            {/* Sequential Practice Area Stepper */}
-            {visible && attentionItems.length > 0 ? (
-              <div
-                role="group"
-                aria-label="Practice areas sequential navigation stepper"
-                className="flex items-center gap-1 bg-background/80 dark:bg-card/80 rounded-lg px-2 py-0.5 border border-border/70 text-xs shrink-0 shadow-2xs"
-              >
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden @min-[600px]:inline select-none">
-                  Focus
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={!visible}
-                  onClick={handlePrevAttention}
-                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-2 @min-[540px]:after:inset-0 after:content-['']"
-                  aria-label="Previous practice area (Key: Alt+[ or [)"
-                  title="Previous practice area (Alt+[ or [)"
+          <>
+            <Separator orientation="horizontal" className="@min-[540px]:hidden" />
+            <Separator orientation="vertical" className="hidden @min-[540px]:block h-5" />
+            <div className="flex items-center justify-between @min-[540px]:justify-end gap-1.5 w-full @min-[540px]:w-auto shrink-0 min-w-0">
+              {/* Sequential Practice Area Stepper */}
+              {visible && attentionItems.length > 0 ? (
+                <ButtonGroup
+                  aria-label="Practice areas sequential navigation stepper"
+                  className="items-center shrink-0"
                 >
-                  <ChevronLeft className="size-4 @min-[540px]:size-3" aria-hidden="true" />
-                </Button>
-                <span className="tabular-nums font-semibold text-foreground px-1 text-[11px] select-none">
-                  {currentIndex >= 0 ? currentIndex + 1 : 1}
-                  <span className="text-muted-foreground font-normal"> / </span>
-                  {attentionItems.length}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={!visible}
-                  onClick={handleNextAttention}
-                  className="relative size-8 @min-[540px]:size-7 p-0 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation flex items-center justify-center focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 after:absolute after:-inset-2 @min-[540px]:after:inset-0 after:content-['']"
-                  aria-label="Next practice area (Key: Alt+] or ])"
-                  title="Next practice area (Alt+] or ])"
-                >
-                  <ChevronRight className="size-4 @min-[540px]:size-3" aria-hidden="true" />
-                </Button>
-              </div>
-            ) : (
-              <div className="@min-[540px]:hidden" />
-            )}
-
-            {/* Utility buttons (Lines & Legend) + Expanded Switch */}
-            <div className="flex items-center gap-1 @min-[540px]:gap-1.5 shrink-0">
-              {hasGuideLines && onToggleGuideLines && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleGuideLines}
-                  className={cn(
-                    "h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 cursor-pointer transition-colors touch-manipulation",
-                    showGuideLines
-                      ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                  title={showGuideLines ? "Hide detected 3-line penmanship guidelines" : "Show detected 3-line penmanship guidelines"}
-                  aria-pressed={showGuideLines}
-                >
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
-                    <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
-                    <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
-                    <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
-                  <span className="hidden @min-[420px]:inline">Lines</span>
-                </Button>
+                  <ButtonGroupText className="hidden @min-[600px]:flex h-8 @min-[540px]:h-7 bg-background px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider select-none">
+                    Focus
+                  </ButtonGroupText>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    disabled={!visible}
+                    onClick={handlePrevAttention}
+                    className="size-8 @min-[540px]:size-7"
+                    aria-label="Previous practice area (Key: Alt+[ or [)"
+                    title="Previous practice area (Alt+[ or [)"
+                  >
+                    <ChevronLeft aria-hidden="true" />
+                  </Button>
+                  <ButtonGroupText className="h-8 @min-[540px]:h-7 bg-background px-2 text-xs font-semibold tabular-nums select-none">
+                    {currentIndex >= 0 ? currentIndex + 1 : 1}
+                    <span className="text-muted-foreground font-normal">/</span>
+                    {attentionItems.length}
+                  </ButtonGroupText>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    disabled={!visible}
+                    onClick={handleNextAttention}
+                    className="size-8 @min-[540px]:size-7"
+                    aria-label="Next practice area (Key: Alt+] or ])"
+                    title="Next practice area (Alt+] or ])"
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </Button>
+                </ButtonGroup>
+              ) : (
+                <div className="@min-[540px]:hidden" />
               )}
 
-              {visible && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowLegend((prev) => !prev)}
-                  className={cn(
-                    "relative h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1 cursor-pointer transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                    showLegend
-                      ? "bg-brand-100 text-brand-900 dark:bg-brand-950 dark:text-brand-200 font-semibold"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                  title="Toggle diagnostic symbols legend"
-                  aria-expanded={showLegend}
-                  aria-label="Toggle diagnostic symbols legend"
-                >
-                  <HelpCircle className="size-3.5" aria-hidden="true" />
-                  <span className="hidden @min-[420px]:inline">Legend</span>
-                </Button>
-              )}
+              {/* Utility buttons (Lines & Legend) + Expanded Switch */}
+              <div className="flex items-center gap-1 @min-[540px]:gap-1.5 shrink-0">
+                {hasGuideLines && onToggleGuideLines && (
+                  <Toggle
+                    variant="outline"
+                    size="sm"
+                    pressed={Boolean(showGuideLines)}
+                    onPressedChange={() => onToggleGuideLines()}
+                    className="h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 aria-pressed:bg-secondary aria-pressed:text-secondary-foreground aria-pressed:border-primary/30 aria-pressed:font-semibold"
+                    title={showGuideLines ? "Hide detected 3-line penmanship guidelines" : "Show detected 3-line penmanship guidelines"}
+                  >
+                    <svg data-icon="inline-start" width="13" height="13" viewBox="0 0 14 14" fill="none" className="shrink-0" aria-hidden="true">
+                      <line x1="1" y1="4" x2="13" y2="4" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+                      <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.6" strokeDasharray="2 2" />
+                      <line x1="1" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
+                    <span className="hidden @min-[420px]:inline">Lines</span>
+                  </Toggle>
+                )}
 
-              {/* Expanded Switch with Label */}
-              <div className="hidden @min-[540px]:flex items-center gap-1.5 pl-2 border-l border-border/60 shrink-0">
-                <Switch
-                  id="toggle-diagnostic-overlay-desktop"
-                  aria-label={isParentView ? "Toggle writing marks on worksheet" : "Toggle handwriting diagnostic overlay"}
-                  checked={visible}
-                  onCheckedChange={onToggleVisible}
-                  className="cursor-pointer scale-90 @min-[540px]:scale-75 touch-manipulation"
-                />
-                <Label
-                  htmlFor="toggle-diagnostic-overlay-desktop"
-                  className="text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden @min-[460px]:inline"
-                >
-                  {isParentView
-                    ? visible
-                      ? "Writing marks on"
-                      : "Writing marks off"
-                    : visible
-                      ? "Overlay on"
-                      : "Overlay off"}
-                </Label>
+                {visible && (
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant={showLegend ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-11 @min-[540px]:h-7 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg"
+                        title="Toggle diagnostic symbols legend"
+                        aria-label="Toggle diagnostic symbols legend"
+                      />
+                    }
+                  >
+                    <HelpCircle data-icon="inline-start" aria-hidden="true" />
+                    <span className="hidden @min-[420px]:inline">Legend</span>
+                  </CollapsibleTrigger>
+                )}
+
+                <Separator orientation="vertical" className="hidden @min-[540px]:block h-5" />
+
+                {/* Expanded Switch with Label */}
+                <Field orientation="horizontal" className="hidden @min-[540px]:flex w-auto items-center gap-1.5 shrink-0">
+                  <Switch
+                    id="toggle-diagnostic-overlay-desktop"
+                    size="sm"
+                    aria-label={isParentView ? "Toggle writing marks on worksheet" : "Toggle handwriting diagnostic overlay"}
+                    checked={visible}
+                    onCheckedChange={onToggleVisible}
+                    className="cursor-pointer touch-manipulation"
+                  />
+                  <FieldLabel
+                    htmlFor="toggle-diagnostic-overlay-desktop"
+                    className="text-xs @min-[540px]:text-[11px] font-medium text-muted-foreground cursor-pointer select-none whitespace-nowrap hidden @min-[460px]:inline"
+                  >
+                    {isParentView
+                      ? visible
+                        ? "Writing marks on"
+                        : "Writing marks off"
+                      : visible
+                        ? "Overlay on"
+                        : "Overlay off"}
+                  </FieldLabel>
+                </Field>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
       {/* 3. In-Situ Visual Guide Legend (Collapsible) */}
-      {showLegend && visible && (
+      <CollapsibleContent>
         <div
           role="region"
           aria-label={isParentView ? "Writing marks guide" : "Diagnostic guide legend"}
-          className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2 transition-opacity animate-in fade-in duration-150 motion-reduce:animate-none"
+          className="p-3 rounded-xl bg-card border border-border/80 shadow-warm text-xs flex flex-col gap-2"
         >
-          <div className="flex items-center justify-between pb-1 border-b border-border/50">
+          <div className="flex items-center justify-between">
             <span className="font-semibold text-foreground text-xs">
               {isParentView
                 ? "What the marks on the worksheet mean"
@@ -689,14 +649,15 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="icon-xs"
               onClick={() => setShowLegend(false)}
-              className="relative size-11 sm:size-7 min-h-11 min-w-11 sm:min-h-[28px] sm:min-w-[28px] p-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+              className="text-muted-foreground hover:text-foreground"
               aria-label="Close guide legend"
             >
-              <X className="size-4 sm:size-3.5" aria-hidden="true" />
+              <X aria-hidden="true" />
             </Button>
           </div>
+          <Separator />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1 text-[11px]">
             <div className="flex items-start gap-2">
@@ -773,7 +734,7 @@ export const OverlayToolbar = memo(function OverlayToolbar({
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 });

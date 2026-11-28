@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { BandBadge } from "@/components/shared/band-badge";
 import { BandPositionBar } from "@/components/shared/band-position-bar";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -164,12 +165,17 @@ export function CriterionFeedbackRow({
         onOpenChange={() => onInspect()}
         className={cn(
           "transition-colors",
-          isActive && "bg-brand-50/70 dark:bg-brand-950/40"
+          isActive && "bg-secondary/60"
         )}
       >
         <CollapsibleTrigger
-          type="button"
-          className="group w-full flex items-center justify-between gap-3 px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 min-h-11 sm:min-h-10"
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              className="group h-auto w-full justify-between gap-3 rounded-none px-4 py-3 font-normal hover:bg-muted/30 min-h-11 sm:min-h-10"
+            />
+          }
         >
           {headerContent}
         </CollapsibleTrigger>
@@ -177,7 +183,7 @@ export function CriterionFeedbackRow({
         {hasDetails && (
           <CollapsibleContent
             id={`diagnostic-note-${criterionKey}`}
-            className="px-4 pb-3.5 pt-0.5 space-y-2"
+            className="flex flex-col gap-2 px-4 pb-3.5 pt-0.5"
           >
             {detailsBody}
           </CollapsibleContent>
@@ -190,7 +196,7 @@ export function CriterionFeedbackRow({
     <div
       className={cn(
         "transition-colors",
-        isActive && "bg-brand-50/70 dark:bg-brand-950/40"
+        isActive && "bg-secondary/60"
       )}
     >
       <div className="flex items-center justify-between gap-3 px-4 py-3">
@@ -200,7 +206,7 @@ export function CriterionFeedbackRow({
       {isExpanded && (
         <div
           id={`diagnostic-note-${criterionKey}`}
-          className="px-4 pb-3.5 pt-0.5 space-y-2"
+          className="flex flex-col gap-2 px-4 pb-3.5 pt-0.5"
         >
           {detailsBody}
         </div>
