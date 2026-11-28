@@ -33,13 +33,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from "@/components/shared/responsive-modal";
 import { Field, FieldGroup, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -172,7 +173,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <DialogFooter>
+      <ResponsiveModalFooter className="px-0 md:px-0">
         <Button
           className="min-h-11 md:min-h-9"
           type="button"
@@ -192,7 +193,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
             "Return worksheet"
           )}
         </Button>
-      </DialogFooter>
+      </ResponsiveModalFooter>
     </form>
   );
 }
@@ -508,24 +509,26 @@ export function SubmissionLifecycleControls({
 
         {releaseConfirmDialog}
 
-        <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
-          <DialogContent finalFocus={focusTarget}>
-            <DialogHeader>
-              <DialogTitle>Return worksheet</DialogTitle>
-              <DialogDescription>
+        <ResponsiveModal open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
+          <ResponsiveModalContent finalFocus={focusTarget}>
+            <ResponsiveModalHeader>
+              <ResponsiveModalTitle>Return worksheet</ResponsiveModalTitle>
+              <ResponsiveModalDescription>
                 Request another attempt from {submission.student.full_name}. The existing photo and
                 rubric are kept.
-              </DialogDescription>
-            </DialogHeader>
-            {returnOpen && (
-              <ReturnForm
-                key={submission.id}
-                submission={submission}
-                onDone={() => setReturnOpen(false)}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+              </ResponsiveModalDescription>
+            </ResponsiveModalHeader>
+            <ResponsiveModalBody className="px-5 py-2 md:p-0">
+              {returnOpen && (
+                <ReturnForm
+                  key={submission.id}
+                  submission={submission}
+                  onDone={() => setReturnOpen(false)}
+                />
+              )}
+            </ResponsiveModalBody>
+          </ResponsiveModalContent>
+        </ResponsiveModal>
       </div>
     );
   }
@@ -633,24 +636,26 @@ export function SubmissionLifecycleControls({
         )}
       </CardContent>
       {releaseConfirmDialog}
-      <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
-        <DialogContent finalFocus={focusTarget}>
-          <DialogHeader>
-            <DialogTitle>Return worksheet</DialogTitle>
-            <DialogDescription>
+      <ResponsiveModal open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
+        <ResponsiveModalContent finalFocus={focusTarget}>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>Return worksheet</ResponsiveModalTitle>
+            <ResponsiveModalDescription>
               Request another attempt from {submission.student.full_name}. The existing photo and
               rubric are kept.
-            </DialogDescription>
-          </DialogHeader>
-          {returnOpen && (
-            <ReturnForm
-              key={submission.id}
-              submission={submission}
-              onDone={() => setReturnOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <ResponsiveModalBody className="px-5 py-2 md:p-0">
+            {returnOpen && (
+              <ReturnForm
+                key={submission.id}
+                submission={submission}
+                onDone={() => setReturnOpen(false)}
+              />
+            )}
+          </ResponsiveModalBody>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </Card>
   );
 }
@@ -1001,7 +1006,7 @@ function WorkSettingsForm({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <DialogFooter>
+      <ResponsiveModalFooter className="px-0 md:px-0">
         <Button
           className="min-h-11 md:min-h-9"
           type="button"
@@ -1025,7 +1030,7 @@ function WorkSettingsForm({
             "Save changes"
           )}
         </Button>
-      </DialogFooter>
+      </ResponsiveModalFooter>
     </form>
   );
 }
@@ -1061,18 +1066,20 @@ export function StudentWorkControls(props: {
           Deadline & attempt
         </Button>
       )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent finalFocus={trigger}>
-          <DialogHeader>
-            <DialogTitle>Student Deadline & Graded Worksheet</DialogTitle>
-            <DialogDescription className="sr-only">
+      <ResponsiveModal open={open} onOpenChange={setOpen}>
+        <ResponsiveModalContent finalFocus={trigger}>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>Student Deadline & Graded Worksheet</ResponsiveModalTitle>
+            <ResponsiveModalDescription className="sr-only">
               Set an individual deadline extension or choose which handwriting attempt is counted for{" "}
               {props.studentName}.
-            </DialogDescription>
-          </DialogHeader>
-          {open && <WorkSettingsForm {...props} onDone={() => setOpen(false)} />}
-        </DialogContent>
-      </Dialog>
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <ResponsiveModalBody className="px-5 py-2 md:p-0">
+            {open && <WorkSettingsForm {...props} onDone={() => setOpen(false)} />}
+          </ResponsiveModalBody>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </>
   );
 }
@@ -1203,27 +1210,28 @@ export function ReleaseActivityButton({
           {receipt}
         </span>
       )}
-      <Dialog
+      <ResponsiveModal
         open={open}
         onOpenChange={(next) => {
           if (!mutation.isPending) setOpen(next);
         }}
       >
-        <DialogContent finalFocus={focusTarget}>
-          <DialogHeader>
-            <DialogTitle>
+        <ResponsiveModalContent finalFocus={focusTarget}>
+          <ResponsiveModalHeader>
+            <ResponsiveModalTitle>
               {step === "review"
                 ? `Review what parents will see (${count} eligible)`
                 : `Release ${hasPointGrades ? "results and grades" : "worksheet results"}?`}
-            </DialogTitle>
-            <DialogDescription>
+            </ResponsiveModalTitle>
+            <ResponsiveModalDescription>
               Share all eligible worksheet results{hasPointGrades ? " and point grades" : ""} for
               this activity across its assigned sections.{" "}
               {hasPointGrades && "This includes draft overrides and zeros, even without uploads. "}
               Excused work is skipped. A worksheet&apos;s assessment and diagnostic feedback are
               shared only when that attempt is scored.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
+          <ResponsiveModalBody className="px-5 py-2 md:p-0 flex flex-col gap-4">
           {step === "review" ? (
             <div className="flex flex-col gap-4">
               {isFiltered && (
@@ -1329,7 +1337,8 @@ export function ReleaseActivityButton({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <DialogFooter className="sm:flex-col sm:items-stretch">
+          </ResponsiveModalBody>
+          <ResponsiveModalFooter className="sm:flex-col sm:items-stretch">
             {step === "confirm" && (
               <Button
                 variant="outline"
@@ -1378,9 +1387,9 @@ export function ReleaseActivityButton({
                 "Release all eligible results"
               )}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveModalFooter>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
     </span>
   );
 }

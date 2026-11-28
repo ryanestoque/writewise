@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayFooter,
+  ResponsiveRichOverlayTitle,
+  ResponsiveRichOverlayDescription,
+} from "@/components/shared/responsive-rich-overlay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
@@ -940,9 +940,9 @@ export function SubmissionDetailContent({
       <div className="min-w-0 flex-1 order-1">
         <div className="flex items-center gap-2 flex-wrap">
           {variant === "modal" ? (
-            <DialogTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
+            <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">
               {submission.student?.full_name ?? "Student"}
-            </DialogTitle>
+            </ResponsiveRichOverlayTitle>
           ) : (
             <h1 className="font-heading text-base sm:text-xl md:text-2xl font-semibold tracking-tight text-foreground truncate">
               {submission.student?.full_name ?? "Student"}
@@ -951,7 +951,7 @@ export function SubmissionDetailContent({
           <SubmissionLifecycleControls submission={submission} variant="header" />
         </div>
         {variant === "modal" ? (
-          <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-1.5 gap-y-0.5 flex-wrap">
+          <ResponsiveRichOverlayDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-1.5 gap-y-0.5 flex-wrap">
             <span className="shrink-0">
               Uploaded by{" "}
               {submission.uploader_role === "parent" ? "Parent" : "Teacher"}
@@ -966,7 +966,7 @@ export function SubmissionDetailContent({
             >
               {formatDateFull(submission.created_at)}
             </time>
-          </DialogDescription>
+          </ResponsiveRichOverlayDescription>
         ) : (
           <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-x-1.5 gap-y-0.5 flex-wrap">
             <span className="shrink-0">
@@ -1036,9 +1036,9 @@ export function SubmissionDetailContent({
 
       {/* Header */}
       {variant === "modal" ? (
-        <DialogHeader className="pb-2.5 sm:pb-3 shrink-0 text-left">
+        <ResponsiveRichOverlayHeader className="pb-2.5 sm:pb-3 shrink-0 text-left">
           {headerContent}
-        </DialogHeader>
+        </ResponsiveRichOverlayHeader>
       ) : (
         <header className="pb-2.5 sm:pb-3">
           {headerContent}
@@ -1327,31 +1327,31 @@ export function SubmissionDetailContent({
                     </TabsList>
 
                     {/* COMMENTS TAB PANEL (Worksheet remains pinned on left!) */}
-                    <TabsContent
-                      value="comments"
-                      id="submission-tabpanel-comments"
-                      className="rounded-xl border border-border/80 bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
-                    >
-                      {open && (commentUserId ? (
-                        <SubmissionCommentThread
-                          key={`${commentUserId}:${submission.id}`}
-                          userId={commentUserId}
-                          target={{ submissionId: submission.id }}
-                          location={{
-                            submissionId: submission.id,
-                            activityId: submission.activity_id,
-                            studentId: submission.student_id,
-                          }}
-                          studentName={submission.student?.full_name}
-                          compactHeader
-                          open
-                        />
-                      ) : (
-                        <div className="p-4 flex flex-col gap-3" role="status" aria-label="Loading conversation">
-                          <Skeleton className="h-6 w-48 rounded-md" />
-                          <Skeleton className="h-16 w-full rounded-xl" />
-                        </div>
-                      ))}
+                    <TabsContent value="comments" id="submission-tabpanel-comments">
+                      <Card className="py-0 overflow-hidden flex flex-col min-h-80 shadow-xs">
+                        <CardContent className="p-0 flex flex-col flex-1 min-h-0">
+                          {open && (commentUserId ? (
+                            <SubmissionCommentThread
+                              key={`${commentUserId}:${submission.id}`}
+                              userId={commentUserId}
+                              target={{ submissionId: submission.id }}
+                              location={{
+                                submissionId: submission.id,
+                                activityId: submission.activity_id,
+                                studentId: submission.student_id,
+                              }}
+                              studentName={submission.student?.full_name}
+                              compactHeader
+                              open
+                            />
+                          ) : (
+                            <div className="p-4 flex flex-col gap-3" role="status" aria-label="Loading conversation">
+                              <Skeleton className="h-6 w-48 rounded-md" />
+                              <Skeleton className="h-16 w-full rounded-xl" />
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     {/* ASSESSMENT / RUBRIC PANEL */}
@@ -1755,7 +1755,7 @@ export function SubmissionDetailContent({
       {variant === "modal" ? (
         <>
           <Separator />
-          <DialogFooter className="pt-3 sm:pt-3.5 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
+          <ResponsiveRichOverlayFooter className="pt-3 sm:pt-3.5 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
             </div>
@@ -1768,7 +1768,7 @@ export function SubmissionDetailContent({
             >
               Close
             </Button>
-          </DialogFooter>
+          </ResponsiveRichOverlayFooter>
         </>
       ) : null}
 

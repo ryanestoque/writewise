@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 import { getBandFromScore, type ScoreBand } from "@/lib/utils/scoring";
 
 interface BandPositionBarProps {
@@ -33,11 +34,10 @@ export function BandPositionBar({
   return (
     <div className={cn("flex w-full flex-col gap-1", className)}>
       <div className="w-full flex items-center gap-2.5">
-        <div
-          role="progressbar"
-          aria-valuenow={numericScore !== null ? Math.round(numericScore) : undefined}
-          aria-valuemin={0}
-          aria-valuemax={100}
+        <Progress
+          value={numericScore !== null ? Math.round(numericScore) : null}
+          min={0}
+          max={100}
           aria-valuetext={ariaValueText}
           aria-label={
             ariaLabel ??
@@ -45,32 +45,36 @@ export function BandPositionBar({
               ? `Diagnostic score position: ${Math.round(numericScore)}%`
               : "Diagnostic score not yet available")
           }
-          className={cn(
-            "relative flex-1 rounded-full overflow-hidden bg-muted/40 border border-border/50 grid grid-cols-4 p-0.5",
+          className="flex-1 gap-0"
+          trackClassName={cn(
+            "relative flex-1 rounded-full overflow-hidden bg-muted/40 border border-border/50 grid grid-cols-4 items-stretch p-0.5",
             height === "sm" ? "h-2.5" : "h-3.5"
           )}
-        >
-          {/* 4 Colored Band Zones: Clay, Gold, Sage, Forest */}
-          <div className="bg-band-1/45 rounded-l-full border-r border-background/80" />
-          <div className="bg-band-2/45 border-r border-background/80" />
-          <div className="bg-band-3/45 border-r border-background/80" />
-          <div className="bg-band-4/45 rounded-r-full" />
+          trackChildren={
+            <>
+              {/* 4 Colored Band Zones: Clay, Gold, Sage, Forest */}
+              <div className="bg-band-1/45 rounded-l-full border-r border-background/80" />
+              <div className="bg-band-2/45 border-r border-background/80" />
+              <div className="bg-band-3/45 border-r border-background/80" />
+              <div className="bg-band-4/45 rounded-r-full" />
 
-          {/* Marker indicator for current score */}
-          {numericScore !== null && (
-            <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-10 motion-reduce:transition-none"
-              style={{ left: `${numericScore}%` }}
-            >
-              <div
-                className={cn(
-                  "rounded-full bg-foreground shadow-xs border-2 border-background ring-1 ring-border/60",
-                  height === "sm" ? "size-2.5" : "size-3.5"
-                )}
-              />
-            </div>
-          )}
-        </div>
+              {/* Marker indicator for current score */}
+              {numericScore !== null && (
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-10 motion-reduce:transition-none"
+                  style={{ left: `${numericScore}%` }}
+                >
+                  <div
+                    className={cn(
+                      "rounded-full bg-foreground shadow-xs border-2 border-background ring-1 ring-border/60",
+                      height === "sm" ? "size-2.5" : "size-3.5"
+                    )}
+                  />
+                </div>
+              )}
+            </>
+          }
+        />
 
         {showLabel && (
           <span className="font-sans text-xs font-semibold tabular-nums text-foreground min-w-[2.5rem] text-right shrink-0">

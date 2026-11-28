@@ -10,14 +10,16 @@ import type { components } from "@/types/api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from "@/components/shared/responsive-modal";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
@@ -205,22 +207,22 @@ export function GradebookBulkDialog({
     (isMultiSectionRelease && !crossSectionAcknowledged);
 
   return (
-    <Dialog
+    <ResponsiveModal
       open={open}
       onOpenChange={(value) => {
         if (!pending) onOpenChange(value);
       }}
     >
-      <DialogContent className="sm:max-w-lg max-h-[min(90dvh,calc(100dvh-2rem))] overflow-y-auto">
-        <DialogHeader className="flex flex-col gap-1.5">
-          <DialogTitle className="text-lg font-semibold tracking-tight font-heading">
+      <ResponsiveModalContent className="sm:max-w-lg max-h-[min(90dvh,calc(100dvh-2rem))] flex flex-col overflow-hidden">
+        <ResponsiveModalHeader className="flex flex-col gap-1.5 shrink-0">
+          <ResponsiveModalTitle className="text-lg font-semibold tracking-tight font-heading">
             {operation === "zero"
               ? "Mark uncollected work with draft zeros"
               : operation === "excuse"
                 ? "Excuse selected work"
                 : "Release grades to parents"}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription className="text-xs text-muted-foreground leading-relaxed">
             {operation === "release" ? (
               <>
                 Publish validated cursive diagnostic scores and per-criterion feedback for{" "}
@@ -236,22 +238,24 @@ export function GradebookBulkDialog({
                   : "Their work will be excluded from both sides of the points total, and reminders will stop."
               }`
             )}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
+
+        <ResponsiveModalBody className="flex flex-col gap-3.5 px-5 py-2 md:p-0">
 
         {operation === "release" && (
           <div className="flex flex-col gap-3.5">
             {/* Section Publication Overview */}
-            <div className="rounded-lg border border-border/80 bg-card overflow-hidden text-xs">
-              <div className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex items-center justify-between">
+            <Card size="sm" className="rounded-lg border-border/80 py-0 overflow-hidden text-xs">
+              <CardHeader className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex flex-row items-center justify-between space-y-0">
                 <span className="font-medium text-foreground">Assigned Sections</span>
                 <span className="font-semibold tabular-nums text-foreground">
                   {totalReadyAcrossSections}{" "}
                   {totalReadyAcrossSections === 1 ? "grade ready" : "grades ready"}
                 </span>
-              </div>
+              </CardHeader>
 
-              <div className="divide-y divide-border/40">
+              <CardContent className="p-0 divide-y divide-border/40">
                 {assignedSections.map((sec) => (
                   <div
                     key={sec.id}
@@ -291,8 +295,8 @@ export function GradebookBulkDialog({
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Zero Ready Alert (Actionable Recovery & Accessibility) */}
             {isZeroReadyTotal ? (
@@ -387,8 +391,9 @@ export function GradebookBulkDialog({
             <AlertDescription className="text-xs">{error}</AlertDescription>
           </Alert>
         )}
+        </ResponsiveModalBody>
 
-        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40">
+        <ResponsiveModalFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40 shrink-0">
           {isZeroReadyTotal ? (
             <Button onClick={() => onOpenChange(false)} className="min-h-9">
               Back to gradebook
@@ -420,8 +425,8 @@ export function GradebookBulkDialog({
               )}
             </>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveModalFooter>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }

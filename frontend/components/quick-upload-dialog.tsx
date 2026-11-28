@@ -9,13 +9,15 @@ import {
   useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle } from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayFooter,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
@@ -144,7 +146,7 @@ export function QuickUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
 
   return (
-    <Dialog
+    <ResponsiveRichOverlay
       open={open}
       onOpenChange={(nextOpen) => {
         // Prevent closing via backdrop/escape while upload mutation is in-flight
@@ -154,9 +156,10 @@ export function QuickUploadDialog({
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent
+      <ResponsiveRichOverlayContent
         showCloseButton={!isUploading}
         className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
+        sheetClassName="p-0 flex flex-col gap-0"
       >
         {/* Only mount UploadFlow while open so closed routes do not fire background queries */}
         {open ? (
@@ -168,8 +171,8 @@ export function QuickUploadDialog({
             onUploadingChange={setIsUploading}
           />
         ) : null}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveRichOverlayContent>
+    </ResponsiveRichOverlay>
   );
 }
 
@@ -701,14 +704,14 @@ function UploadFlow({
         {stepAnnouncement}
       </span>
 
-      <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-3.5 border-b border-border">
+      <ResponsiveRichOverlayHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-3.5 border-b border-border">
         <div className="min-w-0 pr-10 sm:pr-8">
-          <DialogTitle className="text-base sm:text-lg font-semibold text-foreground">
+          <ResponsiveRichOverlayTitle className="text-base sm:text-lg font-semibold text-foreground">
             Upload Student Worksheet
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </ResponsiveRichOverlayTitle>
+          <ResponsiveRichOverlayDescription className="sr-only">
             Upload student cursive worksheets for automated assessment and feedback.
-          </DialogDescription>
+          </ResponsiveRichOverlayDescription>
         </div>
 
         {/* 3-Step Interactive Progress Stepper (Anchored Across All Steps) */}
@@ -794,7 +797,7 @@ function UploadFlow({
             })}
           </ol>
         </nav>
-      </DialogHeader>
+      </ResponsiveRichOverlayHeader>
 
       <div className="px-4 sm:px-6 py-4 max-h-[min(72dvh,calc(100dvh-10rem))] overflow-y-auto overscroll-contain">
         {isUploading ? (
@@ -1461,8 +1464,9 @@ function UploadFlow({
                   </Alert>
                 )}
 
-                <div className="rounded-2xl border border-border bg-card p-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
+                <Card size="sm" className="rounded-2xl py-4">
+                  <CardContent className="px-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <FileImageIcon className="size-5 text-primary shrink-0" />
                       <div className="truncate">
@@ -1540,7 +1544,8 @@ function UploadFlow({
                       />
                     </div>
                   )}
-                </div>
+                  </CardContent>
+                </Card>
               </>
             )}
 
@@ -1618,7 +1623,7 @@ function UploadFlow({
 
       {/* Footer actions for Steps 1–3 */}
       {!isUploading && step <= 3 && (
-        <DialogFooter className="border-t border-border bg-muted/20 px-4 py-3 sm:px-6 sm:justify-between">
+        <ResponsiveRichOverlayFooter className="border-t border-border bg-muted/20 px-4 py-3 sm:px-6 sm:justify-between">
           {step === 1 && (
             <Button
               variant="outline"
@@ -1670,7 +1675,7 @@ function UploadFlow({
               Submit
             </Button>
           )}
-        </DialogFooter>
+        </ResponsiveRichOverlayFooter>
       )}
     </>
   );

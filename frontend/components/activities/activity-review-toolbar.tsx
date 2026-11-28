@@ -3,13 +3,10 @@
 import {
   memo,
   type RefObject,
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
   useMemo,
 } from "react";
-import { SearchInput } from "@/components/ui/search-input";
+import { SearchInput } from "@/components/shared/search-input";
+import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -28,9 +25,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   SlidersHorizontal,
   CheckSquare,
@@ -39,8 +34,6 @@ import {
   ChevronDown,
   Check,
   MessageSquare,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { reviewFilterHelp, type LegacyReviewFilter } from "@/lib/utils/activity-attempt-review";
 import { cn } from "@/lib/utils";
@@ -58,9 +51,6 @@ const secondaryFilters: { id: SubmissionFilter; label: string }[] = [
   { id: "needs_action", label: "Needs action (any)" },
   { id: "unread_comments", label: "Unread comments" },
 ];
-
-const PILL_BASE_CLASS =
-  "relative h-auto min-h-11 gap-1.5 rounded-lg border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all cursor-pointer whitespace-nowrap touch-manipulation hover:bg-muted/60 hover:text-foreground sm:min-h-8 data-pressed:border-primary data-pressed:bg-primary data-pressed:font-semibold data-pressed:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground";
 
 export interface ActivityReviewToolbarProps {
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -141,123 +131,50 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
     ? submissionFilterItems.find((f) => f.id === activeSecondaryItem.id)?.count
     : undefined;
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const getViewport = useCallback(() => {
-    return (
-      scrollAreaRef.current?.querySelector<HTMLElement>(
-        '[data-slot="scroll-area-viewport"]'
-      ) ?? null
-    );
-  }, []);
-
-  const checkScroll = useCallback(() => {
-    const el = getViewport();
-    if (!el) return;
-    const { scrollLeft, scrollWidth, clientWidth } = el;
-    setCanScrollLeft(scrollLeft > 4);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 4);
-  }, [getViewport]);
-
-  useEffect(() => {
-    const el = getViewport();
-    if (!el) return;
-
-    const rafId = window.requestAnimationFrame(() => checkScroll());
-
-    const handleScroll = () => checkScroll();
-    el.addEventListener("scroll", handleScroll, { passive: true });
-
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => checkScroll());
-      resizeObserver.observe(el);
-      if (el.firstElementChild) {
-        resizeObserver.observe(el.firstElementChild);
-      }
-    } else {
-      window.addEventListener("resize", handleScroll);
-    }
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      el.removeEventListener("scroll", handleScroll);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      } else {
-        window.removeEventListener("resize", handleScroll);
-      }
-    };
-  }, [checkScroll, getViewport]);
-
-  // Scroll active filter pill into view smoothly when changed
-  useEffect(() => {
-    const el = getViewport();
-    if (!el) return;
-
-    const activeEl = el.querySelector<HTMLElement>('[data-pressed], [aria-pressed="true"]');
-    if (activeEl) {
-      activeEl.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-        block: "nearest",
-        inline: "nearest",
+  const primaryPillItems = useMemo<FilterPillItem<string>[]>(() => {
+    const items: FilterPillItem<string>[] = [
+      { id: "all", label: "All Students", count: allWorkFilter?.count },
+      {
+        id: "needs_scoring",
+        label: "To Grade",
+        count: needsScoringCount > 0 ? needsScoringCount : undefined,
+        badgeClassName:
+          statusFilter !== "needs_scoring" ? "bg-primary/10 text-primary font-bold" : undefined,
+      },
+      {
+        id: "missing",
+        label: "Missing",
+        count: missingCount > 0 ? missingCount : undefined,
+      },
+      {
+        id: "released",
+        label: "Done & Released",
+        count: releasedCount > 0 ? releasedCount : undefined,
+      },
+    ];
+    if (unreadCommentsCount > 0) {
+      items.push({
+        id: "unread_comments",
+        label: "Unread Comments",
+        icon: MessageSquare,
+        count: unreadCommentsCount,
+        className:
+          statusFilter !== "unread_comments"
+            ? "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+            : undefined,
+        badgeClassName:
+          statusFilter !== "unread_comments" ? "bg-primary/15 text-primary" : undefined,
       });
     }
-  }, [getViewport, statusFilter]);
-
-  const handleScrollLeft = () => {
-    const el = getViewport();
-    if (el) {
-      el.scrollBy({
-        left: -180,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
-          : "smooth",
-      });
-    }
-  };
-
-  const handleScrollRight = () => {
-    const el = getViewport();
-    if (el) {
-      el.scrollBy({
-        left: 180,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant"
-          : "smooth",
-      });
-    }
-  };
-
-  const maskStyle: React.CSSProperties = useMemo(() => {
-    if (canScrollLeft && canScrollRight) {
-      return {
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-        maskImage:
-          "linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent)",
-      };
-    }
-    if (canScrollLeft) {
-      return {
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 24px, black 100%)",
-        maskImage:
-          "linear-gradient(to right, transparent, black 24px, black 100%)",
-      };
-    }
-    if (canScrollRight) {
-      return {
-        WebkitMaskImage:
-          "linear-gradient(to right, black 0%, black calc(100% - 24px), transparent)",
-        maskImage:
-          "linear-gradient(to right, black 0%, black calc(100% - 24px), transparent)",
-      };
-    }
-    return {};
-  }, [canScrollLeft, canScrollRight]);
+    return items;
+  }, [
+    allWorkFilter?.count,
+    needsScoringCount,
+    missingCount,
+    releasedCount,
+    unreadCommentsCount,
+    statusFilter,
+  ]);
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -265,244 +182,91 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
       <Card size="sm" className="p-3 sm:rounded-2xl">
         <CardContent className="p-0 flex flex-col gap-2.5 sm:gap-3">
           <div className="flex flex-col justify-between gap-2.5 sm:gap-3 md:flex-row md:items-center">
-            {/* Status filter pills track with scroll indicators */}
-            <div className="group/pills relative flex min-w-0 flex-1 items-center">
-              {canScrollLeft && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  onClick={handleScrollLeft}
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  className="absolute left-0 z-10 size-8 sm:size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted"
-                >
-                  <ChevronLeft aria-hidden="true" />
-                </Button>
-              )}
-
-              <ScrollArea
-                ref={scrollAreaRef}
-                orientation="horizontal"
-                hideScrollbar
-                style={maskStyle}
-                viewportClassName="overscroll-x-contain"
-                className="w-full min-w-0 touch-pan-x touch-pan-y transition-[mask-image]"
-              >
-                <div className="flex w-max items-center gap-1.5 py-0.5">
-                  <ToggleGroup
-                    value={[statusFilter]}
-                    multiple={false}
-                    spacing={1.5}
-                    onValueChange={(vals) => {
-                      if (vals.length > 0) {
-                        if (viewMode !== "grouped") onViewModeChange("grouped");
-                        onStatusFilterChange(vals[0] as SubmissionFilter);
+            <FilterPills
+              items={primaryPillItems}
+              value={statusFilter}
+              onChange={(next) => {
+                if (viewMode !== "grouped") onViewModeChange("grouped");
+                onStatusFilterChange(next as SubmissionFilter);
+              }}
+              ariaLabel="Student work inbox filters"
+              pillClassName="min-h-11 whitespace-nowrap sm:min-h-8"
+              trailing={
+                <ButtonGroup className="shrink-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant={isSecondaryActive ? "default" : "outline"}
+                          size="sm"
+                          aria-pressed={isSecondaryActive}
+                          className={cn(
+                            "min-h-11 sm:min-h-8 text-xs font-medium",
+                            isSecondaryActive && "font-semibold shadow-warm-sm",
+                            !isSecondaryActive && "text-muted-foreground hover:text-foreground"
+                          )}
+                        />
                       }
-                    }}
-                    aria-label="Student work inbox filters"
-                    className="flex items-center gap-1.5"
-                  >
-                    <ToggleGroupItem
-                      value="all"
-                      variant="outline"
-                      size="sm"
-                      className={PILL_BASE_CLASS}
                     >
-                      <span>All Students</span>
-                      {allWorkFilter?.count != null && (
+                      <Filter data-icon="inline-start" aria-hidden="true" />
+                      <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
+                      {isSecondaryActive && activeSecondaryCount != null && (
                         <Badge
                           variant="secondary"
-                          className={cn(
-                            "h-auto rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums transition-colors",
-                            statusFilter === "all" && "bg-primary-foreground/20 text-primary-foreground"
-                          )}
+                          className="h-auto rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-xs font-semibold text-primary-foreground tabular-nums"
                         >
-                          {allWorkFilter.count}
+                          {activeSecondaryCount}
                         </Badge>
                       )}
-                    </ToggleGroupItem>
-
-                    <ToggleGroupItem
-                      value="needs_scoring"
-                      variant="outline"
-                      size="sm"
-                      className={PILL_BASE_CLASS}
+                      <ChevronDown data-icon="inline-end" className="opacity-70" aria-hidden="true" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56 text-xs">
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
+                          Additional Statuses
+                        </DropdownMenuLabel>
+                        {secondaryFilters.map((sf) => {
+                          const item = submissionFilterItems.find((f) => f.id === sf.id);
+                          const isSelected = statusFilter === sf.id;
+                          return (
+                            <DropdownMenuItem
+                              key={sf.id}
+                              onClick={() => {
+                                if (viewMode !== "grouped") onViewModeChange("grouped");
+                                onStatusFilterChange(sf.id);
+                              }}
+                              className={cn(
+                                "min-h-9 cursor-pointer justify-between text-xs",
+                                isSelected && "bg-primary/10 text-primary font-medium"
+                              )}
+                            >
+                              <span>{sf.label}</span>
+                              <div className="text-muted-foreground flex items-center gap-1.5">
+                                {item?.count != null && <span className="tabular-nums">({item.count})</span>}
+                                {isSelected && <Check className="text-primary stroke-[2.5]" aria-hidden="true" />}
+                              </div>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {isSecondaryActive && (
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="icon-sm"
+                      aria-label="Clear additional filter"
+                      onClick={() => onStatusFilterChange("all")}
+                      className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8 shrink-0 hover:bg-destructive hover:text-destructive-foreground"
                     >
-                      <span>To Grade</span>
-                      {needsScoringCount > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "h-auto rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums transition-colors",
-                            statusFilter === "needs_scoring"
-                              ? "bg-primary-foreground/20 text-primary-foreground"
-                              : "bg-primary/10 text-primary font-bold"
-                          )}
-                        >
-                          {needsScoringCount}
-                        </Badge>
-                      )}
-                    </ToggleGroupItem>
-
-                    <ToggleGroupItem
-                      value="missing"
-                      variant="outline"
-                      size="sm"
-                      className={PILL_BASE_CLASS}
-                    >
-                      <span>Missing</span>
-                      {missingCount > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "h-auto rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums transition-colors",
-                            statusFilter === "missing" && "bg-primary-foreground/20 text-primary-foreground"
-                          )}
-                        >
-                          {missingCount}
-                        </Badge>
-                      )}
-                    </ToggleGroupItem>
-
-                    <ToggleGroupItem
-                      value="released"
-                      variant="outline"
-                      size="sm"
-                      className={PILL_BASE_CLASS}
-                    >
-                      <span>Done &amp; Released</span>
-                      {releasedCount > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "h-auto rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums transition-colors",
-                            statusFilter === "released" && "bg-primary-foreground/20 text-primary-foreground"
-                          )}
-                        >
-                          {releasedCount}
-                        </Badge>
-                      )}
-                    </ToggleGroupItem>
-
-                    {unreadCommentsCount > 0 && (
-                      <ToggleGroupItem
-                        value="unread_comments"
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          PILL_BASE_CLASS,
-                          statusFilter !== "unread_comments" &&
-                            "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
-                        )}
-                      >
-                        <MessageSquare data-icon="inline-start" aria-hidden="true" />
-                        <span>Unread Comments</span>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "h-auto rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums transition-colors",
-                            statusFilter === "unread_comments"
-                              ? "bg-primary-foreground/20 text-primary-foreground"
-                              : "bg-primary/15 text-primary"
-                          )}
-                        >
-                          {unreadCommentsCount}
-                        </Badge>
-                      </ToggleGroupItem>
-                    )}
-                  </ToggleGroup>
-
-                  <ButtonGroup className="shrink-0">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            type="button"
-                            variant={isSecondaryActive ? "default" : "outline"}
-                            size="sm"
-                            aria-pressed={isSecondaryActive}
-                            className={cn(
-                              "min-h-11 sm:min-h-8 text-xs font-medium",
-                              isSecondaryActive && "font-semibold shadow-warm-sm",
-                              !isSecondaryActive && "text-muted-foreground hover:text-foreground"
-                            )}
-                          />
-                        }
-                      >
-                        <Filter data-icon="inline-start" aria-hidden="true" />
-                        <span>{isSecondaryActive ? activeSecondaryItem?.label : "More filters"}</span>
-                        {isSecondaryActive && activeSecondaryCount != null && (
-                          <Badge
-                            variant="secondary"
-                            className="h-auto rounded-full bg-primary-foreground/20 px-1.5 py-0.5 text-xs font-semibold text-primary-foreground tabular-nums"
-                          >
-                            {activeSecondaryCount}
-                          </Badge>
-                        )}
-                        <ChevronDown data-icon="inline-end" className="opacity-70" aria-hidden="true" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 text-xs">
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel className="text-muted-foreground px-2 py-1.5 text-xs font-semibold uppercase tracking-wider">
-                            Additional Statuses
-                          </DropdownMenuLabel>
-                          {secondaryFilters.map((sf) => {
-                            const item = submissionFilterItems.find((f) => f.id === sf.id);
-                            const isSelected = statusFilter === sf.id;
-                            return (
-                              <DropdownMenuItem
-                                key={sf.id}
-                                onClick={() => {
-                                  if (viewMode !== "grouped") onViewModeChange("grouped");
-                                  onStatusFilterChange(sf.id);
-                                }}
-                                className={cn(
-                                  "min-h-9 cursor-pointer justify-between text-xs",
-                                  isSelected && "bg-primary/10 text-primary font-medium"
-                                )}
-                              >
-                                <span>{sf.label}</span>
-                                <div className="text-muted-foreground flex items-center gap-1.5">
-                                  {item?.count != null && <span className="tabular-nums">({item.count})</span>}
-                                  {isSelected && <Check className="text-primary stroke-[2.5]" aria-hidden="true" />}
-                                </div>
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    {isSecondaryActive && (
-                      <Button
-                        type="button"
-                        variant="default"
-                        size="icon-sm"
-                        aria-label="Clear additional filter"
-                        onClick={() => onStatusFilterChange("all")}
-                        className="min-h-11 min-w-11 sm:min-h-8 sm:min-w-8 shrink-0 hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <X aria-hidden="true" />
-                      </Button>
-                    )}
-                  </ButtonGroup>
-                </div>
-              </ScrollArea>
-
-              {canScrollRight && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-xs"
-                  onClick={handleScrollRight}
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  className="absolute right-0 z-10 size-8 sm:size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted"
-                >
-                  <ChevronRight aria-hidden="true" />
-                </Button>
-              )}
-            </div>
+                      <X aria-hidden="true" />
+                    </Button>
+                  )}
+                </ButtonGroup>
+              }
+            />
 
             {/* Search and View controls */}
             <div className="flex w-full shrink-0 items-center gap-2 md:w-auto">

@@ -117,10 +117,11 @@ function MobileActivityRow({
       variant="outline"
       size="sm"
       render={
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => onOpenCell(work)}
-          className="min-h-11 w-full cursor-pointer bg-card text-left hover:bg-muted/50"
+          className="h-auto min-h-11 w-full justify-between bg-card text-left font-normal hover:bg-muted/50 cursor-pointer"
         />
       }
     >

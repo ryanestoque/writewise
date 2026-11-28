@@ -325,8 +325,9 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           : "border-transparent"
       )}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         ref={cellRef}
         tabIndex={isFocused ? 0 : -1}
         data-gradecell
@@ -355,7 +356,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           onFocusCell?.();
         }}
         onKeyDown={handleCellKeyDown}
-        className="flex min-h-[5rem] w-full flex-col justify-between rounded-sm p-2 text-left cursor-pointer focus-visible:outline-none"
+        className="flex h-auto min-h-[5rem] w-full flex-col items-stretch justify-between rounded-sm p-2 text-left font-normal hover:bg-transparent cursor-pointer focus-visible:outline-none"
       >
         {viewMode === "diagnostic" ? (
           <div className="flex flex-col gap-1.5">
@@ -516,7 +517,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           </div>
           </div>
         </div>
-      </button>
+      </Button>
 
       <div
         className={cn(

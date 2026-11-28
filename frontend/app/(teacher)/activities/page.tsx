@@ -14,12 +14,12 @@ import { CreateActivityDialog } from "@/components/activities/create-activity-di
 import { EditActivityDialog } from "@/components/activities/edit-activity-dialog";
 import { DeleteActivityDialog } from "@/components/activities/delete-activity-dialog";
 import { ActivityCard } from "@/components/activities/activity-card";
-import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { FloatingActionBar } from "@/components/shared/floating-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import { SearchInput } from "@/components/ui/search-input";
-import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
+import { SearchInput } from "@/components/shared/search-input";
+import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,

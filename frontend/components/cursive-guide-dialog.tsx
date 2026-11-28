@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import {
   Drawer,
   DrawerClose,
@@ -29,7 +29,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SearchInput } from "@/components/ui/search-input";
+import { SearchInput } from "@/components/shared/search-input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   AlertTriangleIcon,
@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursiveStrokeCanvas } from "@/components/cursive-stroke-canvas";
+import { getLetterStrokes, PAIRED_LETTER_OFFSETS } from "@/components/cursive-strokes-data";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CURSIVE_ALPHABET,
@@ -108,7 +109,18 @@ export function CursiveGuideDialog({
       : "grid";
   });
   const [activeStepTab, setActiveStepTab] = useState<"lower" | "upper">("lower");
+  const [activeDemoStep, setActiveDemoStep] = useState<{
+    mode: "lower" | "upper";
+    index: number;
+  } | null>(null);
+  const demoCaseRef = useRef<"lower" | "upper" | null>(null);
   const isMobile = useIsMobile();
+
+  const handleActiveDemoStep = useCallback((mode: "lower" | "upper", index: number | null) => {
+    if (index === 0 || demoCaseRef.current !== mode) setActiveStepTab(mode);
+    demoCaseRef.current = mode;
+    setActiveDemoStep(index === null ? null : { mode, index });
+  }, []);
 
   const activeFilterCount = (caseFilter !== "pairs" ? 1 : 0) + (zoneFilter !== "all" ? 1 : 0);
   const activeCaseLabel = CASE_OPTIONS.find((opt) => opt.value === caseFilter)?.label;
@@ -335,6 +347,7 @@ export function CursiveGuideDialog({
         <CursiveStrokeCanvas
           key={activeLetter.id}
           letterId={activeLetter.id}
+          onActiveStepChange={handleActiveDemoStep}
         />
 
         {/* Step-by-Step Formation Cues */}
@@ -365,16 +378,26 @@ export function CursiveGuideDialog({
           </div>
 
           <ol className="flex list-none flex-col gap-1.5 pl-0 text-xs text-muted-foreground">
-            {(activeStepTab === "lower" ? activeLetter.lowerSteps : activeLetter.upperSteps).map(
-              (step, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
-                    {idx + 1}
+            {getLetterStrokes(activeLetter.id)[activeStepTab].map((step, index) => {
+              const isActive = activeDemoStep?.mode === activeStepTab && activeDemoStep.index === index;
+              return (
+                <li
+                  key={step.d}
+                  aria-current={isActive ? "step" : undefined}
+                  className="flex items-start gap-2"
+                >
+                  <span
+                    className={cn(
+                      "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      isActive ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary",
+                    )}
+                  >
+                    {index + 1}
                   </span>
-                  <span className="leading-relaxed text-foreground/90">{step}</span>
+                  <span className="leading-relaxed text-foreground/90">{step.instruction}</span>
                 </li>
-              )
-            )}
+              );
+            })}
           </ol>
         </div>
 
@@ -416,14 +439,14 @@ export function CursiveGuideDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
+    <ResponsiveRichOverlay open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveRichOverlayContent
         id="cursive-guide-dialog"
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1rem)] sm:max-w-4xl max-h-[min(92dvh,calc(100dvh-1.5rem))] rounded-2xl print:max-w-none print:w-full print:max-h-none print:shadow-none print:rounded-none print:border-none print:p-0"
       >
         {/* Streamlined Header: Title + Stepper (Mobile) / Search (Desktop) */}
-        <DialogHeader className="shrink-0 gap-3 border-b border-border/70 bg-card/95 p-3.5 pb-3 backdrop-blur-xs sm:p-5 sm:pb-3.5 print:hidden">
+        <ResponsiveRichOverlayHeader className="shrink-0 gap-3 border-b border-border/70 bg-card/95 p-3.5 pb-3 backdrop-blur-xs sm:p-5 sm:pb-3.5 print:hidden">
           {isMobile && mobileView === "detail" ? (
             <div className="flex min-w-0 items-center justify-between gap-2 pr-14 sm:pr-8">
               {/* Back to Grid Button */}
@@ -440,9 +463,9 @@ export function CursiveGuideDialog({
                   <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
                   <span>All Letters</span>
                 </Button>
-                <DialogTitle className="sr-only">
+                <ResponsiveRichOverlayTitle className="sr-only">
                   Letter {activeLetter?.id} Guide
-                </DialogTitle>
+                </ResponsiveRichOverlayTitle>
               </div>
 
               {/* Prev / Next Stepper */}
@@ -475,15 +498,15 @@ export function CursiveGuideDialog({
             </div>
           ) : (
             <div className="flex min-w-0 items-center justify-between gap-3 pr-14 sm:pr-8">
-              <DialogTitle className="truncate font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg">
+              <ResponsiveRichOverlayTitle className="truncate font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 Cursive Alphabet Guide
-              </DialogTitle>
+              </ResponsiveRichOverlayTitle>
             </div>
           )}
 
-          <DialogDescription className="sr-only">
-            Interactive cursive handwriting guide showing uppercase and lowercase letter formations on 3-line ruling with stroke cues.
-          </DialogDescription>
+          <ResponsiveRichOverlayDescription className="sr-only">
+            Zaner-Bloser cursive letter forms with animated strokes and written steps for uppercase and lowercase.
+          </ResponsiveRichOverlayDescription>
 
           {/* Search & Case / Zone Filters Bar (Hidden on Mobile Detail View to Maximize Screen Room) */}
           {!(isMobile && mobileView === "detail") && (
@@ -725,7 +748,7 @@ export function CursiveGuideDialog({
               ? `Showing all 26 cursive letters. Letter ${activeLetter.id} currently selected.`
               : `Showing ${filteredLetters.length} letters matching filter. Letter ${activeLetter.id} currently selected.`}
           </div>
-        </DialogHeader>
+        </ResponsiveRichOverlayHeader>
 
         {/* Split Body */}
         <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
@@ -778,20 +801,18 @@ export function CursiveGuideDialog({
                   onValueChange={(vals) => {
                     if (vals.length > 0) {
                       setSelectedLetterId(vals[0]);
-                      setMobileView("detail");
                     }
+                    setMobileView("detail");
                   }}
                   aria-label="Cursive alphabet letters"
                   className="grid w-full grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 print:grid-cols-4 print:gap-3"
                 >
                   {filteredLetters.map((item) => {
                     const isSelected = activeLetter.id === item.id;
-                    const letterDisplayText =
-                      caseFilter === "pairs"
-                        ? `${item.upper}${item.lower}`
-                        : caseFilter === "upper"
-                          ? item.upper
-                          : item.lower;
+                    const strokes = getLetterStrokes(item.id);
+                    const previewCases = caseFilter === "pairs"
+                      ? (["upper", "lower"] as const)
+                      : [caseFilter];
 
                     return (
                       <div key={item.id} className="min-w-0 print:break-inside-avoid">
@@ -812,15 +833,29 @@ export function CursiveGuideDialog({
                             </span>
                           </div>
                           <div className="relative flex-1 w-full min-h-0 overflow-hidden flex items-center justify-center">
-                            <span
-                              className="font-cursive text-foreground print:text-black leading-none"
-                              style={{
-                                fontSize: caseFilter === "pairs" ? "36px" : "42px",
-                                fontWeight: 500,
-                              }}
+                            <svg
+                              aria-hidden="true"
+                              viewBox={caseFilter === "pairs" ? "105 18 180 87" : "150 18 94 87"}
+                              className="size-full text-foreground print:text-black"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
                             >
-                              {letterDisplayText}
-                            </span>
+                              {previewCases.map((mode) => (
+                                <g
+                                  key={mode}
+                                  transform={caseFilter === "pairs"
+                                    ? `translate(${PAIRED_LETTER_OFFSETS[mode]}, 0)`
+                                    : undefined}
+                                >
+                                  {strokes[mode].map((step) => (
+                                    <path key={step.d} d={step.d} />
+                                  ))}
+                                </g>
+                              ))}
+                            </svg>
                           </div>
                         </ToggleGroupItem>
                       </div>
@@ -843,10 +878,10 @@ export function CursiveGuideDialog({
                 : "hidden md:block w-[420px] lg:w-[480px] shrink-0 bg-muted/20 p-4 sm:p-5"
             )}
           >
-            {renderSpotlightContent(isMobile && mobileView === "detail")}
+            {(!isMobile || mobileView === "detail") && renderSpotlightContent(isMobile)}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveRichOverlayContent>
+    </ResponsiveRichOverlay>
   );
 }

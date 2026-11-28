@@ -28,15 +28,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalClose,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalTrigger,
+} from "@/components/shared/responsive-modal";
 import {
   Eye,
   EyeOff,
@@ -104,8 +105,8 @@ function ForgotPasswordDialog({ email }: { email: string }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
+    <ResponsiveModal open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveModalTrigger
         render={
           <Button
             type="button"
@@ -117,31 +118,33 @@ function ForgotPasswordDialog({ email }: { email: string }) {
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base font-semibold text-foreground font-heading">
+      <ResponsiveModalContent className="sm:max-w-md">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle className="text-base font-semibold text-foreground font-heading">
             {isSent ? "Check Your Email" : "Reset Password"}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
             {isSent
               ? "We've sent recovery instructions to your registered email address."
               : `We will send a password reset link to your verified email: ${email}`}
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         {isSent ? (
-          <div className="flex flex-col gap-4 py-1">
-            <Alert role="status" aria-live="polite" variant="success">
-              <CheckCircle2 aria-hidden="true" />
-              <AlertDescription className="text-xs leading-relaxed">
-                A recovery link has been sent to{" "}
-                <span className="font-semibold">{email}</span>. Follow the instructions
-                in your email to set a new password.
-              </AlertDescription>
-            </Alert>
+          <>
+            <ResponsiveModalBody className="px-5 py-2 md:p-0 flex flex-col gap-4">
+              <Alert role="status" aria-live="polite" variant="success">
+                <CheckCircle2 aria-hidden="true" />
+                <AlertDescription className="text-xs leading-relaxed">
+                  A recovery link has been sent to{" "}
+                  <span className="font-semibold">{email}</span>. Follow the instructions
+                  in your email to set a new password.
+                </AlertDescription>
+              </Alert>
+            </ResponsiveModalBody>
 
-            <DialogFooter showCloseButton={false} className="pt-2">
-              <DialogClose
+            <ResponsiveModalFooter showCloseButton={false} className="pt-2">
+              <ResponsiveModalClose
                 render={
                   <Button
                     type="button"
@@ -154,25 +157,27 @@ function ForgotPasswordDialog({ email }: { email: string }) {
                   </Button>
                 }
               />
-            </DialogFooter>
-          </div>
+            </ResponsiveModalFooter>
+          </>
         ) : (
-          <div className="flex flex-col gap-4 pt-1">
-            {sendError && (
-              <Alert variant="destructive">
-                <AlertDescription className="text-xs">
-                  {sendError}
-                </AlertDescription>
-              </Alert>
-            )}
+          <>
+            <ResponsiveModalBody className="px-5 py-2 md:p-0 flex flex-col gap-4">
+              {sendError && (
+                <Alert variant="destructive">
+                  <AlertDescription className="text-xs">
+                    {sendError}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              If you forgot your current password, this link allows you to securely
-              set a new password without needing to enter your current credentials.
-            </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                If you forgot your current password, this link allows you to securely
+                set a new password without needing to enter your current credentials.
+              </p>
+            </ResponsiveModalBody>
 
-            <DialogFooter showCloseButton={false} className="pt-2 flex gap-2 sm:justify-end">
-              <DialogClose
+            <ResponsiveModalFooter showCloseButton={false} className="pt-2 flex gap-2 sm:justify-end">
+              <ResponsiveModalClose
                 render={
                   <Button
                     type="button"
@@ -200,11 +205,11 @@ function ForgotPasswordDialog({ email }: { email: string }) {
                   "Send Reset Link"
                 )}
               </Button>
-            </DialogFooter>
-          </div>
+            </ResponsiveModalFooter>
+          </>
         )}
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }
 
