@@ -21,7 +21,14 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SearchInput } from "@/components/ui/search-input";
@@ -374,20 +381,30 @@ export function ClassTable({
           <FieldLabel htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
             Sort by
           </FieldLabel>
-          <div className="flex items-center gap-1.5 flex-1 max-w-[240px]">
-            <NativeSelect
-              id="mobile-student-sort"
-              size="sm"
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+            <Select
               value={sortField}
-              onChange={(e) => onSortChange(e.target.value as SortField, "asc")}
-              className="flex-1 w-full"
+              onValueChange={(value) => {
+                if (value) onSortChange(value as SortField, "asc");
+              }}
             >
-              {COLUMNS.map((col) => (
-                <NativeSelectOption key={col.field} value={col.field}>
-                  {col.label}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+              <SelectTrigger
+                id="mobile-student-sort"
+                aria-label="Sort by"
+                className="min-h-10 min-w-0 flex-1 max-w-[200px]"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectGroup>
+                  {COLUMNS.map((col) => (
+                    <SelectItem key={col.field} value={col.field}>
+                      {col.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             <Button
               type="button"
               variant="outline"
