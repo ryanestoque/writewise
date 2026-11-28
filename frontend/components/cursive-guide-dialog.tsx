@@ -5,12 +5,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import {
   Drawer,
   DrawerClose,
@@ -439,14 +439,14 @@ export function CursiveGuideDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
+    <ResponsiveRichOverlay open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveRichOverlayContent
         id="cursive-guide-dialog"
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1rem)] sm:max-w-4xl max-h-[min(92dvh,calc(100dvh-1.5rem))] rounded-2xl print:max-w-none print:w-full print:max-h-none print:shadow-none print:rounded-none print:border-none print:p-0"
       >
         {/* Streamlined Header: Title + Stepper (Mobile) / Search (Desktop) */}
-        <DialogHeader className="shrink-0 gap-3 border-b border-border/70 bg-card/95 p-3.5 pb-3 backdrop-blur-xs sm:p-5 sm:pb-3.5 print:hidden">
+        <ResponsiveRichOverlayHeader className="shrink-0 gap-3 border-b border-border/70 bg-card/95 p-3.5 pb-3 backdrop-blur-xs sm:p-5 sm:pb-3.5 print:hidden">
           {isMobile && mobileView === "detail" ? (
             <div className="flex min-w-0 items-center justify-between gap-2 pr-14 sm:pr-8">
               {/* Back to Grid Button */}
@@ -463,9 +463,9 @@ export function CursiveGuideDialog({
                   <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
                   <span>All Letters</span>
                 </Button>
-                <DialogTitle className="sr-only">
+                <ResponsiveRichOverlayTitle className="sr-only">
                   Letter {activeLetter?.id} Guide
-                </DialogTitle>
+                </ResponsiveRichOverlayTitle>
               </div>
 
               {/* Prev / Next Stepper */}
@@ -498,15 +498,15 @@ export function CursiveGuideDialog({
             </div>
           ) : (
             <div className="flex min-w-0 items-center justify-between gap-3 pr-14 sm:pr-8">
-              <DialogTitle className="truncate font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg">
+              <ResponsiveRichOverlayTitle className="truncate font-heading text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 Cursive Alphabet Guide
-              </DialogTitle>
+              </ResponsiveRichOverlayTitle>
             </div>
           )}
 
-          <DialogDescription className="sr-only">
+          <ResponsiveRichOverlayDescription className="sr-only">
             Zaner-Bloser cursive letter forms with animated strokes and written steps for uppercase and lowercase.
-          </DialogDescription>
+          </ResponsiveRichOverlayDescription>
 
           {/* Search & Case / Zone Filters Bar (Hidden on Mobile Detail View to Maximize Screen Room) */}
           {!(isMobile && mobileView === "detail") && (
@@ -748,7 +748,7 @@ export function CursiveGuideDialog({
               ? `Showing all 26 cursive letters. Letter ${activeLetter.id} currently selected.`
               : `Showing ${filteredLetters.length} letters matching filter. Letter ${activeLetter.id} currently selected.`}
           </div>
-        </DialogHeader>
+        </ResponsiveRichOverlayHeader>
 
         {/* Split Body */}
         <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
@@ -881,7 +881,7 @@ export function CursiveGuideDialog({
             {(!isMobile || mobileView === "detail") && renderSpotlightContent(isMobile)}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveRichOverlayContent>
+    </ResponsiveRichOverlay>
   );
 }

@@ -11,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import { Separator } from "@/components/ui/separator";
 import { ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -388,23 +388,23 @@ export function RubricReferenceDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+    <ResponsiveRichOverlay open={open} onOpenChange={onOpenChange}>
+      <ResponsiveRichOverlayContent
         id="rubric-reference-dialog"
         overlayClassName="bg-foreground/25 supports-backdrop-filter:backdrop-blur-xs"
         className="p-0 overflow-hidden flex flex-col gap-0 shadow-warm w-[calc(100%-1.5rem)] sm:max-w-2xl max-h-[min(90dvh,calc(100dvh-2rem))] rounded-2xl"
       >
-        <DialogHeader className="p-4 sm:p-5 pb-2 shrink-0">
+        <ResponsiveRichOverlayHeader className="p-4 sm:p-5 pb-2 shrink-0">
           <div className="flex flex-wrap items-center justify-between gap-2 min-w-0 pr-10 sm:pr-8">
-            <DialogTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
+            <ResponsiveRichOverlayTitle className="text-base sm:text-lg font-heading font-semibold text-foreground tracking-tight">
               {isParent ? "Score Guide" : "Scoring Rubric"}
-            </DialogTitle>
+            </ResponsiveRichOverlayTitle>
           </div>
 
-          <DialogDescription className="sr-only">
+          <ResponsiveRichOverlayDescription className="sr-only">
             Handwriting skills and developmental score levels used in WriteWise.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveRichOverlayDescription>
+        </ResponsiveRichOverlayHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-none">
           <div className="p-4 sm:p-5 flex flex-col gap-6">
@@ -548,7 +548,7 @@ export function RubricReferenceDialog({
             </section>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveRichOverlayContent>
+    </ResponsiveRichOverlay>
   );
 }

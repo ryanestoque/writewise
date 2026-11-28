@@ -11,13 +11,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayFooter,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import {
   Empty,
   EmptyContent,
@@ -1147,27 +1147,27 @@ export function QualityErrorCard({
 
       {/* Inspect photo modal with interactive zoom, pan, and direct remediation */}
       {previewUrl && (
-        <Dialog
+        <ResponsiveRichOverlay
           open={isInspecting}
           onOpenChange={(open) => {
             if (!open) resetZoomAndPan();
             setIsInspecting(open);
           }}
         >
-          <DialogContent
+          <ResponsiveRichOverlayContent
             showCloseButton
             className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100dvh-2rem))] border border-border shadow-warm"
           >
             {/* Modal Header: Title and Zoom Toolbar */}
-            <DialogHeader className="p-3 sm:p-3.5 bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
+            <ResponsiveRichOverlayHeader className="p-3 sm:p-3.5 bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-2 pr-10 sm:pr-0">
-                <DialogTitle className="text-sm sm:text-base font-semibold text-foreground">
+                <ResponsiveRichOverlayTitle className="text-sm sm:text-base font-semibold text-foreground">
                   Captured Worksheet Photo
-                </DialogTitle>
+                </ResponsiveRichOverlayTitle>
               </div>
-              <DialogDescription className="sr-only">
+              <ResponsiveRichOverlayDescription className="sr-only">
                 Inspect captured cursive worksheet photo for quality verification, stroke clarity, and paper alignment
-              </DialogDescription>
+              </ResponsiveRichOverlayDescription>
 
               {/* Zoom & Inspection Controls */}
               {!imageError && (
@@ -1219,7 +1219,7 @@ export function QualityErrorCard({
                   </Button>
                 </div>
               )}
-            </DialogHeader>
+            </ResponsiveRichOverlayHeader>
             <Separator />
 
             {/* Interactive Image Canvas */}
@@ -1300,7 +1300,7 @@ export function QualityErrorCard({
             <Separator />
 
             {/* Modal Footer: Targeted Diagnostic Advice & Direct Remediation Action */}
-            <DialogFooter className="p-3 sm:p-3.5 bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
+            <ResponsiveRichOverlayFooter className="p-3 sm:p-3.5 bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Lightbulb className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
                 <span className="line-clamp-1 sm:line-clamp-none">
@@ -1337,9 +1337,9 @@ export function QualityErrorCard({
                   <span className="sr-only"> (press R)</span>
                 </Button>
               </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </ResponsiveRichOverlayFooter>
+          </ResponsiveRichOverlayContent>
+        </ResponsiveRichOverlay>
       )}
     </Card>
   );
