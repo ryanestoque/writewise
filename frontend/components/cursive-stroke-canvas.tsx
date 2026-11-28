@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
 import { PlayIcon, PauseIcon, RotateCcwIcon, GaugeIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { getLetterStrokes, StrokePath } from "./cursive-strokes-data";
 
@@ -272,139 +275,99 @@ export function CursiveStrokeCanvas({
     }
   };
 
-  const caseModes: AnimationCaseMode[] = ["lower", "upper", "both"];
-
-  const handleCaseKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const idx = caseModes.indexOf(caseMode);
-    let next = -1;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (idx + 1) % caseModes.length;
-    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (idx - 1 + caseModes.length) % caseModes.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = caseModes.length - 1;
-    if (next < 0) return;
-    e.preventDefault();
-    handleCaseModeChange(caseModes[next]);
-    const buttons = e.currentTarget.querySelectorAll<HTMLElement>('[role="radio"]');
-    buttons[next]?.focus();
-  };
-
   return (
-    <div className={cn("w-full space-y-2.5", className)}>
+    <div className={cn("flex w-full flex-col gap-2.5", className)}>
       {/* Controls & Case Selector Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
         {/* Case Mode Selector */}
-        <div
-          role="radiogroup"
+        <ToggleGroup
+          value={[caseMode]}
+          multiple={false}
+          onValueChange={(vals) => {
+            if (vals.length > 0) handleCaseModeChange(vals[0] as AnimationCaseMode);
+          }}
           aria-label="Cursive letter case mode"
-          onKeyDown={handleCaseKeyDown}
-          className="flex items-center p-0.5 rounded-lg border border-border/70 bg-muted/40"
+          variant="outline"
+          size="sm"
         >
-          <button
-            type="button"
-            role="radio"
-            aria-checked={caseMode === "lower"}
-            tabIndex={caseMode === "lower" ? 0 : -1}
-            onClick={() => handleCaseModeChange("lower")}
-            className={cn(
-              "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-              caseMode === "lower"
-                ? "bg-background text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+          <ToggleGroupItem value="lower" className="min-h-10 sm:min-h-8">
             Lower ({strokesData.lower[0] ? letterId.toLowerCase() : ""})
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={caseMode === "upper"}
-            tabIndex={caseMode === "upper" ? 0 : -1}
-            onClick={() => handleCaseModeChange("upper")}
-            className={cn(
-              "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-              caseMode === "upper"
-                ? "bg-background text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+          </ToggleGroupItem>
+          <ToggleGroupItem value="upper" className="min-h-10 sm:min-h-8">
             Upper ({letterId?.toUpperCase()})
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={caseMode === "both"}
-            tabIndex={caseMode === "both" ? 0 : -1}
-            onClick={() => handleCaseModeChange("both")}
-            className={cn(
-              "px-2.5 py-1.5 sm:py-1 min-h-10 sm:min-h-0 font-medium rounded-md transition-all cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-              caseMode === "both"
-                ? "bg-background text-foreground shadow-2xs font-semibold"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
+          </ToggleGroupItem>
+          <ToggleGroupItem value="both" className="min-h-10 sm:min-h-8">
             Both (Aa)
-          </button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
 
-        {/* Playback Controls & Speed (Min 40px touch targets for mobile thumbs) */}
+        {/* Playback Controls & Speed */}
         <div className="flex items-center gap-1.5">
-          {/* Play/Pause */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={togglePlay}
-            className="inline-flex items-center justify-center gap-1.5 h-10 sm:h-7 px-3 sm:px-2.5 rounded-lg sm:rounded-md border border-border/70 bg-background hover:bg-muted text-foreground transition-all cursor-pointer font-medium active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="min-h-10 sm:min-h-8"
             title={isPlaying ? "Pause animation" : isCompleted ? "Replay animation" : "Play animation"}
             aria-label={isPlaying ? "Pause animation" : isCompleted ? "Replay animation" : "Play animation"}
           >
             {isPlaying ? (
               <>
-                <PauseIcon className="size-4 sm:size-3.5 fill-current" />
-                <span className="text-xs">Pause</span>
+                <PauseIcon data-icon="inline-start" className="fill-current" aria-hidden="true" />
+                <span>Pause</span>
               </>
             ) : (
               <>
-                <PlayIcon className="size-4 sm:size-3.5 fill-current" />
-                <span className="text-xs">{isCompleted ? "Replay" : "Play"}</span>
+                <PlayIcon data-icon="inline-start" className="fill-current" aria-hidden="true" />
+                <span>{isCompleted ? "Replay" : "Play"}</span>
               </>
             )}
-          </button>
+          </Button>
 
-          {/* Replay */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon-sm"
             onClick={resetAnimation}
-            className="inline-flex items-center justify-center size-10 sm:size-7 rounded-lg sm:rounded-md border border-border/70 bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="size-10 sm:size-8"
             title="Replay from start"
             aria-label="Replay from start"
           >
-            <RotateCcwIcon className="size-4 sm:size-3.5" />
-          </button>
+            <RotateCcwIcon aria-hidden="true" />
+          </Button>
 
-          {/* Speed Selector (Min 40px touch targets on mobile) */}
-          <div className="flex items-center gap-1 pl-1.5 sm:pl-1 border-l border-border/60">
-            <GaugeIcon className="size-3.5 text-muted-foreground hidden xs:block" aria-hidden="true" />
-            {SPEEDS.map((sp) => (
-              <button
-                key={sp}
-                type="button"
-                onClick={() => handleSpeedChange(sp)}
-                className={cn(
-                  "min-w-10 h-10 sm:min-w-0 sm:h-auto sm:px-1.5 sm:py-0.5 px-2 py-1 text-xs sm:text-[11px] rounded-lg sm:rounded transition-all cursor-pointer font-medium flex items-center justify-center active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                  speed === sp
-                    ? "bg-primary text-primary-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                )}
-                aria-label={`Set animation speed to ${sp}x`}
-              >
-                {sp}x
-              </button>
-            ))}
+          <Separator orientation="vertical" className="mx-0.5 h-6" />
+
+          <div className="flex items-center gap-1">
+            <GaugeIcon className="hidden size-3.5 text-muted-foreground sm:block" aria-hidden="true" />
+            <ToggleGroup
+              value={[String(speed)]}
+              multiple={false}
+              onValueChange={(vals) => {
+                if (vals.length > 0) handleSpeedChange(Number(vals[0]) as AnimationSpeed);
+              }}
+              aria-label="Animation playback speed"
+              variant="outline"
+              size="sm"
+            >
+              {SPEEDS.map((sp) => (
+                <ToggleGroupItem
+                  key={sp}
+                  value={String(sp)}
+                  aria-label={`Set animation speed to ${sp}x`}
+                  className="min-h-10 min-w-10 sm:min-h-8 sm:min-w-0"
+                >
+                  {sp}x
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
         </div>
       </div>
 
       {/* SVG Penmanship Ruling Canvas */}
-      <div className="w-full h-36 sm:h-40 rounded-xl border border-border/80 bg-card dark:bg-card/90 relative overflow-hidden flex items-center justify-center shadow-xs select-none">
+      <div className="relative flex h-36 w-full select-none items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs sm:h-40">
         <svg
           viewBox="0 0 400 100"
           className="w-full h-full"
