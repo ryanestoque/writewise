@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+} from "@/components/shared/responsive-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -165,19 +166,19 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
 
   return (
     <TooltipProvider>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[480px] p-5 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col gap-3.5 sm:gap-4 overflow-hidden shadow-warm border border-border/80 bg-card">
-          <DialogHeader className="gap-0 text-left">
-            <DialogTitle className="font-heading text-lg font-semibold tracking-tight text-foreground">
+      <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+        <ResponsiveModalContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[480px] p-5 sm:p-6 rounded-2xl sm:rounded-3xl flex flex-col gap-3.5 sm:gap-4 overflow-hidden shadow-warm border border-border/80 bg-card">
+          <ResponsiveModalHeader className="gap-0 text-left">
+            <ResponsiveModalTitle className="font-heading text-lg font-semibold tracking-tight text-foreground">
               Manage Class Sections
-            </DialogTitle>
-            <DialogDescription className="sr-only">
+            </ResponsiveModalTitle>
+            <ResponsiveModalDescription className="sr-only">
               Create, rename, or delete class sections for your roster.
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
 
           {/* Create Section Input */}
-          <form onSubmit={handleCreate}>
+          <form onSubmit={handleCreate} className="px-5 md:px-0">
             <FieldGroup>
               <Field data-invalid={Boolean(createError) || undefined}>
                 <FieldLabel htmlFor="new-section-name-input" className="sr-only">
@@ -226,7 +227,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
           </form>
 
           {/* Section List */}
-          <div className="flex flex-col gap-2 max-h-[min(50dvh,340px)] overflow-y-auto pr-1">
+          <ResponsiveModalBody className="flex flex-col gap-2 max-h-[min(50dvh,340px)] px-5 pb-4 md:px-0 md:pr-1 md:pb-0">
             {isLoading ? (
               <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
                 <Spinner className="size-5 text-primary" />
@@ -407,9 +408,9 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                 })}
               </ul>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveModalBody>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog

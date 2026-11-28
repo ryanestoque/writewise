@@ -4,7 +4,15 @@ import { useState, useEffect, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from "@/components/shared/responsive-modal";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,18 +223,21 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-card">
-          <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
-            <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+      <ResponsiveModal open={open} onOpenChange={handleDialogOpenChange}>
+        <ResponsiveModalContent
+          className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[460px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-card"
+          drawerClassName="max-h-[92dvh]"
+        >
+          <ResponsiveModalHeader className="pb-3 sm:pb-4 shrink-0 text-left">
+            <ResponsiveModalTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
               {isEditing ? "Edit Student" : "Add Student"}
-            </DialogTitle>
-            <DialogDescription className="sr-only">
+            </ResponsiveModalTitle>
+            <ResponsiveModalDescription className="sr-only">
               {isEditing
                 ? "Update the student's details and class section below."
                 : "Enter the student's details to add them to your active class roster."}
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveModalDescription>
+          </ResponsiveModalHeader>
           
           <form 
             onSubmit={form.handleSubmit((data) => onSubmit(data, false))} 
@@ -242,7 +253,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
             }}
             className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1"
           >
-            <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+            <ResponsiveModalBody className="overflow-x-hidden px-5 pb-2 md:px-1 md:py-1">
               <FieldGroup>
                 {/* Full Name */}
                 <Field data-invalid={!!form.formState.errors.full_name}>
@@ -368,9 +379,9 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   <FieldError id="parent_email-error" errors={[form.formState.errors.parent_email]} />
                 </Field>
               </FieldGroup>
-            </div>
+            </ResponsiveModalBody>
             
-            <DialogFooter className="pt-3.5 sm:pt-4 mt-2 border-t border-border sm:justify-between shrink-0">
+            <ResponsiveModalFooter className="pt-3.5 sm:pt-4 mt-2 border-t border-border sm:justify-between shrink-0">
               <Button 
                 type="button" 
                 variant="ghost" 
@@ -410,10 +421,10 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   {isEditing ? "Save Changes" : "Add Student"}
                 </Button>
               </div>
-            </DialogFooter>
+            </ResponsiveModalFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ResponsiveModalContent>
+      </ResponsiveModal>
 
       {/* Duplicate Student Confirmation Dialog */}
       <AlertDialog open={!!duplicateData} onOpenChange={(isOpen) => !isOpen && setDuplicateData(null)}>
