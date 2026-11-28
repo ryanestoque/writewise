@@ -119,9 +119,9 @@ function HistoryItemRow({
               className={cn(
                 "h-auto max-w-full px-2 py-0.5 rounded-md tabular-nums text-xs font-medium",
                 getScoreProgressDirection(item.delta) === "improving"
-                  ? "text-band-4-text bg-band-4/15 dark:bg-band-4/25 border-band-4/30 dark:border-band-4/40"
+                  ? "text-band-4-text bg-band-4/15 border-band-4/30"
                   : getScoreProgressDirection(item.delta) === "lower"
-                    ? "text-band-2-text bg-band-2/15 dark:bg-band-2/25 border-band-2/30 dark:border-band-2/40"
+                    ? "text-band-2-text bg-band-2/15 border-band-2/30"
                     : "text-muted-foreground bg-muted/40 border-border/60"
               )}
             >
@@ -259,7 +259,7 @@ export function PastWorksheetsSection({
   };
 
   return (
-    <section aria-labelledby={headingId} className="space-y-3">
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-baseline gap-2">
           <h2
@@ -281,7 +281,7 @@ export function PastWorksheetsSection({
             onClick={() => setSortOrder((prev) => (prev === "newest" ? "oldest" : "newest"))}
             className="h-11 sm:h-9 rounded-lg bg-card border-border/80 hover:bg-muted/50 text-xs font-medium text-foreground cursor-pointer touch-manipulation"
           >
-            <ArrowUpDown data-icon="inline-start" className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <ArrowUpDown data-icon="inline-start" className="text-primary" aria-hidden="true" />
             <span>{sortOrder === "newest" ? "Newest first" : "Oldest first"}</span>
           </Button>
         )}
@@ -307,16 +307,16 @@ export function PastWorksheetsSection({
             variant="outline"
             size="sm"
             onClick={handleToggleExpand}
-            className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 cursor-pointer"
+            className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
           >
             {showAllInline ? (
               <>
-                <ChevronUp className="size-4" aria-hidden="true" />
+                <ChevronUp data-icon="inline-start" aria-hidden="true" />
                 <span>Show fewer</span>
               </>
             ) : (
               <>
-                <ChevronDown className="size-4" aria-hidden="true" />
+                <ChevronDown data-icon="inline-start" aria-hidden="true" />
                 <span>See all ({processedHistory.length})</span>
               </>
             )}

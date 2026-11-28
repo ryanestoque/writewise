@@ -165,7 +165,7 @@ export function SampleReportPreview({
                     <TabsTrigger
                       key={criterion.key}
                       value={criterion.key}
-                      className="flex-none h-auto rounded-lg px-3 py-2 text-xs sm:text-sm font-medium cursor-pointer select-none min-h-11 sm:min-h-9 bg-card text-muted-foreground ring-1 ring-border/80 hover:text-foreground hover:bg-muted/60 data-active:bg-primary data-active:text-primary-foreground data-active:ring-primary data-active:font-semibold dark:data-active:bg-primary dark:data-active:text-primary-foreground"
+                      className="flex-none h-auto rounded-lg px-3 py-2 text-xs sm:text-sm font-medium cursor-pointer select-none min-h-11 sm:min-h-9 bg-card text-muted-foreground ring-1 ring-border/80 hover:text-foreground hover:bg-muted/60 data-active:bg-primary data-active:text-primary-foreground data-active:ring-primary data-active:font-semibold"
                     >
                       <span>{criterion.label}</span>
                       <span className="font-sans tabular-nums text-xs font-semibold opacity-85">
