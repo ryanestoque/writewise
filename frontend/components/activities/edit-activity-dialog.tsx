@@ -11,35 +11,43 @@ import {
   type ActivityFormValues } from "./activity-assignment-fields";
 import { toActivityDueAt, toActivityDueInput } from "@/lib/utils/activity-deadlines";
 import { ApiError } from "@/lib/utils/api-error";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription } from "@/components/ui/dialog";
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction } from "@/components/ui/alert-dialog";
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Field,
-  FieldLabel,
-  FieldGroup,
+  FieldContent,
+  FieldDescription,
   FieldError,
-  FieldContent } from "@/components/ui/field";
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   type Activity,
-  useUpdateActivity } from "@/lib/hooks/use-activities";
-import { Edit3, Home } from "lucide-react";
+  useUpdateActivity,
+} from "@/lib/hooks/use-activities";
+import { AlertTriangle, Edit3, Home } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
 function getWordCount(text: string): number {
@@ -154,23 +162,26 @@ export function EditActivityDialog({
   const pointsNotice = (
     <>
       {activity?.points_possible != null && !points && (
-        <p className="rounded-lg border border-amber-200/80 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/30 p-2.5 text-xs text-amber-900 dark:text-amber-200">
-          Saving will ask you to confirm removal of existing point grades.
-        </p>
+        <Alert className="border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
+          <AlertTriangle aria-hidden="true" />
+          <AlertDescription className="text-xs">
+            Saving will ask you to confirm removal of existing point grades.
+          </AlertDescription>
+        </Alert>
       )}
       {activity?.points_possible != null &&
         points &&
         Number(points) !== activity.points_possible && (
-          <p className="text-xs text-muted-foreground">
+          <FieldDescription className="text-xs">
             Changing the maximum returns point grades to draft. Release them again after review.
-          </p>
+          </FieldDescription>
         )}
     </>
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm border border-border/80 bg-surface dark:bg-card">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm">
         <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
           <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
             Edit Activity
@@ -229,11 +240,11 @@ export function EditActivityDialog({
 
                 {/* Live Cursive Script Preview */}
                 {targetText && targetText.trim().length > 0 && (
-                  <div className="space-y-1.5 pt-2">
-                    <p className="text-xs font-medium text-muted-foreground">
+                  <div className="flex flex-col gap-1.5 pt-2">
+                    <FieldDescription className="text-xs font-medium">
                       Cursive Worksheet Preview
-                    </p>
-                    <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-linear-to-b from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border border-brand-200/50 dark:border-border/60 overflow-hidden shadow-2xs">
+                    </FieldDescription>
+                    <div className="relative p-3.5 sm:p-4 pb-5 sm:pb-6 rounded-xl bg-muted/20 border border-border/60 overflow-hidden shadow-2xs">
                       <div className="relative overflow-hidden">
                         <div
                           className="absolute inset-0 pointer-events-none cursive-guidelines overflow-hidden"
@@ -251,29 +262,26 @@ export function EditActivityDialog({
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-2">
-                  <p
-                    id="edit_target_text_hint"
-                    className="text-xs text-muted-foreground leading-normal"
-                  >
-                    Recommended: 5–25 words for standard 3-line ruled cursive worksheets.
-                  </p>
-                </div>
+                <FieldDescription id="edit_target_text_hint" className="mt-2 text-xs">
+                  Recommended: 5–25 words for standard 3-line ruled cursive worksheets.
+                </FieldDescription>
 
                 {wordCount > 0 && wordCount < 3 && (
-                  <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
-                    <span>
+                  <Alert className="mt-1.5 border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
+                    <AlertTriangle aria-hidden="true" />
+                    <AlertDescription className="text-xs">
                       Short prompt ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
-                    </span>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {wordCount > 35 && (
-                  <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
-                    <span>
+                  <Alert className="mt-1.5 border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
+                    <AlertTriangle aria-hidden="true" />
+                    <AlertDescription className="text-xs">
                       Long prompt ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
-                    </span>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 )}
                 <FieldError
                   id="edit_target_text-error"
@@ -282,32 +290,28 @@ export function EditActivityDialog({
               </Field>
 
               {/* Take-Home Toggle */}
-              <Field>
-                <div className="flex items-center justify-between gap-4 p-3.5 rounded-xl bg-muted/40 border border-border/60">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 shrink-0 mt-0.5">
-                      <Home className="size-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <FieldLabel
-                        htmlFor="edit_is_take_home"
-                        className="text-sm font-medium text-foreground cursor-pointer"
-                      >
-                        Take-home activity
-                      </FieldLabel>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-normal">
-                        Allow parents to upload completed handwriting photos from home.
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="edit_is_take_home"
-                    checked={isTakeHome}
-                    onCheckedChange={(checked: boolean) =>
-                      form.setValue("is_take_home", checked)
-                    }
-                  />
+              <Field
+                orientation="horizontal"
+                className="items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/40 p-3.5"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                  <Home className="size-4" aria-hidden="true" />
                 </div>
+                <FieldContent>
+                  <FieldLabel htmlFor="edit_is_take_home" className="cursor-pointer">
+                    Take-home activity
+                  </FieldLabel>
+                  <FieldDescription className="text-xs">
+                    Allow parents to upload completed handwriting photos from home.
+                  </FieldDescription>
+                </FieldContent>
+                <Switch
+                  id="edit_is_take_home"
+                  checked={isTakeHome}
+                  onCheckedChange={(checked: boolean) =>
+                    form.setValue("is_take_home", checked)
+                  }
+                />
               </Field>
 
               {/* Chunk 2: Assignment & Optional Settings */}
@@ -321,28 +325,29 @@ export function EditActivityDialog({
             </FieldGroup>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2 pt-3.5 sm:pt-4 mt-2 border-t border-border shrink-0">
+          <Separator className="mt-2 shrink-0" />
+          <DialogFooter className="pt-3.5 sm:pt-4 sm:justify-between shrink-0">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium cursor-pointer"
+              className="h-10 sm:h-9 min-h-11 sm:min-h-9 w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
+              className="h-10 sm:h-9 min-h-11 sm:min-h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
             >
               {isPending ? (
-                <Spinner className="w-4 h-4 mr-2" />
+                <Spinner data-icon="inline-start" />
               ) : (
-                <Edit3 className="w-4 h-4 mr-1.5" />
+                <Edit3 data-icon="inline-start" aria-hidden="true" />
               )}
               Save Changes
             </Button>
-          </div>
+          </DialogFooter>
         </form>
         <AlertDialog open={removeConfirmation} onOpenChange={setRemoveConfirmation}>
           <AlertDialogContent>

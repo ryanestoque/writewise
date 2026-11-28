@@ -6,8 +6,18 @@ import Link from "next/link";
 import { useActivity } from "@/lib/hooks/use-activities";
 import { useSubmissions, type Submission } from "@/lib/hooks/use-submissions";
 import { SubmissionDetailContent } from "@/components/submissions/submission-detail-content";
-import { ArrowLeft, RotateCcw } from "lucide-react";
+import { ArrowLeft, AlertCircle, FileQuestion, Link2Off, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
@@ -146,53 +156,62 @@ export default function SubmissionDetailPage({
 
   if (commentTarget.kind === "invalid") {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80" data-page-studio="true">
-        <div className="space-y-1.5 max-w-md">
-          <h1 className="font-heading text-lg font-semibold text-foreground">
-            Invalid Conversation Link
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            This conversation link is invalid. Choose a worksheet upload from the activity to view its comments.
-          </p>
-        </div>
-        <Link
-          href={activityHref}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-xs min-h-11 sm:min-h-9"
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          <span>Return to Activity</span>
-        </Link>
-      </div>
+      <Card className="py-0" data-page-studio="true">
+        <CardContent className="px-0">
+          <Empty className="border-0 py-20 px-4">
+            <EmptyMedia variant="icon">
+              <Link2Off aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyHeader className="max-w-md">
+              <EmptyTitle>Invalid Conversation Link</EmptyTitle>
+              <EmptyDescription>
+                This conversation link is invalid. Choose a worksheet upload from the activity to view its comments.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                nativeButton={false}
+                className="min-h-11 sm:min-h-9"
+                render={<Link href={activityHref} />}
+              >
+                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                <span>Return to Activity</span>
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-4" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
+      <div className="flex w-full flex-col gap-4" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
         {/* Top Back Navigation Trail Skeleton */}
         <div className="py-2 -ml-1 sm:-ml-2">
           <Skeleton className="h-4 w-28 rounded-md" />
         </div>
 
         {/* Header Skeleton matching rendered responsive layout */}
-        <div className="space-y-2 pb-2.5 sm:pb-3 border-b border-border/70">
+        <div className="flex flex-col gap-2 pb-2.5 sm:pb-3">
           {/* Main identity row */}
           <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="space-y-1.5 min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Skeleton className="h-6 sm:h-7 w-40 sm:w-52 rounded-md" />
               <Skeleton className="h-3.5 w-44 sm:w-56 rounded-md" />
             </div>
             <Skeleton className="h-9 w-32 rounded-lg shrink-0" />
           </div>
+          <Separator className="mt-1" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start py-2.5 sm:py-3.5">
-          <div className="lg:col-span-6 space-y-2.5">
+          <div className="lg:col-span-6 flex flex-col gap-2.5">
             <Skeleton className="h-9 w-full rounded-xl" />
             <Skeleton className="aspect-3/4 w-full rounded-2xl min-h-[300px] sm:min-h-[340px] lg:min-h-[460px]" />
             <Skeleton className="h-9 w-full rounded-xl" />
           </div>
-          <div className="lg:col-span-6 space-y-3">
+          <div className="lg:col-span-6 flex flex-col gap-3">
             <Skeleton className="h-14 w-full rounded-xl" />
             <Skeleton className="h-44 w-full rounded-xl" />
             <Skeleton className="h-32 w-full rounded-xl" />
@@ -206,36 +225,43 @@ export default function SubmissionDetailPage({
 
   if (isQueryError) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-destructive/30" data-page-studio="true">
-        <div className="space-y-1.5 max-w-md">
-          <h1 className="font-heading text-lg font-semibold text-foreground">
-            Unable to Load Submission
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            There was a problem loading this handwriting assessment. Please check your connection and try again.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5 flex-wrap justify-center">
-          <Button
-            type="button"
-            onClick={() => {
-              void refetchActivity();
-              void refetchSubmissions();
-            }}
-            className="min-h-11 sm:min-h-9 px-4 text-xs font-semibold gap-1.5 rounded-lg cursor-pointer"
-          >
-            <RotateCcw className="size-3.5" aria-hidden="true" />
-            <span>Retry</span>
-          </Button>
-          <Link
-            href={activityHref}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border border-border/80 hover:bg-muted transition-colors min-h-11 sm:min-h-9"
-          >
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-            <span>Return to Activity</span>
-          </Link>
-        </div>
-      </div>
+      <Card className="border-destructive/30 py-0" data-page-studio="true">
+        <CardContent className="px-0">
+          <Empty className="border-0 py-16 px-4">
+            <EmptyMedia variant="icon" className="bg-destructive/10 text-destructive">
+              <AlertCircle aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyHeader className="max-w-md">
+              <EmptyTitle>Unable to Load Submission</EmptyTitle>
+              <EmptyDescription>
+                There was a problem loading this handwriting assessment. Please check your connection and try again.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent className="flex-row flex-wrap items-center justify-center gap-2.5">
+              <Button
+                type="button"
+                onClick={() => {
+                  void refetchActivity();
+                  void refetchSubmissions();
+                }}
+                className="min-h-11 sm:min-h-9 cursor-pointer"
+              >
+                <RotateCcw data-icon="inline-start" aria-hidden="true" />
+                <span>Retry</span>
+              </Button>
+              <Button
+                nativeButton={false}
+                variant="outline"
+                className="min-h-11 sm:min-h-9"
+                render={<Link href={activityHref} />}
+              >
+                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                <span>Return to Activity</span>
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -251,23 +277,31 @@ export default function SubmissionDetailPage({
       );
     }
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-4 text-center space-y-4 bg-surface/50 dark:bg-card/50 rounded-2xl border border-dashed border-border/80" data-page-studio="true">
-        <div className="space-y-1.5 max-w-md">
-          <h1 className="font-heading text-lg font-semibold text-foreground">
-            Submission Not Found
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            The handwriting submission you are looking for may have been deleted, or the submission ID is invalid.
-          </p>
-        </div>
-        <Link
-          href={activityHref}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-xs min-h-11 sm:min-h-9"
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          <span>Return to Activity</span>
-        </Link>
-      </div>
+      <Card className="py-0" data-page-studio="true">
+        <CardContent className="px-0">
+          <Empty className="border-0 py-20 px-4">
+            <EmptyMedia variant="icon">
+              <FileQuestion aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyHeader className="max-w-md">
+              <EmptyTitle>Submission Not Found</EmptyTitle>
+              <EmptyDescription>
+                The handwriting submission you are looking for may have been deleted, or the submission ID is invalid.
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button
+                nativeButton={false}
+                className="min-h-11 sm:min-h-9"
+                render={<Link href={activityHref} />}
+              >
+                <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                <span>Return to Activity</span>
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </CardContent>
+      </Card>
     );
   }
 

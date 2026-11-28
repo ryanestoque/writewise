@@ -1,16 +1,21 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import {
   type Activity,
-  useDeleteActivity } from "@/lib/hooks/use-activities";
+  useDeleteActivity,
+} from "@/lib/hooks/use-activities";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
@@ -23,7 +28,8 @@ interface DeleteActivityDialogProps {
 export function DeleteActivityDialog({
   activity,
   open,
-  onOpenChange }: DeleteActivityDialogProps) {
+  onOpenChange,
+}: DeleteActivityDialogProps) {
   const { mutate: deleteActivity, isPending } = useDeleteActivity();
 
   if (!activity) return null;
@@ -39,74 +45,66 @@ export function DeleteActivityDialog({
       },
       onError: (error: Error) => {
         toast.add({ type: "error", title: error.message || "Failed to delete activity." });
-      } });
+      },
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md p-5 sm:p-6 rounded-2xl sm:rounded-3xl overflow-y-auto shadow-xl border border-border/80 bg-surface dark:bg-card">
-        <DialogHeader className="pb-3 text-left">
-          <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader className="text-left">
+          <AlertDialogTitle>
             {hasSubmissions ? "Cannot Delete Activity" : "Delete Activity"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </AlertDialogTitle>
+          <AlertDialogDescription>
             {hasSubmissions
-              ? "This activity contains existing student records."
-              : "This action cannot be undone."}
-          </DialogDescription>
-        </DialogHeader>
+              ? "This activity contains existing student records and cannot be deleted."
+              : "Are you sure you want to delete this activity? It will be permanently removed from your activities list."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-        <div className="space-y-3 pt-2">
+        <div className="flex flex-col gap-3">
           {/* Target Text Preview Box */}
           <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-xs sm:text-sm text-foreground italic line-clamp-3">
             &ldquo;{activity.target_text}&rdquo;
           </div>
 
-          {hasSubmissions ? (
-            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300">
-              <AlertTriangle className="size-4 shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
+          {hasSubmissions && (
+            <Alert className="border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
+              <AlertTriangle aria-hidden="true" />
+              <AlertDescription className="text-xs leading-relaxed">
                 This activity has <strong>{submissionCount}</strong> student{" "}
                 {submissionCount === 1 ? "submission" : "submissions"}. To
                 preserve student assessment history and grading data,
                 activities with submissions cannot be deleted.
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Are you sure you want to delete this activity? It will be
-              permanently removed from your activities list.
-            </p>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row justify-end items-stretch sm:items-center gap-2 pt-4 mt-2 border-t border-border">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto text-muted-foreground hover:text-foreground text-xs sm:text-sm rounded-lg sm:rounded-xl font-medium cursor-pointer"
-          >
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>
             {hasSubmissions ? "Close" : "Cancel"}
-          </Button>
+          </AlertDialogCancel>
           {!hasSubmissions && (
-            <Button
-              type="button"
+            <AlertDialogAction
               variant="destructive"
               disabled={isPending}
-              onClick={handleDelete}
-              className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
+              onClick={(event) => {
+                event.preventDefault();
+                handleDelete();
+              }}
             >
               {isPending ? (
-                <Spinner className="w-4 h-4 mr-2" />
+                <Spinner data-icon="inline-start" />
               ) : (
-                <Trash2 className="w-4 h-4 mr-1.5" />
+                <Trash2 data-icon="inline-start" aria-hidden="true" />
               )}
               Delete Activity
-            </Button>
+            </AlertDialogAction>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

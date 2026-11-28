@@ -1,7 +1,10 @@
 "use client";
 
 import { memo } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
@@ -91,68 +94,86 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
               . This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div
+          <ScrollArea
             role="region"
-            className="flex max-h-64 flex-col gap-3 overflow-y-auto text-sm"
+            className="max-h-64 pr-3 text-sm"
             aria-label="Attempts selected for deletion"
             tabIndex={0}
           >
-            {hiddenSelectedCount > 0 && (
-              <div role="status" className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200">
-                <span>
-                  <strong>{hiddenSelectedCount}</strong> hidden {hiddenSelectedCount === 1 ? "attempt is" : "attempts are"} included in this deletion.
-                </span>
-                {onClearHiddenSelection && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="xs"
-                    onClick={onClearHiddenSelection}
-                    className="h-auto p-0 underline hover:no-underline font-semibold cursor-pointer shrink-0 text-amber-900 dark:text-amber-200"
-                  >
-                    Remove hidden
-                  </Button>
-                )}
+            <div className="flex flex-col gap-3">
+              {hiddenSelectedCount > 0 && (
+                <Alert
+                  role="status"
+                  className="border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text has-data-[slot=alert-action]:pr-32"
+                >
+                  <AlertCircle aria-hidden="true" />
+                  <AlertDescription className="text-xs">
+                    <strong>{hiddenSelectedCount}</strong> hidden{" "}
+                    {hiddenSelectedCount === 1 ? "attempt is" : "attempts are"} included in this
+                    deletion.
+                  </AlertDescription>
+                  {onClearHiddenSelection && (
+                    <AlertAction>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="xs"
+                        onClick={onClearHiddenSelection}
+                        className="h-auto p-0 font-semibold text-band-2-text underline hover:no-underline cursor-pointer"
+                      >
+                        Remove hidden
+                      </Button>
+                    </AlertAction>
+                  )}
+                </Alert>
+              )}
+              {unavailableSelectedCount > 0 && (
+                <Alert
+                  variant="destructive"
+                  className="has-data-[slot=alert-action]:pr-28"
+                >
+                  <AlertDescription className="text-xs">
+                    {unavailableSelectedCount} selected{" "}
+                    {unavailableSelectedCount === 1 ? "attempt is" : "attempts are"} unavailable.
+                  </AlertDescription>
+                  {onClearSelection && (
+                    <AlertAction>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="xs"
+                        onClick={onClearSelection}
+                        className="h-auto p-0 font-semibold text-destructive underline hover:no-underline cursor-pointer"
+                      >
+                        Clear selection
+                      </Button>
+                    </AlertAction>
+                  )}
+                </Alert>
+              )}
+              <div className="flex flex-col gap-2">
+                {selectedSubmissions.map((sub, index) => (
+                  <div key={sub.id} className="flex flex-col gap-2">
+                    {index > 0 && <Separator />}
+                    <div className="flex flex-col gap-1 pb-1">
+                      <strong className="break-words">
+                        {sub.student?.full_name ??
+                          students?.find((student) => student.id === sub.student_id)?.full_name ??
+                          "Unknown student"}
+                      </strong>
+                      <span className="text-muted-foreground">
+                        Uploaded {formatDate(sub.created_at)}
+                      </span>
+                      <span>
+                        {activeIds.has(sub.id) ? "Official attempt" : "Past attempt"}
+                        {sub.released_at ? " · Released to parents" : " · Not released"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-            {unavailableSelectedCount > 0 && (
-              <Alert
-                variant="destructive"
-                className="flex items-center justify-between gap-2 rounded-lg p-2 text-xs"
-              >
-                <AlertDescription className="text-xs">
-                  {unavailableSelectedCount} selected {unavailableSelectedCount === 1 ? "attempt is" : "attempts are"} unavailable.
-                </AlertDescription>
-                {onClearSelection && (
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="xs"
-                    onClick={onClearSelection}
-                    className="h-auto p-0 underline hover:no-underline font-semibold cursor-pointer shrink-0 text-destructive"
-                  >
-                    Clear selection
-                  </Button>
-                )}
-              </Alert>
-            )}
-            {selectedSubmissions.map((sub) => (
-              <div key={sub.id} className="flex flex-col gap-1 border-b pb-2">
-                <strong className="break-words">
-                  {sub.student?.full_name ??
-                    students?.find((student) => student.id === sub.student_id)?.full_name ??
-                    "Unknown student"}
-                </strong>
-                <span className="text-muted-foreground">
-                  Uploaded {formatDate(sub.created_at)}
-                </span>
-                <span>
-                  {activeIds.has(sub.id) ? "Official attempt" : "Past attempt"}
-                  {sub.released_at ? " · Released to parents" : " · Not released"}
-                </span>
-              </div>
-            ))}
-          </div>
+            </div>
+          </ScrollArea>
           <AlertDialogFooter>
             <AlertDialogCancel
               disabled={isBatchDeleting}
@@ -176,7 +197,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isBatchDeleting ? (
                 <>
-                  <Spinner className="mr-1.5 size-4" />
+                  <Spinner data-icon="inline-start" />
                   Deleting...
                 </>
               ) : (
@@ -214,7 +235,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isSingleDeleting ? (
                 <>
-                  <Spinner className="mr-1.5 size-4" />
+                  <Spinner data-icon="inline-start" />
                   Deleting...
                 </>
               ) : (
@@ -256,7 +277,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isStudentBatchDeleting ? (
                 <>
-                  <Spinner className="mr-1.5 size-4" />
+                  <Spinner data-icon="inline-start" />
                   Deleting...
                 </>
               ) : (

@@ -54,12 +54,16 @@ const AttemptDeletionDialogs = dynamic(
     ),
   { ssr: false }
 );
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Kbd } from "@/components/ui/kbd";
 import {
   AlertDialog,
@@ -1085,18 +1089,22 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
   if (error) {
     return (
-      <div className="w-full space-y-5 px-1 pb-28 sm:space-y-6 sm:px-0 sm:pb-24">
+      <div className="flex w-full flex-col gap-5 px-1 pb-28 sm:gap-6 sm:px-0 sm:pb-24">
         <div>
-          <Link
-            href="/activities"
-            className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden md:min-h-[36px]"
+          <Button
+            nativeButton={false}
+            variant="ghost"
+            size="sm"
+            className="group -ml-1 min-h-11 md:min-h-9"
+            render={<Link href="/activities" />}
           >
             <ArrowLeft
-              className="size-3.5 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
+              data-icon="inline-start"
+              className="transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
               aria-hidden="true"
             />
             <span>Back to Activities</span>
-          </Link>
+          </Button>
         </div>
         <Alert variant="destructive">
           <AlertCircle aria-hidden="true" />
@@ -1109,7 +1117,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               onClick={() => refetch()}
               className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 shrink-0 cursor-pointer md:min-h-9"
             >
-              <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              <RotateCcw data-icon="inline-start" aria-hidden="true" />
               Retry
             </Button>
           </AlertDescription>
@@ -1120,82 +1128,91 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-5 px-1 pb-28 sm:space-y-6 sm:px-0 sm:pb-24">
+      <div className="flex w-full flex-col gap-5 px-1 pb-28 sm:gap-6 sm:px-0 sm:pb-24">
         <Skeleton className="h-4 w-40" />
-        <div className="bg-surface dark:bg-card border-border shadow-warm space-y-4 rounded-xl border p-6 sm:rounded-2xl">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-7 w-1/3 rounded-lg" />
-            <Skeleton className="h-9 w-28 rounded-lg" />
-          </div>
-          <Skeleton className="h-20 w-full rounded-xl" />
-          <div className="flex gap-2 pt-2">
-            <Skeleton className="h-5 w-24 rounded-full" />
-            <Skeleton className="h-5 w-16 rounded-full" />
-          </div>
-        </div>
-        <div className="bg-surface dark:bg-card border-border shadow-warm space-y-4 rounded-xl border p-6 sm:rounded-2xl">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-6 w-36" />
-            <Skeleton className="h-8 w-44 rounded-lg" />
-          </div>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-4/3 w-full rounded-xl" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-7 w-1/3 rounded-lg" />
+              <Skeleton className="h-9 w-28 rounded-lg" />
+            </div>
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <div className="flex gap-2 pt-2">
+              <Skeleton className="h-5 w-24 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-6 w-36" />
+              <Skeleton className="h-8 w-44 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex flex-col gap-2">
+                  <Skeleton className="aspect-4/3 w-full rounded-xl" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!activity) {
     return (
-      <div className="w-full space-y-5 px-1 pb-28 sm:space-y-6 sm:px-0 sm:pb-24">
+      <div className="flex w-full flex-col gap-5 px-1 pb-28 sm:gap-6 sm:px-0 sm:pb-24">
         <div>
-          <Link
-            href="/activities"
-            className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden md:min-h-[36px]"
+          <Button
+            nativeButton={false}
+            variant="ghost"
+            size="sm"
+            className="group -ml-1 min-h-11 md:min-h-9"
+            render={<Link href="/activities" />}
           >
             <ArrowLeft
-              className="size-3.5 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
+              data-icon="inline-start"
+              className="transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
               aria-hidden="true"
             />
             <span>Back to Activities</span>
-          </Link>
+          </Button>
         </div>
-        <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-          <Empty className="border-0 py-12 sm:py-14 px-4">
-            <EmptyMedia
-              variant="icon"
-              className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
-            >
-              <ClipboardList className="size-5 sm:size-6" aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyHeader className="max-w-md">
-              <EmptyTitle className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
-                Activity not found
-              </EmptyTitle>
-              <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                This activity may have been removed or you don&apos;t have access.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
-              <Link
-                href="/activities"
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                )}
+        <Card className="py-0">
+          <CardContent className="px-0">
+            <Empty className="border-0 py-12 sm:py-14 px-4">
+              <EmptyMedia
+                variant="icon"
+                className="size-11 rounded-xl bg-muted text-muted-foreground border border-border/40"
               >
-                <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                Back to Activities
-              </Link>
-            </EmptyContent>
-          </Empty>
-        </div>
+                <ClipboardList className="size-5 sm:size-6" aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyHeader className="max-w-md">
+                <EmptyTitle className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+                  Activity not found
+                </EmptyTitle>
+                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
+                  This activity may have been removed or you don&apos;t have access.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
+                <Button
+                  nativeButton={false}
+                  variant="outline"
+                  className="h-10 min-h-11 cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-9"
+                  render={<Link href="/activities" />}
+                >
+                  <ArrowLeft data-icon="inline-start" aria-hidden="true" />
+                  Back to Activities
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -1214,16 +1231,20 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     <div className="flex w-full min-w-0 flex-col gap-3 pb-28 sm:gap-5 sm:pb-24">
       {/* Top Back Navigation Trail */}
       <nav aria-label="Breadcrumb navigation" className="flex items-center print:hidden">
-        <Link
-          href="/activities"
-          className="text-muted-foreground hover:text-foreground group focus-visible:ring-ring hover:bg-muted/50 -ml-1 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden sm:-ml-2 md:min-h-[36px]"
+        <Button
+          nativeButton={false}
+          variant="ghost"
+          size="sm"
+          className="group -ml-1 sm:-ml-2 min-h-11 md:min-h-9"
+          render={<Link href="/activities" />}
         >
           <ArrowLeft
-            className="size-3.5 transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
+            data-icon="inline-start"
+            className="transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none"
             aria-hidden="true"
           />
           <span>Back to Activities</span>
-        </Link>
+        </Button>
       </nav>
 
       {/* Streamlined Activity Hero Card with Authentic 3-Line Cursive Ruling */}
@@ -1258,27 +1279,26 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       />
 
       {commentTarget.kind !== "none" && (
-        <div
-          role="status"
-          className="bg-muted/40 border-border flex flex-col items-start justify-between gap-3 rounded-xl border p-4 sm:flex-row sm:items-center"
-        >
-          <p className="text-muted-foreground text-sm">
+        <Alert role="status" className="bg-muted/40 has-data-[slot=alert-action]:pr-24">
+          <AlertDescription className="flex min-h-9 items-center">
             Choose a worksheet upload to view its comments.
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={closeComments}
-            className="min-h-11 md:min-h-9"
-          >
-            Dismiss
-          </Button>
-        </div>
+          </AlertDescription>
+          <AlertAction>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={closeComments}
+              className="min-h-11 md:min-h-9 cursor-pointer"
+            >
+              Dismiss
+            </Button>
+          </AlertAction>
+        </Alert>
       )}
       <section
         id="student-work"
         aria-labelledby="submissions-heading"
-        className="space-y-3 sm:space-y-4 pt-4 sm:pt-6 scroll-mt-20"
+        className="flex flex-col gap-3 sm:gap-4 pt-4 sm:pt-6 scroll-mt-20"
       >
         {/* Section Header with Controls */}
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -1298,11 +1318,11 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 variant="default"
                 size="default"
                 onClick={handleStartGradingSprint}
-                className="min-h-[44px] md:min-h-[36px] px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
+                className="min-h-11 md:min-h-9 px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs"
                 aria-label={`Start grading sprint. ${allPendingScoringSubmissions.length} worksheets pending scoring.`}
                 aria-keyshortcuts="Alt+G"
               >
-                <PenLine className="size-3.5 shrink-0" aria-hidden="true" />
+                <PenLine data-icon="inline-start" aria-hidden="true" />
                 <span>Start Grading ({allPendingScoringSubmissions.length} Pending)</span>
                 <Kbd
                   aria-hidden="true"
@@ -1442,16 +1462,13 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl"
-              >
+              <Card key={i} size="sm" className="gap-0 pt-0 pb-3.5">
                 <Skeleton className="aspect-4/3 w-full rounded-none" />
-                <div className="space-y-2 p-3.5">
+                <CardContent className="flex flex-col gap-2 pt-3.5">
                   <Skeleton className="h-4 w-2/3" />
                   <Skeleton className="h-4 w-1/3" />
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ) : submissionsError ? (
@@ -1466,41 +1483,43 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 onClick={() => refetchSubmissions()}
                 className="border-destructive/30 hover:bg-destructive/10 text-destructive min-h-11 shrink-0 cursor-pointer md:min-h-9"
               >
-                <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                <RotateCcw data-icon="inline-start" aria-hidden="true" />
                 Retry
               </Button>
             </AlertDescription>
           </Alert>
         ) : submissions?.length === 0 && (viewMode === "all" || !assignedStudents.length) ? (
           /* Empty state: No submissions at all */
-          <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
-            <Empty className="border-0 py-12 sm:py-14 px-4">
-              <EmptyMedia
-                variant="icon"
-                className="size-11 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
-              >
-                <Inbox className="size-5 sm:size-6" aria-hidden="true" />
-              </EmptyMedia>
-              <EmptyHeader className="max-w-md">
-                <EmptyTitle className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
-                  No submissions yet
-                </EmptyTitle>
-                <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
-                  Upload a student&apos;s handwriting worksheet for this activity to begin AI
-                  diagnostic assessment.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] w-full cursor-pointer rounded-lg px-4 text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
-                  onClick={() => openUpload({ activityId: id })}
+          <Card className="py-0">
+            <CardContent className="px-0">
+              <Empty className="border-0 py-12 sm:py-14 px-4">
+                <EmptyMedia
+                  variant="icon"
+                  className="size-11 rounded-xl bg-secondary text-secondary-foreground"
                 >
-                  <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  <span>Upload worksheet</span>
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </div>
+                  <Inbox className="size-5 sm:size-6" aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader className="max-w-md">
+                  <EmptyTitle className="text-lg sm:text-xl font-medium tracking-tight text-foreground">
+                    No submissions yet
+                  </EmptyTitle>
+                  <EmptyDescription className="mx-auto max-w-sm text-xs sm:text-sm text-muted-foreground">
+                    Upload a student&apos;s handwriting worksheet for this activity to begin AI
+                    diagnostic assessment.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex w-full items-center justify-center px-4 sm:w-auto sm:px-0">
+                  <Button
+                    className="h-10 min-h-11 w-full cursor-pointer rounded-lg px-4 text-xs font-medium sm:w-auto sm:rounded-xl sm:text-sm md:h-9 md:min-h-9"
+                    onClick={() => openUpload({ activityId: id })}
+                  >
+                    <Upload data-icon="inline-start" aria-hidden="true" />
+                    <span>Upload worksheet</span>
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            </CardContent>
+          </Card>
         ) : currentListLength === 0 ? (
           <ActivityReviewEmptyStates
             statusFilter={statusFilter}
@@ -1602,16 +1621,17 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         )}
       </section>
 
+      <Separator />
       <Collapsible
         open={historyOpen}
         onOpenChange={setHistoryOpen}
-        className="border-border border-t pt-4"
       >
         <CollapsibleTrigger
-          render={<Button variant="ghost" className="min-h-11 gap-2 md:min-h-9" />}
+          render={<Button variant="ghost" className="min-h-11 md:min-h-9" />}
         >
-          Conversation history{" "}
+          <span>Conversation history</span>
           <ChevronDown
+            data-icon="inline-end"
             className={cn(
               "transition-transform motion-reduce:transition-none",
               historyOpen && "rotate-180"
@@ -1671,19 +1691,23 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         ariaLabel="Batch attempt actions"
       >
         {hiddenSelectedCount > 0 && (
-          <div className="flex items-center gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-900 dark:text-amber-200">
-            <AlertCircle className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+          <Badge
+            variant="outline"
+            className="h-auto gap-1.5 border-band-2/40 bg-band-2/15 px-2.5 py-1 text-xs font-medium text-band-2-text"
+          >
             <span>
               {hiddenSelectedCount} hidden {hiddenSelectedCount === 1 ? "attempt" : "attempts"}
             </span>
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
               onClick={clearHiddenSelections}
-              className="ml-1 font-semibold underline hover:no-underline text-amber-950 dark:text-amber-100 cursor-pointer"
+              className="h-auto p-0 font-semibold text-band-2-text underline hover:no-underline cursor-pointer"
             >
               Clear hidden
-            </button>
-          </div>
+            </Button>
+          </Badge>
         )}
         {selectedStudentsCount > 0 && (
           <span className="text-muted-foreground mr-1 hidden text-xs sm:inline">
@@ -1697,9 +1721,9 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             size="sm"
             onClick={() => setIsBatchReleaseDialogOpen(true)}
             disabled={isBatchReleasing || batchDeleteMutation.isPending}
-            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9 bg-brand-700 hover:bg-brand-800 dark:bg-primary dark:hover:bg-primary/90 text-white dark:text-primary-foreground"
+            className="min-h-11 cursor-pointer rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
           >
-            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+            <CheckCircle2 data-icon="inline-start" aria-hidden="true" />
             <span>
               Release {releasableSelected.length}{" "}
               <span className="hidden sm:inline">
@@ -1715,7 +1739,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
             size="sm"
             onClick={() => setIsBatchExcuseDialogOpen(true)}
             disabled={isBatchExcusing || batchDeleteMutation.isPending}
-            className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-medium md:min-h-9 border-border/80 hover:bg-muted/60"
+            className="min-h-11 cursor-pointer rounded-full px-3.5 text-xs font-medium md:min-h-9 border-border/80 hover:bg-muted/60"
           >
             <span>
               Excuse {selectedStudentIds.length}{" "}
@@ -1731,9 +1755,9 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
           size="sm"
           onClick={() => setIsBatchDeleteDialogOpen(true)}
           disabled={batchDeleteMutation.isPending || isBatchReleasing || isBatchExcusing}
-          className="min-h-11 cursor-pointer gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
+          className="min-h-11 cursor-pointer rounded-full px-3.5 text-xs font-semibold shadow-xs md:min-h-9"
         >
-          <Trash2 className="size-3.5" aria-hidden="true" />
+          <Trash2 data-icon="inline-start" aria-hidden="true" />
           <span>
             Delete {selectedCount}{" "}
             <span className="hidden sm:inline">
@@ -1785,7 +1809,14 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                 void handleBatchExcuse();
               }}
             >
-              {isBatchExcusing ? "Excusing…" : `Excuse ${selectedStudentIds.length}`}
+              {isBatchExcusing ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  Excusing…
+                </>
+              ) : (
+                `Excuse ${selectedStudentIds.length}`
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

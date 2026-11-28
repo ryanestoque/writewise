@@ -27,11 +27,13 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import {
   Empty,
@@ -384,7 +386,7 @@ export default function ActivitiesPage() {
               onClick={() => refetch()}
               className="min-h-11 md:min-h-9 shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10 cursor-pointer"
             >
-              <RotateCcw className="mr-1.5 size-4" aria-hidden="true" />
+              <RotateCcw data-icon="inline-start" aria-hidden="true" />
               Retry
             </Button>
           </AlertDescription>
@@ -395,7 +397,7 @@ export default function ActivitiesPage() {
 
   return (
     <TooltipProvider delay={150}>
-      <div className="w-full min-w-0 space-y-5 sm:space-y-6 pb-28 sm:pb-24">
+      <div className="flex w-full min-w-0 flex-col gap-5 sm:gap-6 pb-28 sm:pb-24">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
@@ -411,9 +413,9 @@ export default function ActivitiesPage() {
               setIsCreateOpen(true);
             }}
             aria-keyshortcuts="c"
-            className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
+            className="h-10 sm:h-9 min-h-11 sm:min-h-9 w-full sm:w-auto text-xs sm:text-sm font-medium shadow-xs rounded-lg sm:rounded-xl cursor-pointer"
           >
-            <Plus className="w-4 h-4 mr-1.5 shrink-0" aria-hidden="true" />
+            <Plus data-icon="inline-start" aria-hidden="true" />
             <span>Create Activity</span>
             <Kbd
               aria-hidden="true"
@@ -427,80 +429,78 @@ export default function ActivitiesPage() {
 
       {/* Filter & Search Bar — only when activities exist */}
       {activities && activities.length > 0 && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface dark:bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
-          {/* Search Input */}
-          <SearchInput
-            ref={searchInputRef}
-            placeholder="Search activities..."
-            aria-label="Search activities by target text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onClear={() => setSearchQuery("")}
-            containerClassName="w-full md:w-56 lg:w-64 shrink-0"
-          />
-
-          {/* Filter Pills & Sort Controls */}
-          <div className="relative min-w-0 flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between md:justify-end gap-2 w-full md:w-auto">
-            <FilterPills
-              items={activityFilterItems}
-              value={filterType}
-              onChange={handleFilterChange}
-              ariaLabel="Filter by activity type"
-              containerClassName="min-w-0 flex-1 md:flex-initial md:justify-end"
+        <Card size="sm" className="py-3">
+          <CardContent className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-3">
+            {/* Search Input */}
+            <SearchInput
+              ref={searchInputRef}
+              placeholder="Search activities..."
+              aria-label="Search activities by target text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClear={() => setSearchQuery("")}
+              containerClassName="w-full md:w-56 lg:w-64 shrink-0"
             />
 
-            {/* Sort Selector */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[34px] sm:min-h-[32px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
-                <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
-                <span className="font-medium text-foreground">
-                  {sortBy === "newest" && "Newest First"}
-                  {sortBy === "oldest" && "Oldest First"}
-                  {sortBy === "most_submissions" && "Most Submissions"}
-                  {sortBy === "least_submissions" && "Least Submissions"}
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  onClick={() => setSortBy("newest")}
-                  className="cursor-pointer text-xs justify-between"
+            {/* Filter Pills & Sort Controls */}
+            <div className="relative min-w-0 flex-1 flex flex-col sm:flex-row items-stretch sm:items-center justify-between md:justify-end gap-2 w-full md:w-auto">
+              <FilterPills
+                items={activityFilterItems}
+                value={filterType}
+                onChange={handleFilterChange}
+                ariaLabel="Filter by activity type"
+                containerClassName="min-w-0 flex-1 md:flex-initial md:justify-end"
+              />
+
+              {/* Sort Selector */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-11 sm:min-h-8 shrink-0 cursor-pointer text-xs"
+                    />
+                  }
                 >
-                  <span>Newest First</span>
-                  {sortBy === "newest" && (
-                    <span className="text-primary font-bold">✓</span>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortBy("oldest")}
-                  className="cursor-pointer text-xs justify-between"
-                >
-                  <span>Oldest First</span>
-                  {sortBy === "oldest" && (
-                    <span className="text-primary font-bold">✓</span>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortBy("most_submissions")}
-                  className="cursor-pointer text-xs justify-between"
-                >
-                  <span>Most Submissions</span>
-                  {sortBy === "most_submissions" && (
-                    <span className="text-primary font-bold">✓</span>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortBy("least_submissions")}
-                  className="cursor-pointer text-xs justify-between"
-                >
-                  <span>Least Submissions</span>
-                  {sortBy === "least_submissions" && (
-                    <span className="text-primary font-bold">✓</span>
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+                  <ArrowUpDown data-icon="inline-start" aria-hidden="true" />
+                  <span>
+                    {sortBy === "newest" && "Newest First"}
+                    {sortBy === "oldest" && "Oldest First"}
+                    {sortBy === "most_submissions" && "Most Submissions"}
+                    {sortBy === "least_submissions" && "Least Submissions"}
+                  </span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuRadioGroup
+                    value={sortBy}
+                    onValueChange={(value) => setSortBy(value as SortOption)}
+                  >
+                    <DropdownMenuRadioItem value="newest" className="cursor-pointer text-xs">
+                      Newest First
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="oldest" className="cursor-pointer text-xs">
+                      Oldest First
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem
+                      value="most_submissions"
+                      className="cursor-pointer text-xs"
+                    >
+                      Most Submissions
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem
+                      value="least_submissions"
+                      className="cursor-pointer text-xs"
+                    >
+                      Least Submissions
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Filter results indicator */}
@@ -521,13 +521,15 @@ export default function ActivitiesPage() {
             <strong className="text-foreground">{searchQuery}</strong>
             &rdquo;
           </span>
-          <button
+          <Button
             type="button"
+            variant="link"
+            size="xs"
             onClick={() => setSearchQuery("")}
-            className="text-primary hover:underline font-medium cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
+            className="h-auto p-0 cursor-pointer"
           >
             Clear search
-          </button>
+          </Button>
         </div>
       )}
 
@@ -536,100 +538,103 @@ export default function ActivitiesPage() {
         /* Loading Skeleton */
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl p-5 space-y-3 shadow-warm"
-            >
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <div className="flex gap-2 pt-2">
-                <Skeleton className="h-5 w-16 rounded-full" />
-                <Skeleton className="h-5 w-12 rounded-full" />
-              </div>
-            </div>
+            <Card key={i} size="sm">
+              <CardContent className="flex flex-col gap-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <div className="flex gap-2 pt-2">
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       ) : activities?.length === 0 ? (
         /* Empty State — No activities */
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
-          <Empty className="py-14 border-0">
-            <EmptyMedia
-              variant="icon"
-              className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300"
-            >
-              <ClipboardList className="w-6 h-6" />
-            </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle className="text-lg sm:text-xl">
-                No activities yet
-              </EmptyTitle>
-              <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
-                Create your first cursive handwriting activity to begin
-                assessing student worksheets.
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent className="flex items-center justify-center w-full sm:w-auto px-4 sm:px-0">
-              <Button
-                onClick={() => {
-                  setDuplicatingActivity(null);
-                  setIsCreateOpen(true);
-                }}
-                className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
+        <Card className="py-0">
+          <CardContent className="px-0">
+            <Empty className="py-14 border-0">
+              <EmptyMedia
+                variant="icon"
+                className="bg-secondary text-secondary-foreground"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Activity
-              </Button>
-            </EmptyContent>
-          </Empty>
-        </div>
+                <ClipboardList className="size-6" aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-lg sm:text-xl">
+                  No activities yet
+                </EmptyTitle>
+                <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
+                  Create your first cursive handwriting activity to begin
+                  assessing student worksheets.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="flex items-center justify-center w-full sm:w-auto px-4 sm:px-0">
+                <Button
+                  onClick={() => {
+                    setDuplicatingActivity(null);
+                    setIsCreateOpen(true);
+                  }}
+                  className="h-10 sm:h-9 min-h-11 sm:min-h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
+                >
+                  <Plus data-icon="inline-start" aria-hidden="true" />
+                  Create Activity
+                </Button>
+              </EmptyContent>
+            </Empty>
+          </CardContent>
+        </Card>
       ) : filteredAndSortedActivities.length === 0 ? (
         /* Empty State — No search / filter results */
-        <div className="bg-surface dark:bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
-          <Empty className="py-12 border-0">
-            <EmptyMedia
-              variant="icon"
-              className="bg-muted text-muted-foreground"
-            >
-              {filterType === "archived" ? (
-                <Archive className="w-6 h-6" />
-              ) : (
-                <SearchX className="w-6 h-6" />
-              )}
-            </EmptyMedia>
-            <EmptyHeader>
-              <EmptyTitle className="text-lg sm:text-xl">
-                {filterType === "archived"
-                  ? "No archived activities"
-                  : "No matching activities"}
-              </EmptyTitle>
-              <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
-                {filterType === "archived"
-                  ? "When handwriting exercises are completed, you can archive them to keep your active list clean."
-                  : "No activities match your current search and filter criteria."}
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent className="flex gap-2">
-              {searchQuery && (
-                <Button
-                  variant="outline"
-                  onClick={() => setSearchQuery("")}
-                  className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
-                >
-                  Clear Search
-                </Button>
-              )}
-              {filterType !== "all" && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setFilterType("all")}
-                  className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
-                >
-                  View Active Activities
-                </Button>
-              )}
-            </EmptyContent>
-          </Empty>
-        </div>
+        <Card className="py-0">
+          <CardContent className="px-0">
+            <Empty className="py-12 border-0">
+              <EmptyMedia
+                variant="icon"
+                className="bg-muted text-muted-foreground"
+              >
+                {filterType === "archived" ? (
+                  <Archive className="size-6" aria-hidden="true" />
+                ) : (
+                  <SearchX className="size-6" aria-hidden="true" />
+                )}
+              </EmptyMedia>
+              <EmptyHeader>
+                <EmptyTitle className="text-lg sm:text-xl">
+                  {filterType === "archived"
+                    ? "No archived activities"
+                    : "No matching activities"}
+                </EmptyTitle>
+                <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
+                  {filterType === "archived"
+                    ? "When handwriting exercises are completed, you can archive them to keep your active list clean."
+                    : "No activities match your current search and filter criteria."}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="flex gap-2">
+                {searchQuery && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setSearchQuery("")}
+                    className="h-10 sm:h-9 min-h-11 sm:min-h-9 font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+                {filterType !== "all" && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setFilterType("all")}
+                    className="h-10 sm:h-9 min-h-11 sm:min-h-9 font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl cursor-pointer"
+                  >
+                    View Active Activities
+                  </Button>
+                )}
+              </EmptyContent>
+            </Empty>
+          </CardContent>
+        </Card>
       ) : (
         /* Activity Card Grid */
         <div
@@ -689,9 +694,8 @@ export default function ActivitiesPage() {
                     selectedIds.size === 1 ? "activity" : "activities"
                   }`}
                 >
-                  <Archive className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
-                  <span className="hidden sm:inline">Archive</span>
-                  <span className="sm:hidden">Archive</span>
+                  <Archive data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+                  <span>Archive</span>
                 </Button>
               }
             />
@@ -718,9 +722,8 @@ export default function ActivitiesPage() {
                     selectedIds.size === 1 ? "activity" : "activities"
                   }`}
                 >
-                  <ArchiveRestore className="w-3.5 h-3.5 sm:mr-1.5 text-muted-foreground shrink-0" />
-                  <span className="hidden sm:inline">Restore</span>
-                  <span className="sm:hidden">Restore</span>
+                  <ArchiveRestore data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+                  <span>Restore</span>
                 </Button>
               }
             />
