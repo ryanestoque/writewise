@@ -7,7 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
@@ -778,26 +777,25 @@ export default function RosterPage() {
                       key={student.id}
                       size="sm"
                       className={cn(
-                        "transition-all",
+                        "gap-2 py-3 transition-all",
                         isSelected
                           ? "bg-primary/5 border-primary/50 ring-1 ring-primary/30"
                           : "hover:border-border"
                       )}
                     >
-                      <CardHeader>
+                      <CardHeader className="items-center">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="p-2 -ml-2 -my-1.5 flex items-center justify-center">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => toggleSelectStudent(student.id)}
-                              aria-label={`Select ${student.full_name}`}
-                            />
-                          </div>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelectStudent(student.id)}
+                            aria-label={`Select ${student.full_name}`}
+                            className="after:-inset-3.5"
+                          />
                           <CardTitle className="text-sm font-semibold tracking-tight truncate">
                             {student.full_name}
                           </CardTitle>
                         </div>
-                        <CardAction className="-mr-1">
+                        <CardAction className="row-span-1 self-center -mr-1.5 -my-2">
                           <RowActions student={student} onEdit={() => handleEdit(student)} />
                         </CardAction>
                       </CardHeader>
@@ -852,9 +850,7 @@ export default function RosterPage() {
                         )}
                       </CardContent>
 
-                      <Separator />
-
-                      <CardFooter className="justify-between text-[11px] text-muted-foreground">
+                      <CardFooter className="mt-1 justify-between border-t border-border/60 pt-3 text-[11px] text-muted-foreground">
                         <span>Enrolled</span>
                         <time dateTime={student.created_at} className="font-medium text-foreground/80">
                           {new Date(student.created_at).toLocaleDateString(undefined, {
