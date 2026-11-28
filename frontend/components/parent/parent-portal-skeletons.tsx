@@ -1,6 +1,7 @@
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Item, ItemActions, ItemContent } from "@/components/ui/item";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -164,7 +165,7 @@ export function TakeHomeActivitiesSkeleton({
 
             <CardContent className="flex-1">
               {/* Cursive Guidelines Specimen Desk placeholder */}
-              <div className="relative overflow-hidden rounded-xl border border-border/70 bg-surface dark:bg-card">
+              <div className="relative overflow-hidden rounded-xl border border-border/70 bg-card">
                 <div className="relative p-3.5 pb-5 sm:p-4 sm:pb-6">
                   <div
                     className="cursive-guidelines pointer-events-none absolute inset-0 z-0 opacity-45"
@@ -219,12 +220,12 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
         className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-2.5 p-3 rounded-xl bg-muted/20 border border-border/60"
       >
         {/* Trend summary item (order-first on mobile) */}
-        <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:space-y-2 pb-2 sm:pb-0 border-b sm:border-b-0 border-border/50">
+        <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:gap-2 pb-2 sm:pb-0 border-b sm:border-b-0 border-border/50">
           <Skeleton className="h-3.5 w-24 sm:w-28 rounded-md" />
           <Skeleton className="h-5 sm:h-6 w-32 sm:w-36 rounded-full" />
         </div>
         {/* First item */}
-        <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-2">
+        <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-2">
           <Skeleton className="h-3.5 w-20 rounded-md" />
           <div className="flex items-center gap-1.5">
             <Skeleton className="h-5 w-10 sm:w-12 rounded-md" />
@@ -232,7 +233,7 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
           </div>
         </div>
         {/* Latest item */}
-        <div className="flex items-center justify-between sm:flex-col sm:items-start sm:space-y-2">
+        <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-2">
           <Skeleton className="h-3.5 w-20 sm:w-24 rounded-md" />
           <div className="flex items-center gap-1.5">
             <Skeleton className="h-5 w-10 sm:w-12 rounded-md" />
@@ -272,7 +273,7 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
         role="status"
         aria-live="polite"
         aria-label="Loading progress chart"
-        className="space-y-4 min-w-0"
+        className="flex flex-col gap-4 min-w-0"
       >
         {inner}
       </div>
@@ -286,7 +287,7 @@ export function ProgressTrendSkeleton({ bare = false }: { bare?: boolean }) {
       aria-label="Loading progress chart"
       className="p-0 gap-0 shadow-none min-w-0"
     >
-      <CardContent className="p-4 sm:p-6 space-y-4 min-w-0">
+      <CardContent className="p-4 sm:p-6 flex flex-col gap-4 min-w-0">
         {inner}
       </CardContent>
     </Card>
@@ -303,7 +304,7 @@ export function PastWorksheetsSkeleton({ rows = 3 }: { rows?: number }) {
       role="status"
       aria-live="polite"
       aria-label="Loading past worksheets"
-      className="space-y-3"
+      className="flex flex-col gap-3"
     >
       <span className="sr-only">Loading past worksheets</span>
 
@@ -361,7 +362,7 @@ export function ParentGradesSkeleton({ rows = 3 }: { rows?: number }) {
     <section
       id="coursework-section"
       aria-labelledby="coursework-heading-loading"
-      className="space-y-3"
+      className="flex flex-col gap-3"
     >
       <h2
         id="coursework-heading-loading"
@@ -478,10 +479,10 @@ export function ParentPortalPageSkeleton({
       <div aria-hidden="true" className="h-11 shrink-0 print:hidden" />
 
       {/* Main Content Canvas (full width, matching DESIGN.md Full-Width Canvas Rule) */}
-      <div aria-hidden="true" className="w-full px-4 sm:px-6 py-6 space-y-6 pb-16">
+      <div aria-hidden="true" className="w-full px-4 sm:px-6 py-6 flex flex-col gap-6 pb-16">
         {/* Page Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1.5 min-w-0">
+          <div className="flex flex-col gap-1.5 min-w-0">
             <Skeleton className="h-8 sm:h-9 w-56 sm:w-72 rounded-md" />
             <Skeleton className="h-4 w-28 rounded-md" />
           </div>
@@ -510,7 +511,7 @@ export function NotificationWorkLoadingSkeleton() {
 
       <div
         aria-hidden="true"
-        className="rounded-lg border border-border/80 bg-muted/30 p-3 space-y-2"
+        className="rounded-lg border border-border/80 bg-muted/30 p-3 flex flex-col gap-2"
       >
         <Skeleton className="h-3.5 w-28 rounded-md" />
         <Skeleton className="h-4 w-5/6 rounded-md" />
@@ -539,7 +540,7 @@ export function ParentSettingsSkeleton() {
       role="status"
       aria-live="polite"
       aria-label="Loading account settings"
-      className="w-full min-w-0 px-4 py-6 sm:px-6 space-y-8 pb-20 sm:pb-16"
+      className="w-full min-w-0 px-4 py-6 sm:px-6 flex flex-col gap-8 pb-20 sm:pb-16"
     >
       <span className="sr-only">Loading account settings</span>
 
@@ -549,36 +550,36 @@ export function ParentSettingsSkeleton() {
       </div>
 
       {/* Page Header */}
-      <div aria-hidden="true" className="border-border space-y-2 border-b pb-6">
+      <div aria-hidden="true" className="border-border flex flex-col gap-2 border-b pb-6">
         <Skeleton className="h-8 sm:h-9 w-52 rounded-md" />
         <Skeleton className="h-4 w-72 max-w-full rounded-md" />
       </div>
 
       {/* 3 Settings Sections */}
       {[2, 2, 1].map((fieldCount, sectionIdx) => (
-        <div key={sectionIdx} aria-hidden="true" className="space-y-8">
+        <div key={sectionIdx} aria-hidden="true" className="flex flex-col gap-8">
           <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
-            <div className="space-y-1.5">
+            <div className="flex flex-col gap-1.5">
               <Skeleton className="h-6 w-44 rounded-md" />
               <Skeleton className="h-4 w-56 rounded-md opacity-70" />
             </div>
 
-            <div className="rounded-xl border border-border bg-card shadow-warm overflow-hidden">
-              <div className="p-6 space-y-5">
+            <Card className="gap-0 py-0">
+              <CardContent className="p-6 flex flex-col gap-5">
                 {Array.from({ length: fieldCount }).map((_, fieldIdx) => (
-                  <div key={fieldIdx} className="space-y-1.5">
+                  <div key={fieldIdx} className="flex flex-col gap-1.5">
                     <Skeleton className="h-4 w-28 rounded-md" />
                     <Skeleton className="h-10 sm:h-9 w-full rounded-lg" />
                   </div>
                 ))}
-              </div>
-              <div className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
+              </CardContent>
+              <CardFooter className="justify-end border-t border-border bg-muted/20 px-6 py-3.5">
                 <Skeleton className="h-11 sm:h-9 w-32 rounded-lg" />
-              </div>
-            </div>
+              </CardFooter>
+            </Card>
           </div>
 
-          {sectionIdx < 2 && <div className="h-px w-full bg-border" />}
+          {sectionIdx < 2 && <Separator />}
         </div>
       ))}
     </div>

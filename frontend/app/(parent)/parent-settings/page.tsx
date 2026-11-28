@@ -6,8 +6,7 @@ import { ParentProfileSettingsCard } from "@/components/settings/parent-profile-
 import { SecuritySettingsCard } from "@/components/settings/security-settings-card";
 import { NotificationSettingsCard } from "@/components/settings/notification-settings-card";
 import { Separator } from "@/components/ui/separator";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -35,23 +34,23 @@ export default async function ParentSettingsPage() {
   const email = user.email || parentProfile?.email || "";
 
   return (
-    <div className="w-full min-w-0 px-4 py-6 sm:px-6 space-y-8 pb-20 sm:pb-16">
+    <div className="w-full min-w-0 px-4 py-6 sm:px-6 flex flex-col gap-8 pb-20 sm:pb-16">
       {/* Return to Progress Navigation */}
       <div>
-        <Link
-          href="/progress"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "-ml-2 h-10 min-h-[40px] gap-1.5 text-muted-foreground hover:text-foreground sm:h-9 sm:min-h-[36px]"
-          )}
+        <Button
+          nativeButton={false}
+          variant="ghost"
+          size="sm"
+          className="-ml-2 h-10 min-h-10 text-muted-foreground hover:text-foreground sm:h-9 sm:min-h-9"
+          render={<Link href="/progress" />}
         >
-          <ArrowLeft className="size-4" aria-hidden="true" />
+          <ArrowLeft data-icon="inline-start" aria-hidden="true" />
           <span>Back to progress</span>
-        </Link>
+        </Button>
       </div>
 
       {/* Page Header */}
-      <div className="border-border space-y-1 border-b pb-6">
+      <div className="border-border flex flex-col gap-1 border-b pb-6">
         <h1 className="font-heading text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
           Account Settings
         </h1>
