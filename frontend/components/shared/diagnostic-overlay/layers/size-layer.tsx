@@ -170,7 +170,7 @@ export const SizeLayer = memo(function SizeLayer({
               vectorEffect="non-scaling-stroke"
               strokeDasharray={isAttention ? "none" : `${5 * hitScale} ${3 * hitScale}`}
               rx={3 * hitScale}
-              className="transition-all"
+              className="transition-[fill-opacity,stroke,stroke-width]"
             />
 
             {/* Top (Midline) and Bottom (Baseline) Guideline Accent Bars */}

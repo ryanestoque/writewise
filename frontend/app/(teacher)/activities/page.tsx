@@ -8,6 +8,7 @@ import {
   useBulkArchive,
 } from "@/lib/hooks/use-activities";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
+import { isBlockingOverlayOpen } from "@/lib/utils/keyboard";
 import { useStudents } from "@/lib/hooks/use-students";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { CreateActivityDialog } from "@/components/activities/create-activity-dialog";
@@ -314,7 +315,8 @@ export default function ActivitiesPage() {
         isCreateOpen ||
         editingActivity ||
         deletingActivity ||
-        duplicatingActivity
+        duplicatingActivity ||
+        isBlockingOverlayOpen()
       )
         return;
 
@@ -536,7 +538,7 @@ export default function ActivitiesPage() {
       {/* Content Area */}
       {isLoading ? (
         /* Loading Skeleton */
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i} size="sm">
               <CardContent className="flex flex-col gap-3">
@@ -641,7 +643,7 @@ export default function ActivitiesPage() {
           id="activities-grid"
           role="region"
           aria-label="Activities list"
-          className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+          className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4"
         >
           {filteredAndSortedActivities.map((activity) => {
             const assignedStudents = (students ?? []).filter((s) =>

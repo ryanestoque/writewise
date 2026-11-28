@@ -18,48 +18,48 @@ export const CRITERION_CONFIG: readonly ChartCriterionConfig[] = [
   {
     key: "composite",
     label: "Overall Score",
-    lightColor: "var(--color-brand-600)",
-    darkColor: "var(--color-brand-400)",
+    lightColor: "var(--color-chart-composite)",
+    darkColor: "var(--color-chart-composite)",
     strokeWidth: 3,
     strokeDasharray: undefined,
   },
   {
     key: "letter_formation",
     label: "Letter Formation",
-    lightColor: "#475569", // Slate Gray (slate-600)
-    darkColor: "#cbd5e1",  // Slate Tint (slate-300)
+    lightColor: "var(--muted-foreground)",
+    darkColor: "var(--muted-foreground)",
     strokeWidth: 2,
     strokeDasharray: "6 3",
   },
   {
     key: "size_consistency",
     label: "Size Consistency",
-    lightColor: "#0e7490", // Deep Cyan / Cool Teal (cyan-700)
-    darkColor: "#38bdf8",  // Sky Blue (sky-400)
+    lightColor: "var(--color-chart-size)",
+    darkColor: "var(--color-chart-size)",
     strokeWidth: 2,
     strokeDasharray: "4 2",
   },
   {
     key: "spacing",
     label: "Spacing",
-    lightColor: "#4338ca", // Indigo Slate (indigo-700)
-    darkColor: "#a5b4fc",  // Indigo Tint (indigo-300)
+    lightColor: "var(--color-chart-spacing)",
+    darkColor: "var(--color-chart-spacing)",
     strokeWidth: 2,
     strokeDasharray: "3 3",
   },
   {
     key: "slant",
     label: "Slant",
-    lightColor: "#92400e", // Warm Bronze / Sepia (amber-800)
-    darkColor: "#fbbf24",  // Warm Ochre (amber-400)
+    lightColor: "var(--band-1-text)",
+    darkColor: "var(--band-1-text)",
     strokeWidth: 2,
     strokeDasharray: "8 3 2 3",
   },
   {
     key: "baseline_alignment",
     label: "Baseline Alignment",
-    lightColor: "#15803d", // Deep Pine (green-700)
-    darkColor: "#4ade80",  // Light Pine (green-400)
+    lightColor: "var(--band-4-text)",
+    darkColor: "var(--band-4-text)",
     strokeWidth: 2,
     strokeDasharray: "2 2",
   },

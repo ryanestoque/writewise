@@ -399,16 +399,16 @@ export function GradebookBulkDialog({
 
         <ResponsiveModalFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40 shrink-0">
           {isZeroReadyTotal ? (
-            <Button onClick={() => onOpenChange(false)} className="min-h-9">
+            <Button onClick={() => onOpenChange(false)} className="min-h-11 sm:min-h-9">
               Back to gradebook
             </Button>
           ) : (
             <>
-              <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)} className="min-h-9">
+              <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)} className="min-h-11 sm:min-h-9">
                 {message ? "Close" : "Cancel"}
               </Button>
               {!message && (
-                <Button disabled={isConfirmDisabled} onClick={() => void save()} className="min-h-9">
+                <Button disabled={isConfirmDisabled} onClick={() => void save()} className="min-h-11 sm:min-h-9">
                   {pending ? (
                     <>
                       <Spinner data-icon="inline-start" />

@@ -229,7 +229,7 @@ export const BaselineLayer = memo(function BaselineLayer({
               strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
               vectorEffect="non-scaling-stroke"
               strokeDasharray={isAttention ? "none" : `${4 * hitScale} ${3 * hitScale}`}
-              className="transition-all"
+              className="transition-[stroke,stroke-opacity,stroke-width]"
             />
 
             {/* Deviation Indicator Indicator Dot */}
@@ -240,7 +240,7 @@ export const BaselineLayer = memo(function BaselineLayer({
                   cy={0}
                   r={5.5 * hitScale}
                   fill={strokeColor}
-                  stroke="#ffffff"
+                  stroke="var(--color-surface)"
                   strokeWidth={2}
                   vectorEffect="non-scaling-stroke"
                   className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"

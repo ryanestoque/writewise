@@ -1150,7 +1150,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
               <Skeleton className="h-6 w-36" />
               <Skeleton className="h-8 w-44 rounded-lg" />
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex flex-col gap-2">
                   <Skeleton className="aspect-4/3 w-full rounded-xl" />
@@ -1449,7 +1449,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
                   handleClearSearch();
                   setStatusFilter("all");
                 }}
-                className="min-h-[44px] sm:min-h-[28px] px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+                className="min-h-11 md:min-h-8 px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
               >
                 Reset filters
               </Button>
@@ -1465,7 +1465,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
         {/* Submissions Content Grid */}
         {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} size="sm" className="gap-0 pt-0 pb-3.5">
                 <Skeleton className="aspect-4/3 w-full rounded-none" />

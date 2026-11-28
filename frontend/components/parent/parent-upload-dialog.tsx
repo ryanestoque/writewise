@@ -547,7 +547,7 @@ function ParentUploadFlow({
       />
 
       <ResponsiveRichOverlayHeader className="shrink-0 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
-        <div className="min-w-0 pr-10 sm:pr-8">
+        <div className="min-w-0 pr-12 sm:pr-8">
           <ResponsiveRichOverlayTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
             Send worksheet photo
           </ResponsiveRichOverlayTitle>
@@ -600,7 +600,7 @@ function ParentUploadFlow({
                             )}
                           >
                             {isCompleted ? (
-                              <CheckIcon aria-hidden="true" />
+                              <CheckIcon className="size-3.5" aria-hidden="true" />
                             ) : (
                               stepNumber
                             )}
@@ -725,7 +725,7 @@ function ParentUploadFlow({
                   variant="outline"
                   size="sm"
                   onClick={handleChooseAnotherWorksheet}
-                  className="h-9 px-3 text-xs sm:text-sm font-medium cursor-pointer"
+                  className="h-11 sm:h-9 px-3 text-xs sm:text-sm font-medium cursor-pointer"
                 >
                   Choose another worksheet
                 </Button>
@@ -895,7 +895,7 @@ function ParentUploadFlow({
                     role="status"
                     className="p-3 bg-warning/10 border-warning/25 text-foreground text-xs animate-in fade-in-50 duration-200"
                   >
-                    <LightbulbIcon className="text-warning" aria-hidden="true" />
+                    <LightbulbIcon className="text-warning-foreground" aria-hidden="true" />
                     <AlertTitle className="font-semibold text-foreground text-xs">
                       Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}:
                     </AlertTitle>
@@ -908,7 +908,7 @@ function ParentUploadFlow({
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => setLastRetakeTip(null)}
-                        className="size-10 sm:size-8 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                        className="size-11 sm:size-8 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
                         aria-label="Dismiss tip"
                       >
                         <XIcon aria-hidden="true" />
@@ -963,7 +963,7 @@ function ParentUploadFlow({
                         ref={choosePhotoButtonRef}
                         type="button"
                         variant="default"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
+                        className="h-11 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
                         onClick={() => cameraInputRef.current?.click()}
                       >
                         <CameraIcon data-icon="inline-start" aria-hidden="true" />
@@ -972,7 +972,7 @@ function ParentUploadFlow({
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full bg-background hover:bg-muted cursor-pointer"
+                        className="h-11 sm:h-9 text-xs sm:text-sm font-medium w-full bg-background hover:bg-muted cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <FileImageIcon
@@ -989,7 +989,7 @@ function ParentUploadFlow({
                         ref={choosePhotoButtonRef}
                         type="button"
                         variant="default"
-                        className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
+                        className="h-11 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <FileImageIcon data-icon="inline-start" aria-hidden="true" />
@@ -1011,7 +1011,7 @@ function ParentUploadFlow({
                         variant="ghost"
                         size="xs"
                         onClick={() => setDropError(null)}
-                        className="min-h-10 sm:min-h-8 h-auto px-2 font-semibold underline text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer touch-manipulation"
+                        className="min-h-11 sm:min-h-8 h-auto px-2 font-semibold underline text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer touch-manipulation"
                       >
                         Dismiss
                       </Button>
@@ -1035,7 +1035,7 @@ function ParentUploadFlow({
                       <Button
                         type="button"
                         variant="ghost"
-                        className="w-full min-h-10 sm:min-h-9 h-auto justify-between rounded-none px-4 py-2 hover:bg-muted/50 text-left font-medium text-foreground cursor-pointer touch-manipulation"
+                        className="w-full min-h-11 sm:min-h-9 h-auto justify-between rounded-none px-4 py-2 hover:bg-muted/50 text-left font-medium text-foreground cursor-pointer touch-manipulation"
                       />
                     }
                   >
@@ -1045,6 +1045,7 @@ function ParentUploadFlow({
                     <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
+                        data-icon="inline-end"
                         className={cn(
                           "size-3.5 transition-transform duration-200",
                           showTips && "rotate-180"
@@ -1173,7 +1174,7 @@ function ParentUploadFlow({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-10 sm:h-9 text-xs font-medium cursor-pointer px-3"
+                        className="h-11 sm:h-9 text-xs font-medium cursor-pointer px-3"
                         onClick={handleRotateClockwise}
                         disabled={isRotating}
                         aria-label="Rotate photo 90 degrees clockwise"
@@ -1189,7 +1190,7 @@ function ParentUploadFlow({
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="h-10 sm:h-9 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer px-2.5"
+                        className="h-11 sm:h-9 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer px-2.5"
                         onClick={handleClearFile}
                         aria-label="Remove photo and take another"
                       >
@@ -1252,9 +1253,22 @@ function ParentUploadFlow({
                         <img
                           src={previewUrl}
                           alt={`Full-size handwriting preview for ${childName}`}
-                          className="w-full h-auto max-h-[72dvh] object-contain rounded-lg border border-border"
+                          className="w-full h-auto max-h-[72dvh] object-contain rounded-lg border border-border touch-pinch-zoom"
                         />
                       </ResponsiveRichOverlayBody>
+                      <ResponsiveRichOverlayFooter
+                        showCloseButton={false}
+                        className="border-t border-border bg-background sm:px-4 sm:py-3 justify-end sm:justify-end"
+                      >
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setZoomOpen(false)}
+                          className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                        >
+                          Close
+                        </Button>
+                      </ResponsiveRichOverlayFooter>
                     </ResponsiveRichOverlayContent>
                   </ResponsiveRichOverlay>
                 )}
@@ -1313,11 +1327,11 @@ function ParentUploadFlow({
 
       {/* Step 3 (Review & Confirm) Action Footer */}
       {!isUploading && step === 3 && (
-        <ResponsiveRichOverlayFooter className="shrink-0 flex-row items-center justify-between sm:justify-between border-t border-border bg-background sm:p-3.5 sm:px-6">
+        <ResponsiveRichOverlayFooter className="shrink-0 flex-row flex-wrap items-center justify-between gap-2 sm:justify-between border-t border-border bg-background sm:p-3.5 sm:px-6">
           <Button
             variant="outline"
             onClick={() => setStep(2)}
-            className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+            className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
           >
             <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
             Back
@@ -1327,10 +1341,11 @@ function ParentUploadFlow({
             ref={submitButtonRef}
             disabled={uploadMutation.isPending || !selectedActivity}
             onClick={handleRetryUpload}
-            className="h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
+            className="h-11 sm:h-9 px-4 sm:px-5 text-xs sm:text-sm font-semibold shadow-warm-sm cursor-pointer"
           >
             <CheckCircle2Icon data-icon="inline-start" aria-hidden="true" />
-            Send worksheet photo
+            <span className="min-[380px]:hidden">Send photo</span>
+            <span className="hidden min-[380px]:inline">Send worksheet photo</span>
           </Button>
         </ResponsiveRichOverlayFooter>
       )}

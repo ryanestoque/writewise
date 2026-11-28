@@ -451,7 +451,7 @@ export function RubricReferenceDialog({
                       key={item.id}
                       value={item.id}
                       className={cn(
-                        "rounded-xl border transition-all duration-150 overflow-hidden",
+                        "rounded-xl border transition-[border-color,background-color,box-shadow] duration-150 overflow-hidden",
                         isExpanded
                           ? "border-primary/30 bg-card data-open:bg-card shadow-xs"
                           : "border-border/70 bg-card/60 hover:bg-card hover:border-border"

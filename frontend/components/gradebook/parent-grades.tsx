@@ -25,6 +25,7 @@ import {
 import { Item, ItemActions, ItemContent } from "@/components/ui/item";
 import { ParentGradesSkeleton } from "@/components/parent/parent-portal-skeletons";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
+import { cn } from "@/lib/utils";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 
 function formatTeacherDisplayName(name: string): string {
@@ -307,13 +308,12 @@ export function ParentGrades({
                             tabIndex={isHighlighted ? -1 : undefined}
                           />
                         }
-                        className={`group/row relative rounded-none border-0 scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none ${
+                        className={cn(
+                          "group/row relative rounded-none border-0 scroll-mt-24 flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3.5 sm:px-5 focus:outline-none",
                           isHighlighted
                             ? "bg-primary/5 ring-primary ring-2 ring-inset"
-                            : onInspectActivity
-                              ? "hover:bg-muted/40 transition-colors"
-                              : ""
-                        }`}
+                            : onInspectActivity && "hover:bg-muted/40 transition-colors"
+                        )}
                       >
                         <ItemContent className="min-w-0 w-full sm:w-auto flex-1 gap-0">
                           {onInspectActivity ? (

@@ -81,9 +81,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Needs Imp.",
     score: "12.5%",
     activeClass:
-      "bg-band-1/20 dark:bg-band-1/30 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-warm-sm font-semibold",
+      "bg-band-1/20 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-1/15 text-band-1-text border-band-1/30 dark:border-band-1/40",
+      "bg-band-1/15 text-band-1-text border-band-1/35",
     dotColor: "bg-band-1",
   },
   {
@@ -92,9 +92,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Developing",
     score: "37.5%",
     activeClass:
-      "bg-band-2/20 dark:bg-band-2/30 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-warm-sm font-semibold",
+      "bg-band-2/20 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-2/15 text-band-2-text border-band-2/30 dark:border-band-2/40",
+      "bg-band-2/15 text-band-2-text border-band-2/35",
     dotColor: "bg-band-2",
   },
   {
@@ -103,9 +103,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Satisfactory",
     score: "62.5%",
     activeClass:
-      "bg-band-3/20 dark:bg-band-3/30 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-warm-sm font-semibold",
+      "bg-band-3/20 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-3/15 text-band-3-text border-band-3/30 dark:border-band-3/40",
+      "bg-band-3/15 text-band-3-text border-band-3/35",
     dotColor: "bg-band-3",
   },
   {
@@ -114,9 +114,9 @@ export const RUBRIC_BANDS: RubricBandMeta[] = [
     shortLabel: "Excellent",
     score: "87.5%",
     activeClass:
-      "bg-band-4/20 dark:bg-band-4/30 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-warm-sm font-semibold",
+      "bg-band-4/20 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-warm-sm font-semibold",
     badgeClass:
-      "bg-band-4/15 text-band-4-text border-band-4/30 dark:border-band-4/40",
+      "bg-band-4/15 text-band-4-text border-band-4/35",
     dotColor: "bg-band-4",
   },
 ];

@@ -67,14 +67,9 @@ import {
   AlertCircleIcon,
   RotateCwIcon,
   CheckIcon,
-  Scan,
-  SunMedium,
-  Focus,
   Hash,
-  AlignJustify,
   Plus,
   ChevronDownIcon,
-  ShieldCheckIcon,
   Video } from "lucide-react";
 
 interface QuickUploadDialogProps {
@@ -1058,12 +1053,7 @@ function UploadFlow({
                     )}
                   </div>
                   <div
-                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-full min-[380px]:max-w-[50%] truncate font-medium cursor-help"
-                    title={
-                      selectedActivity?.target_text
-                        ? `Activity prompt: "${selectedActivity.target_text}"`
-                        : "Activity"
-                    }
+                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-full min-[380px]:max-w-[50%] truncate font-medium"
                   >
                     <span className="truncate">
                       {selectedActivity?.target_text ?? "Activity"}
@@ -1074,7 +1064,7 @@ function UploadFlow({
                 {/* Persistent Retake Guidance Banner */}
                 {lastRetakeTip && (
                   <Alert className="border-warning/30 bg-warning/10 text-foreground text-xs animate-in fade-in-50 duration-200 motion-reduce:animate-none">
-                    <LightbulbIcon className="text-warning" aria-hidden="true" />
+                    <LightbulbIcon className="text-warning-foreground" aria-hidden="true" />
                     <AlertTitle className="text-xs font-semibold">
                       Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}
                     </AlertTitle>
@@ -1336,10 +1326,9 @@ function UploadFlow({
                 )}
 
                 {/* Subtle Privacy Notice Footnote */}
-                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-0.5">
-                  <ShieldCheckIcon className="size-4 text-primary/70 shrink-0" />
-                  <span>Location &amp; device metadata stripped automatically for student privacy</span>
-                </div>
+                <p className="text-center text-xs text-muted-foreground pt-0.5">
+                  Location &amp; device metadata stripped automatically for student privacy
+                </p>
 
                 {/* Streamlined Photo Quality Guide (Collapsible Accordion Below Dropzone) */}
                 <Collapsible
@@ -1371,49 +1360,37 @@ function UploadFlow({
                     </span>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
-                      <Scan className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                      <div>
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          90° Overhead Angle
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                          Hold camera flat directly above the paper.
-                        </p>
-                      </div>
+                    <div className="p-2.5 rounded-lg bg-card">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        90° Overhead Angle
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                        Hold camera flat directly above the paper.
+                      </p>
                     </div>
-                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
-                      <SunMedium className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                      <div>
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          Even Light
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                          Avoid shadows and strong glare on words.
-                        </p>
-                      </div>
+                    <div className="p-2.5 rounded-lg bg-card">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        Even Light
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                        Avoid shadows and strong glare on words.
+                      </p>
                     </div>
-                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
-                      <AlignJustify className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                      <div>
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          Clear Ruling
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                          Keep headline, midline &amp; baseline visible.
-                        </p>
-                      </div>
+                    <div className="p-2.5 rounded-lg bg-card">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        Clear Ruling
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                        Keep headline, midline &amp; baseline visible.
+                      </p>
                     </div>
-                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
-                      <Focus className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                      <div>
-                        <p className="font-semibold text-foreground text-xs sm:text-sm">
-                          Sharp Focus
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                          Tap screen on cursive ink before snapping.
-                        </p>
-                      </div>
+                    <div className="p-2.5 rounded-lg bg-card">
+                      <p className="font-semibold text-foreground text-xs sm:text-sm">
+                        Sharp Focus
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                        Tap screen on cursive ink before snapping.
+                      </p>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
@@ -1436,12 +1413,7 @@ function UploadFlow({
                     )}
                   </div>
                   <div
-                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-full min-[380px]:max-w-[50%] truncate font-medium cursor-help"
-                    title={
-                      selectedActivity?.target_text
-                        ? `Activity prompt: "${selectedActivity.target_text}"`
-                        : "Activity"
-                    }
+                    className="flex items-center gap-1 text-muted-foreground shrink-0 max-w-full min-[380px]:max-w-[50%] truncate font-medium"
                   >
                     <span className="truncate">
                       {selectedActivity?.target_text ?? "Activity"}

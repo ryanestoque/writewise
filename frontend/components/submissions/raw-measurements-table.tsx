@@ -435,7 +435,7 @@ export function RawMeasurementsTable({
                         <Badge
                           variant="outline"
                           className={cn(
-                            "h-auto rounded-full text-[11px] font-semibold px-2 py-0.5 gap-1",
+                            "h-auto rounded-full text-xs font-semibold px-2 py-0.5 gap-1",
                             c.benchmark.badgeClass
                           )}
                         >
@@ -480,7 +480,7 @@ export function RawMeasurementsTable({
                         {/* Measured Value Tick */}
                         <div
                           className={cn(
-                            "absolute top-0 bottom-0 w-2 -ml-1 rounded-full shadow-xs transition-all",
+                            "absolute top-0 bottom-0 w-2 -ml-1 rounded-full shadow-xs transition-[left,background-color]",
                             c.benchmark.status === "within_target"
                               ? "bg-band-4"
                               : c.benchmark.status === "borderline"
@@ -493,7 +493,7 @@ export function RawMeasurementsTable({
                           title={`Measured value: ${c.primaryValue}`}
                         />
                       </div>
-                      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground tabular-nums">
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground tabular-nums">
                         <span>{secondaryNote ?? c.description}</span>
                         <span className="shrink-0 font-medium">Target: {c.targetText}</span>
                       </div>
@@ -508,9 +508,9 @@ export function RawMeasurementsTable({
                   id={inlineId}
                   role="region"
                   aria-label={`${c.name} coaching tip`}
-                  className="lg:hidden rounded-lg bg-primary/5 border-primary/25 p-2.5 text-[11px] animate-in fade-in-50 duration-150 motion-reduce:animate-none text-left"
+                  className="lg:hidden rounded-lg bg-primary/5 border-primary/25 p-2.5 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none text-left"
                 >
-                  <AlertDescription className="flex flex-col gap-1 text-[11px] text-left [&>p:not(:last-child)]:mb-0">
+                  <AlertDescription className="flex flex-col gap-1 text-xs text-left [&>p:not(:last-child)]:mb-0">
                     <p className="text-foreground/85 leading-snug">
                       <strong className="font-semibold text-foreground">{c.name}:</strong>{" "}
                       {activeCriterionInfo.rubricGoal}

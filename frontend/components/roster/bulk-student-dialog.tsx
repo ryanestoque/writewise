@@ -28,6 +28,7 @@ import { useStudents } from "@/lib/hooks/use-students";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
+import { ApiError, handleApiResponse } from "@/lib/utils/api-error";
 import { AlertCircle, UserPlus } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
@@ -126,6 +127,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
       return;
     }
 
+    let authExpired = false;
     const { successCount, failedItems } = await runConcurrentPool(
       parsedNames,
       async (studentName) => {
@@ -137,7 +139,15 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
           body: JSON.stringify({
             full_name: studentName,
             section: trimmedSection }) });
-        return response.ok;
+        try {
+          await handleApiResponse(response);
+          return true;
+        } catch (err) {
+          if (err instanceof ApiError && err.code === "UNAUTHORIZED") {
+            authExpired = true;
+          }
+          return false;
+        }
       },
       {
         concurrency: 4,
@@ -151,7 +161,10 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
     await queryClient.invalidateQueries({ queryKey: ["students"] });
     setIsProcessing(false);
 
-    if (failedItems.length === 0) {
+    if (authExpired) {
+      toast.add({ type: "error", title: "Session expired. Please sign in again." });
+      setStatusMessage("Session expired. Please sign in again.");
+    } else if (failedItems.length === 0) {
       toast.add({ type: "success", title: `Successfully enrolled ${successCount} students into ${trimmedSection}!` });
       handleOpenChange(false);
     } else if (successCount > 0) {

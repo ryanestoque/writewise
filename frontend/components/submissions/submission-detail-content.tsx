@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import Image from "next/image";
 import {
   ResponsiveRichOverlayHeader,
   ResponsiveRichOverlayFooter,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/hooks/use-submissions";
 import { useReleaseSubmission, useActivityWork } from "@/lib/hooks/use-activity-work";
 import { ApiError } from "@/lib/utils/api-error";
+import { isBlockingOverlayOpen } from "@/lib/utils/keyboard";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
 import { GuideLineOverlay, type GuideLines } from "@/components/shared/guide-line-overlay";
@@ -418,7 +420,7 @@ export function SubmissionDetailContent({
   // Keyboard navigation for submission cycling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || isBlockingOverlayOpen()) return;
 
       const isPrev =
         e.key === "ArrowLeft" ||
@@ -1073,12 +1075,12 @@ export function SubmissionDetailContent({
               <div className="flex items-center gap-2 min-w-0">
                 <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
                   {imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={imageUrl}
                       alt={`Worksheet preview for ${submission.student?.full_name ?? "student"}`}
                       width={28}
                       height={28}
+                      unoptimized={imageUrl.startsWith("blob:") || imageUrl.startsWith("data:")}
                       className="size-full object-cover"
                     />
                   ) : (
@@ -1092,14 +1094,14 @@ export function SubmissionDetailContent({
                   {submission.status === "rejected" ? (
                     <Badge
                       variant="destructive"
-                      className="text-[10px] px-2 py-0.5 shrink-0 font-semibold"
+                      className="text-xs px-2 py-0.5 shrink-0 font-semibold"
                     >
                       Photo Rejected
                     </Badge>
                   ) : selectedCriterion ? (
                     <Badge
                       variant="secondary"
-                      className="text-[10px] px-1.5 py-0 truncate"
+                      className="text-xs px-1.5 py-0 truncate"
                     >
                       {selectedCriterion}
                     </Badge>

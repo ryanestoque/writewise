@@ -20,12 +20,12 @@ interface FormationLayerProps {
 }
 
 const LETTER_ZONE_PALETTE = [
-  { fill: "rgba(26, 74, 43, 0.14)", stroke: "#1a4a2b", badgeBg: "#1a4a2b", text: "#1a4a2b" }, // Forest Green (10.1:1 vs #fff)
-  { fill: "rgba(20, 80, 73, 0.14)", stroke: "#145049", badgeBg: "#145049", text: "#145049" }, // Deep Teal Shade (9.6:1 vs #fff)
-  { fill: "rgba(143, 74, 33, 0.14)", stroke: "#8f4a21", badgeBg: "#8f4a21", text: "#8f4a21" }, // Terracotta Dark (6.4:1 vs #fff)
-  { fill: "rgba(122, 78, 0, 0.14)", stroke: "#7a4e00", badgeBg: "#7a4e00", text: "#7a4e00" },   // Ochre Dark (6.8:1 vs #fff)
-  { fill: "rgba(54, 84, 44, 0.14)", stroke: "#36542c", badgeBg: "#36542c", text: "#36542c" },  // Sage Dark (8.2:1 vs #fff)
-  { fill: "rgba(3, 105, 161, 0.14)", stroke: "#0369a1", badgeBg: "#0369a1", text: "#0c4a6e" }, // Sky 700 (5.9:1 vs #fff)
+  { fill: "rgba(26, 74, 43, 0.14)", stroke: "var(--band-4-text)", badgeBg: "var(--band-4-text)", text: "var(--band-4-text)" },
+  { fill: "rgba(20, 80, 73, 0.14)", stroke: "var(--color-brand-700)", badgeBg: "var(--color-brand-700)", text: "var(--color-brand-700)" },
+  { fill: "rgba(143, 74, 33, 0.14)", stroke: "var(--band-1-text)", badgeBg: "var(--band-1-text)", text: "var(--band-1-text)" },
+  { fill: "rgba(122, 78, 0, 0.14)", stroke: "var(--band-2-text)", badgeBg: "var(--band-2-text)", text: "var(--band-2-text)" },
+  { fill: "rgba(54, 84, 44, 0.14)", stroke: "var(--band-3-text)", badgeBg: "var(--band-3-text)", text: "var(--band-3-text)" },
+  { fill: "rgba(15, 61, 56, 0.14)", stroke: "var(--color-brand-800)", badgeBg: "var(--color-brand-800)", text: "var(--color-brand-800)" },
 ];
 
 interface FormationWordItemProps {
@@ -55,7 +55,7 @@ const FormationWordItem = memo(function FormationWordItem({
   const formationColor = isAttention
     ? OVERLAY_COLORS.needs_attention.stroke
     : OVERLAY_COLORS.proficient.stroke;
-  const pillBgColor = isAttention ? "#8f4a21" : "#145049";
+  const pillBgColor = isAttention ? "var(--band-1-text)" : "var(--color-brand-700)";
   const underlineY = y + h + 3;
   const underlineHeight = Math.max(
     4 * hitScale,
@@ -148,7 +148,7 @@ const FormationWordItem = memo(function FormationWordItem({
           key={`stroke-${id}-${pIdx}`}
           d={pCmd}
           fill="none"
-          stroke="#0d9488" // Grounded Teal (low visual weight)
+          stroke="var(--color-brand-600)"
           strokeWidth={strokeW}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -198,10 +198,10 @@ const FormationWordItem = memo(function FormationWordItem({
                   y={0}
                   dominantBaseline="central"
                   textAnchor="middle"
-                  fill="#ffffff"
+                  fill="var(--color-surface)"
                   fontSize={11 * hitScale}
                   fontWeight="700"
-                  fontFamily="system-ui, sans-serif"
+                  fontFamily="var(--font-sans)"
                 >
                   {lz.char}
                 </text>
@@ -260,10 +260,11 @@ const FormationWordItem = memo(function FormationWordItem({
             y={0}
             dominantBaseline="central"
             textAnchor="middle"
-            fill="#ffffff"
+            fill="var(--color-surface)"
             fontSize={11 * hitScale}
             fontWeight="700"
-            fontFamily="system-ui, sans-serif"
+            fontFamily="var(--font-sans)"
+            style={{ fontVariantNumeric: "tabular-nums" }}
           >
             {Math.round(ann.score)}%
           </text>

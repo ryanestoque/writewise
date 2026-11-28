@@ -3,6 +3,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useStudents, useRemoveStudent, useResendParentInvite, Student } from "@/lib/hooks/use-students";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
+import { handleApiResponse } from "@/lib/utils/api-error";
+import { isBlockingOverlayOpen } from "@/lib/utils/keyboard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,7 +119,7 @@ export default function RosterPage() {
           target.isContentEditable ||
           target.getAttribute("role") === "combobox");
 
-      if (isDialogOpen || isBulkDialogOpen || isBatchMoveOpen || isBatchRemoveOpen) return;
+      if (isDialogOpen || isBulkDialogOpen || isBatchMoveOpen || isBatchRemoveOpen || isBlockingOverlayOpen()) return;
 
       if (e.key === "Escape" && selectedStudentIds.size > 0 && !isTyping) {
         e.preventDefault();
@@ -311,7 +313,12 @@ export default function RosterPage() {
         const res = await fetch(`/api/students/${id}/teacher-link`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` } });
-        return res.ok;
+        try {
+          await handleApiResponse(res);
+          return true;
+        } catch {
+          return false;
+        }
       },
       { concurrency: 4 }
     );
@@ -650,12 +657,12 @@ export default function RosterPage() {
                                       {student.parent_email}
                                     </span>
                                     {student.parent_status === "active" ? (
-                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-band-4/15 text-band-4-text border-band-4/30">
+                                      <Badge variant="outline" className="text-xs px-1.5 py-0 font-medium bg-band-4/15 text-band-4-text border-band-4/30">
                                         Active
                                       </Badge>
                                     ) : (
                                       <div className="inline-flex items-center gap-1">
-                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium bg-band-2/15 text-band-2-text border-band-2/30">
+                                        <Badge variant="outline" className="text-xs px-1.5 py-0 font-medium bg-band-2/15 text-band-2-text border-band-2/30">
                                           Pending
                                         </Badge>
                                         <Button
@@ -665,7 +672,7 @@ export default function RosterPage() {
                                           onClick={() => handleResendInvite(student)}
                                           disabled={resendingStudentId === student.id}
                                           title="Resend invitation email"
-                                          className="relative h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
+                                          className="relative h-auto p-0 gap-1 text-xs font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
                                         >
                                           {resendingStudentId === student.id ? (
                                             <Spinner data-icon="inline-start" />
@@ -789,7 +796,7 @@ export default function RosterPage() {
                       key={student.id}
                       size="sm"
                       className={cn(
-                        "gap-2 py-3 transition-all",
+                        "gap-2 py-3 transition-[border-color,box-shadow,background-color]",
                         isSelected
                           ? "bg-primary/5 border-primary/50 ring-1 ring-primary/30"
                           : "hover:border-border"
@@ -840,7 +847,7 @@ export default function RosterPage() {
                                   onClick={() => handleResendInvite(student)}
                                   disabled={resendingStudentId === student.id}
                                   title="Resend invitation email"
-                                  className="relative h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
+                                  className="relative h-auto p-0 gap-1 text-xs font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
                                 >
                                   {resendingStudentId === student.id ? (
                                     <Spinner data-icon="inline-start" />

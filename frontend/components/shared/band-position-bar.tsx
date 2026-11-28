@@ -61,8 +61,8 @@ export function BandPositionBar({
               {/* Marker indicator for current score */}
               {numericScore !== null && (
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-300 ease-out z-10 motion-reduce:transition-none"
-                  style={{ left: `${numericScore}%` }}
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-[left] duration-300 ease-out z-10 motion-reduce:transition-none"
+                  style={{ left: `clamp(0.45rem, ${numericScore}%, calc(100% - 0.45rem))` }}
                 >
                   <div
                     className={cn(

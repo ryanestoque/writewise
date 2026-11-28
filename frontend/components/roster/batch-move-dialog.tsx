@@ -27,6 +27,7 @@ import { useSections } from "@/lib/hooks/use-sections";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
+import { ApiError, handleApiResponse } from "@/lib/utils/api-error";
 import { Check, Plus } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
@@ -97,6 +98,7 @@ export function BatchMoveDialog({
       return;
     }
 
+    let authExpired = false;
     const { successCount, failedItems } = await runConcurrentPool(
       selectedStudents,
       async (student) => {
@@ -106,7 +108,15 @@ export function BatchMoveDialog({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}` },
           body: JSON.stringify({ section: trimmed }) });
-        return response.ok;
+        try {
+          await handleApiResponse(response);
+          return true;
+        } catch (err) {
+          if (err instanceof ApiError && err.code === "UNAUTHORIZED") {
+            authExpired = true;
+          }
+          return false;
+        }
       },
       {
         concurrency: 4,
@@ -118,7 +128,9 @@ export function BatchMoveDialog({
     await queryClient.invalidateQueries({ queryKey: ["students"] });
     setIsProcessing(false);
 
-    if (failedItems.length === 0) {
+    if (authExpired) {
+      toast.add({ type: "error", title: "Session expired. Please sign in again." });
+    } else if (failedItems.length === 0) {
       toast.add({ type: "success", title: `Moved ${successCount} ${successCount === 1 ? "student" : "students"} to ${trimmed}.` });
       onComplete?.();
       handleOpenChange(false);

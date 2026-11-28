@@ -337,7 +337,7 @@ export function ClassTable({
           </div>
 
           {sections.length > 1 && (
-            <div className="min-w-0 overflow-y-hidden">
+            <div className="min-w-0">
               <FilterPills
                 items={sectionPills}
                 value={selectedSection}
@@ -349,8 +349,8 @@ export function ClassTable({
 
         {/* Diagnostic Performance Tier Filter Pills */}
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0 overflow-y-hidden flex-1">
-            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 uppercase tracking-wider hidden sm:inline">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0 uppercase tracking-wider hidden sm:inline">
               Tier:
             </span>
             <FilterPills

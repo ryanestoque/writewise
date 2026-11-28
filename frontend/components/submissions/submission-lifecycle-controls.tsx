@@ -313,34 +313,34 @@ export function SubmissionLifecycleControls({
         {submission.status === "returned" ? (
           <Badge
             variant="outline"
-            className="rounded-full text-[11px] font-semibold h-5 px-2.5 bg-band-2/15 text-band-2-text border-band-2/40"
+            className="rounded-full text-xs font-semibold h-5 px-2.5 bg-band-2/15 text-band-2-text border-band-2/40"
           >
             Returned
           </Badge>
         ) : completed && active && submission.released_at ? (
           <Badge
             variant="outline"
-            className="rounded-full text-[11px] h-5 px-2.5 font-medium border-band-4/40 text-band-4-text bg-band-4/15"
+            className="rounded-full text-xs h-5 px-2.5 font-medium border-band-4/40 text-band-4-text bg-band-4/15"
           >
             Result released
           </Badge>
         ) : active ? (
           <Badge
             variant="secondary"
-            className="rounded-full text-[11px] font-medium h-5 px-2.5 bg-muted/80 text-foreground"
+            className="rounded-full text-xs font-medium h-5 px-2.5 bg-muted/80 text-foreground"
           >
             {work?.work_status ?? "Counted attempt"}
           </Badge>
         ) : (
           <Badge
             variant="outline"
-            className="rounded-full text-[11px] font-medium h-5 px-2.5 text-muted-foreground border-border/80"
+            className="rounded-full text-xs font-medium h-5 px-2.5 text-muted-foreground border-border/80"
           >
             Historical attempt
           </Badge>
         )}
         {work?.pinned_submission_id === submission.id && (
-          <Badge variant="outline" className="rounded-full text-[11px] h-5 px-2 font-medium border-border/70 text-muted-foreground">
+          <Badge variant="outline" className="rounded-full text-xs h-5 px-2 font-medium border-border/70 text-muted-foreground">
             Pinned
           </Badge>
         )}
@@ -881,7 +881,7 @@ function WorkSettingsForm({
                       <span className="text-muted-foreground text-xs">Not scored yet</span>
                     )}
                     {selectedAttempt.id === state?.active_submission_id && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5">
+                      <Badge variant="outline" className="text-xs px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5">
                         Current
                       </Badge>
                     )}
@@ -920,7 +920,7 @@ function WorkSettingsForm({
                               {formatActivityDueAt(row.created_at)}
                             </span>
                             {isCurrent && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5 shrink-0">
+                              <Badge variant="outline" className="text-xs px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5 shrink-0">
                                 Current
                               </Badge>
                             )}
@@ -929,7 +929,7 @@ function WorkSettingsForm({
                             {compositeScore == null ? (
                               <span>Not scored yet</span>
                             ) : (
-                              <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal tabular-nums">
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0 font-normal tabular-nums">
                                 {Math.round(compositeScore)}% · {scoreBand.band}
                               </Badge>
                             )}

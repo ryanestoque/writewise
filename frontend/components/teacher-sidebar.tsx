@@ -255,7 +255,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                         className={cn(
                           "h-11 md:h-10 text-sm font-medium transition-colors relative",
                           isActive &&
-                            "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                            "bg-sidebar-accent text-sidebar-accent-foreground font-semibold before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-primary group-data-[collapsible=icon]:before:hidden"
                         )}
                       >
                         <div className="flex items-center justify-between w-full min-w-0">

@@ -210,8 +210,8 @@ export function SampleReportPreview({
                     <line x1="20" y1="85" x2="520" y2="85" stroke="var(--primary)" strokeWidth="1.25" strokeDasharray="4 4" opacity="0.8" />
                     <text x="22" y="79" fill="var(--secondary-foreground)" fontSize="10" fontFamily="sans-serif" fontWeight="500">Middle Line</text>
 
-                    <line x1="20" y1="135" x2="520" y2="135" stroke="var(--destructive)" strokeWidth="1.5" opacity="0.85" />
-                    <text x="22" y="149" fill="var(--destructive)" fontSize="10" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
+                    <line x1="20" y1="135" x2="520" y2="135" stroke="var(--color-band-1)" strokeWidth="1.5" opacity="0.85" />
+                    <text x="22" y="149" fill="var(--band-1-text)" fontSize="10" fontFamily="sans-serif" fontWeight="500">Bottom Line</text>
 
                     <line x1="20" y1="165" x2="520" y2="165" stroke="var(--muted-foreground)" strokeWidth="0.75" strokeDasharray="2 3" opacity="0.4" />
 
@@ -380,7 +380,7 @@ export function SampleReportPreview({
                     size="sm"
                     aria-haspopup="dialog"
                     onClick={onOpenRubric}
-                    className="h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors shadow-2xs"
+                    className="h-11 sm:h-8 px-3 rounded-full text-xs font-medium text-foreground border-border/80 bg-background hover:text-primary hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 cursor-pointer touch-manipulation transition-colors shadow-2xs"
                   >
                     <HelpCircle data-icon="inline-start" className="text-primary" aria-hidden="true" />
                     <span>Score Guide</span>

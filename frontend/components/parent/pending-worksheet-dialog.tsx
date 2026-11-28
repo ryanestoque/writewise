@@ -59,7 +59,7 @@ export function PendingWorksheetDialog({
       <ResponsiveRichOverlayContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header matching WorksheetViewDialog */}
         <ResponsiveRichOverlayHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
-          <div className="flex items-center justify-between gap-3 pr-10">
+          <div className="flex items-center justify-between gap-3 pr-12 sm:pr-10">
             <div className="min-w-0 flex flex-col gap-1">
               <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 Worksheet &amp; Review Status

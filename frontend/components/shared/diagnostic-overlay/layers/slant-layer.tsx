@@ -50,7 +50,7 @@ export const SlantLayer = memo(function SlantLayer({
         const slantColor = isAttention
           ? OVERLAY_COLORS.needs_attention.stroke
           : OVERLAY_COLORS.proficient.stroke;
-        const slantPillBg = isAttention ? "#8f4a21" : "#145049";
+        const slantPillBg = isAttention ? "var(--band-1-text)" : "var(--color-brand-700)";
         const id = `slant-${ann.line_index}-${ann.word_index}`;
         const isConsistent = ann.note.toLowerCase().includes("consistent");
         const title = isAttention
@@ -148,7 +148,7 @@ export const SlantLayer = memo(function SlantLayer({
               strokeWidth={isAttention ? OVERLAY_WEIGHTS.strokeAttention : OVERLAY_WEIGHTS.strokeNormal}
               vectorEffect="non-scaling-stroke"
               strokeLinecap="round"
-              className="transition-all"
+              className="transition-[stroke,stroke-opacity,stroke-width]"
             />
 
             {/* Vector Origin/Top Anchor Dot */}
@@ -158,7 +158,7 @@ export const SlantLayer = memo(function SlantLayer({
                 cy={0}
                 r={(isAttention ? 5 : 4) * hitScale}
                 fill={slantColor}
-                stroke="#ffffff"
+                stroke="var(--color-surface)"
                 strokeWidth={1.5}
                 vectorEffect="non-scaling-stroke"
                 className="transition-transform group-hover:scale-125 group-focus-visible:scale-125 motion-reduce:transform-none"
@@ -180,10 +180,11 @@ export const SlantLayer = memo(function SlantLayer({
                   x={0}
                   y={4 * hitScale}
                   textAnchor="middle"
-                  fill="#ffffff"
+                  fill="var(--color-surface)"
                   fontSize={11 * hitScale}
                   fontWeight="600"
-                  fontFamily="system-ui, sans-serif"
+                  fontFamily="var(--font-sans)"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
                 >
                   {Math.round(ann.angle_deg)}°
                 </text>

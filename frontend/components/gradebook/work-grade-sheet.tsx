@@ -225,7 +225,7 @@ export function WorkGradeSheet({
                   </p>
                 )}
                 {cell.points_possible === null && (
-                  <Badge variant="secondary" className="text-[11px] font-normal py-0">
+                  <Badge variant="secondary" className="text-xs font-normal py-0">
                     Bands only
                   </Badge>
                 )}
@@ -301,7 +301,7 @@ export function WorkGradeSheet({
                 <CardContent className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-col gap-1">
-                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Handwriting Assessment
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -362,11 +362,11 @@ export function WorkGradeSheet({
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">5 Diagnostic Criteria:</span>
-                      <span className="text-[11px]">
+                      <span className="text-xs">
                         {CRITERIA_DEFINITIONS.map((c) => c.name.split(" ")[0]).join(" · ")}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       Per-criterion stroke measurements, baseline drift, and visual overlays are calibrated and inspected in the worksheet viewer.
                     </p>
                   </div>
@@ -430,7 +430,7 @@ export function WorkGradeSheet({
                         Coursework Points
                       </h3>
                       {cell.grade_revision !== null && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           Revision #{cell.grade_revision}
                           {cell.points_override !== null ? " · Overridden by teacher" : " · From rubric"}
                         </p>

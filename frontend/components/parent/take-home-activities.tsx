@@ -650,7 +650,7 @@ function CompactWorksheetRow({
         )}
       </ItemContent>
 
-      <ItemActions className="gap-1.5 sm:gap-2 w-full sm:w-auto sm:shrink-0">
+      <ItemActions className="flex-wrap sm:flex-nowrap gap-1.5 sm:gap-2 w-full sm:w-auto sm:shrink-0">
         {childId && (work.attempts.length || submission?.submissionId) ? (
           <WorkCommentsButton
             scope={{ activityId: work.id, studentId: childId }}

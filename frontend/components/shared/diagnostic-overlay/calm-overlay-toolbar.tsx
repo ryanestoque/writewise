@@ -232,13 +232,13 @@ export const CalmOverlayToolbar = memo(function CalmOverlayToolbar({
               variant="outline"
               size="icon-sm"
               onClick={handlePrevAttention}
-              className="size-8 sm:size-7"
+              className="size-11 md:size-7"
               aria-label="Previous practice area (Key: Alt+[ or [)"
               title="Previous practice area (Alt+[ or [)"
             >
               <ChevronLeft aria-hidden="true" />
             </Button>
-            <ButtonGroupText className="h-8 sm:h-7 bg-background px-2 text-xs font-semibold tabular-nums select-none">
+            <ButtonGroupText className="h-11 md:h-7 bg-background px-2 text-xs font-semibold tabular-nums select-none">
               {currentIndex >= 0 ? currentIndex + 1 : 1}/{attentionItems.length}
             </ButtonGroupText>
             <Button
@@ -246,7 +246,7 @@ export const CalmOverlayToolbar = memo(function CalmOverlayToolbar({
               variant="outline"
               size="icon-sm"
               onClick={handleNextAttention}
-              className="size-8 sm:size-7"
+              className="size-11 md:size-7"
               aria-label="Next practice area (Key: Alt+] or ])"
               title="Next practice area (Alt+] or ])"
             >

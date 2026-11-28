@@ -139,7 +139,7 @@ export function ParentNav({
           {/* Left: Brand Logo (App icon on mobile, full logo on desktop) */}
           <Link
             href="/progress"
-            className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90 min-h-[40px] min-w-[40px]"
+            className="flex items-center gap-2 shrink-0 rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-opacity hover:opacity-90 min-h-11 min-w-11 sm:min-h-9 sm:min-w-9"
             aria-label="WriteWise Parent Portal Home"
           >
             <div className="flex sm:hidden size-8 items-center justify-center rounded-lg overflow-hidden shrink-0 border border-border/60">
@@ -299,7 +299,7 @@ export function ParentNav({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-10 sm:size-9 rounded-full cursor-pointer touch-manipulation"
+                    className="size-11 sm:size-9 rounded-full cursor-pointer touch-manipulation"
                     aria-label={`Account menu for ${user.fullName}`}
                   />
                 }

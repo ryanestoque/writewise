@@ -110,7 +110,6 @@ export function CriterionTrendChart({
     controlledShowDetails !== undefined ? controlledShowDetails : true;
 
   const [viewMode, setViewMode] = useState<"chart" | "table">("chart");
-  const [isDark, setIsDark] = useState(false);
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(() =>
     isParent ? new Set(["composite"]) : new Set(["composite", "letter_formation"])
   );
@@ -123,29 +122,16 @@ export function CriterionTrendChart({
   const hasMounted = useIsMounted();
 
   useEffect(() => {
-    const checkDark = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    };
-    checkDark();
-
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const handleMotionChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
     motionQuery.addEventListener("change", handleMotionChange);
 
-    const observer = new MutationObserver(() => checkDark());
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
     return () => {
       motionQuery.removeEventListener("change", handleMotionChange);
-      observer.disconnect();
     };
   }, []);
 
-  const getCriterionColor = (c: (typeof CRITERION_CONFIG)[number]) =>
-    isDark ? c.darkColor : c.lightColor;
+  const getCriterionColor = (c: (typeof CRITERION_CONFIG)[number]) => c.lightColor;
 
   const resetCriteria = () => {
     setVisibleSeries(
@@ -573,7 +559,7 @@ export function CriterionTrendChart({
                   y1={band.y1}
                   y2={band.y2}
                   fill={band.fill}
-                  fillOpacity={isDark ? band.darkOpacity : band.lightOpacity}
+                  fillOpacity="var(--chart-band-opacity)"
                 />
               ))}
 
@@ -694,13 +680,13 @@ export function CriterionTrendChart({
                     dot={{
                       r: c.key === "composite" ? 5 : 4,
                       fill: color,
-                      stroke: isDark ? CHART_DOT_STROKE.dark : CHART_DOT_STROKE.light,
+                      stroke: CHART_DOT_STROKE.light,
                       strokeWidth: 2,
                     }}
                     activeDot={{
                       r: 7,
                       strokeWidth: 2.5,
-                      stroke: isDark ? CHART_DOT_STROKE.dark : CHART_DOT_STROKE.light,
+                      stroke: CHART_DOT_STROKE.light,
                     }}
                   />
                 );

@@ -111,7 +111,7 @@ export function ScoringGuidePopover() {
 
         <Separator />
 
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Non-punitive 4-band scoring</span>
           <span className="font-medium text-foreground">Needs Improvement → Excellent</span>
         </div>

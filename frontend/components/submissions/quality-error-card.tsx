@@ -780,7 +780,7 @@ export function QualityErrorCard({
                 aria-haspopup="dialog"
                 aria-label="Enlarge captured worksheet photo to inspect quality"
                 className={cn(
-                  "relative w-20 h-24 p-0 rounded-lg overflow-hidden bg-muted shadow-2xs group text-left border transition-all",
+                  "relative w-20 h-24 p-0 rounded-lg overflow-hidden bg-muted shadow-2xs group text-left border transition-[border-color,box-shadow]",
                   presentation.isQualityCheck
                     ? "border-warning/40 hover:border-warning/60 focus-visible:ring-warning"
                     : "border-destructive/30 hover:border-destructive/50 focus-visible:ring-destructive"
@@ -1257,7 +1257,7 @@ export function QualityErrorCard({
                       variant="outline"
                       size="sm"
                       onClick={() => setImageError(false)}
-                      className="h-8 px-3 text-xs"
+                      className="h-11 sm:h-8 px-3 text-xs"
                     >
                       <RotateCcw data-icon="inline-start" aria-hidden="true" />
                       Retry Loading
@@ -1313,7 +1313,7 @@ export function QualityErrorCard({
                   type="button"
                   variant="outline"
                   onClick={closeInspectionModal}
-                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium"
+                  className="flex-1 sm:flex-initial h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium"
                 >
                   Done
                 </Button>
@@ -1324,7 +1324,7 @@ export function QualityErrorCard({
                     closeInspectionModal();
                     handleRetakeClick();
                   }}
-                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium shadow-warm-sm"
+                  className="flex-1 sm:flex-initial h-11 sm:h-9 px-4 text-xs sm:text-sm font-medium shadow-warm-sm"
                 >
                   <Camera data-icon="inline-start" aria-hidden="true" />
                   <span>Retake Photo</span>

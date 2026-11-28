@@ -942,7 +942,7 @@ export function WorksheetImageInspector({
         {isLoupeActive && loupeState.visible && imageUrl && (
           <div
             aria-hidden="true"
-            className="absolute left-0 top-0 size-[130px] rounded-full border-2 border-primary shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background will-change-transform"
+            className="absolute left-0 top-0 size-[130px] rounded-full border-2 border-primary shadow-xl overflow-hidden pointer-events-none z-30 ring-2 ring-background/80 bg-background"
             style={{
               transform: `translate3d(${loupeState.x - 65}px, ${loupeState.y - 65}px, 0)`,
             }}
@@ -963,7 +963,7 @@ export function WorksheetImageInspector({
                   ? "contrast(1.4) brightness(0.92) saturate(0.6)"
                   : "none",
               }}
-              className="max-w-none object-contain will-change-transform"
+              className="max-w-none object-contain"
             />
             {/* Center target reticle */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full border border-primary/80 bg-primary/20 shadow-2xs pointer-events-none" />

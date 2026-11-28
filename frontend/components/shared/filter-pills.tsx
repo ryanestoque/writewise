@@ -184,7 +184,7 @@ export function FilterPills<T extends string = string>({
           onClick={handleScrollLeft}
           aria-label="Scroll left"
           tabIndex={-1}
-          className="absolute left-0 z-10 size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted cursor-pointer"
+          className="absolute left-0 z-10 size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted cursor-pointer after:absolute after:-inset-2 md:after:hidden"
         >
           <ChevronLeft aria-hidden="true" />
         </Button>
@@ -234,7 +234,7 @@ export function FilterPills<T extends string = string>({
                   id={`${groupId}-pill-${item.id}`}
                   disabled={item.disabled}
                   className={cn(
-                    "relative h-auto min-h-10 gap-1.5 rounded-lg border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all cursor-pointer touch-manipulation hover:bg-muted/60 hover:text-foreground sm:min-h-8",
+                    "relative h-auto min-h-10 gap-1.5 rounded-lg border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-[color,background-color,border-color,box-shadow] cursor-pointer touch-manipulation hover:bg-muted/60 hover:text-foreground sm:min-h-8",
                     "data-pressed:border-primary data-pressed:bg-primary data-pressed:font-semibold data-pressed:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground",
                     "after:absolute after:-inset-x-1 after:inset-y-0 after:content-['']",
                     pillClassName,
@@ -273,7 +273,7 @@ export function FilterPills<T extends string = string>({
           onClick={handleScrollRight}
           aria-label="Scroll right"
           tabIndex={-1}
-          className="absolute right-0 z-10 size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted cursor-pointer"
+          className="absolute right-0 z-10 size-7 rounded-full bg-background/90 text-foreground shadow-xs backdrop-blur-xs transition-opacity hover:bg-muted cursor-pointer after:absolute after:-inset-2 md:after:hidden"
         >
           <ChevronRight aria-hidden="true" />
         </Button>

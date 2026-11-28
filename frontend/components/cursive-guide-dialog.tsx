@@ -706,7 +706,7 @@ export function CursiveGuideDialog({
                       key={chip.id}
                       value={chip.id}
                       title={chip.description}
-                      className="min-h-8 shrink-0 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground data-pressed:border-primary data-pressed:bg-primary data-pressed:font-semibold data-pressed:text-primary-foreground data-pressed:shadow-2xs data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground"
+                      className="min-h-11 sm:min-h-8 shrink-0 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground data-pressed:border-primary data-pressed:bg-primary data-pressed:font-semibold data-pressed:text-primary-foreground data-pressed:shadow-2xs data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground"
                     >
                       <span>{chip.label}</span>
                       <span className="text-xs opacity-80 tabular-nums">({chip.count})</span>
@@ -798,7 +798,7 @@ export function CursiveGuideDialog({
                           data-letter-id={item.id}
                           aria-label={`Letter ${item.id}, ${item.zoneLabel} zone. Click to view formation guide.`}
                           className={cn(
-                            "group relative flex h-20 w-full cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl border p-0 text-left whitespace-normal transition-all duration-150 select-none sm:h-24 print:h-20 print:border-black print:bg-white",
+                            "group relative flex h-20 w-full cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl border p-0 text-left whitespace-normal transition-[border-color,background-color,box-shadow] duration-150 select-none sm:h-24 print:h-20 print:border-black print:bg-white",
                             isSelected
                               ? "border-primary bg-card shadow-sm ring-2 ring-primary/40 hover:bg-card data-pressed:bg-card"
                               : "border-border/70 bg-card/60 hover:border-border hover:bg-card hover:shadow-2xs"

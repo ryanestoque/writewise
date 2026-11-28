@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
@@ -164,7 +165,7 @@ export const ActivityCard = memo(function ActivityCard({
           : undefined
       }
       className={cn(
-        "group relative justify-between gap-3 p-4 sm:p-5 sm:rounded-2xl transition-all duration-200 hover:shadow-md",
+        "group relative justify-between gap-3 p-4 sm:p-5 sm:rounded-2xl transition-[box-shadow,border-color] duration-200 hover:shadow-md",
         isSelectMode && "cursor-pointer select-none",
         isSelected && "ring-2 ring-primary border-primary/60 bg-primary/5",
         isArchived
@@ -317,7 +318,7 @@ export const ActivityCard = memo(function ActivityCard({
           }}
           className="block rounded-xl transition-opacity group-hover:opacity-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <CardTitle as="h3" className="mb-1 text-base font-semibold">
+          <CardTitle className="mb-1 text-base font-semibold">
             {activity.title}
           </CardTitle>
           <p className="mb-3 text-xs text-muted-foreground">
@@ -378,35 +379,40 @@ export const ActivityCard = memo(function ActivityCard({
                 />
               }
             >
-              <div
+              <Progress
+                value={Math.min(Math.round((collectedStudents / totalStudents) * 100), 100)}
                 aria-hidden="true"
-                className="flex h-2 w-full overflow-hidden rounded-full bg-muted/60 shadow-warm-sm transition-all group-hover/progress:brightness-95"
-              >
-                {completedCount > 0 && (
-                  <div
-                    className="bg-primary transition-all duration-300 motion-reduce:transition-none"
-                    style={{
-                      width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
-                    }}
-                  />
-                )}
-                {processingCount > 0 && (
-                  <div
-                    className="bg-warning transition-all duration-300 motion-reduce:transition-none"
-                    style={{
-                      width: `${Math.min((processingCount / totalStudents) * 100, 100)}%`,
-                    }}
-                  />
-                )}
-                {rejectedCount > 0 && (
-                  <div
-                    className="bg-destructive transition-all duration-300 motion-reduce:transition-none"
-                    style={{
-                      width: `${Math.min((rejectedCount / totalStudents) * 100, 100)}%`,
-                    }}
-                  />
-                )}
-              </div>
+                className="w-full gap-0"
+                trackClassName="h-2 bg-muted/60 shadow-warm-sm transition-[filter] group-hover/progress:brightness-95"
+                trackChildren={
+                  <>
+                    {completedCount > 0 && (
+                      <div
+                        className="bg-primary transition-[width] duration-300 motion-reduce:transition-none"
+                        style={{
+                          width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
+                        }}
+                      />
+                    )}
+                    {processingCount > 0 && (
+                      <div
+                        className="bg-warning transition-[width] duration-300 motion-reduce:transition-none"
+                        style={{
+                          width: `${Math.min((processingCount / totalStudents) * 100, 100)}%`,
+                        }}
+                      />
+                    )}
+                    {rejectedCount > 0 && (
+                      <div
+                        className="bg-destructive transition-[width] duration-300 motion-reduce:transition-none"
+                        style={{
+                          width: `${Math.min((rejectedCount / totalStudents) * 100, 100)}%`,
+                        }}
+                      />
+                    )}
+                  </>
+                }
+              />
             </TooltipTrigger>
             <TooltipContent
               side="top"

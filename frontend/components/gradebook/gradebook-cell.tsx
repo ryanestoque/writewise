@@ -11,7 +11,7 @@ import {
   memo,
   type KeyboardEvent,
 } from "react";
-import { Pencil, SlidersHorizontal, Check, X, MessageSquare } from "lucide-react";
+import { Pencil, SlidersHorizontal, Check, X } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
@@ -280,7 +280,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                 disabled={isSaving}
                 onClick={() => void handleCommit()}
                 aria-label="Save score"
-                className="text-primary relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
+                className="text-primary relative after:absolute after:-inset-2 md:after:-inset-1.5 size-7 rounded-sm cursor-pointer"
               >
                 {isSaving ? <Spinner /> : <Check aria-hidden="true" />}
               </Button>
@@ -296,7 +296,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                   requestAnimationFrame(() => cellRef.current?.focus());
                 }}
                 aria-label="Cancel editing"
-                className="text-muted-foreground relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
+                className="text-muted-foreground relative after:absolute after:-inset-2 md:after:-inset-1.5 size-7 rounded-sm cursor-pointer"
               >
                 <X aria-hidden="true" />
               </Button>
@@ -370,7 +370,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                     </span>
                     <Badge
                       variant="outline"
-                      className="h-auto px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight bg-muted text-foreground border-border/50"
+                      className="h-auto px-1.5 py-0.5 rounded text-xs font-medium tracking-tight bg-muted text-foreground border-border/50"
                     >
                       {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
                     </Badge>
@@ -395,7 +395,6 @@ export const GradebookCellButton = memo(function GradebookCellButton({
 
                 {hasUnreadComments && (
                   <Badge variant="secondary" title="Unread parent/teacher comments">
-                    <MessageSquare data-icon="inline-start" aria-hidden="true" />
                     Unread
                   </Badge>
                 )}
@@ -403,7 +402,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             </div>
 
             <p
-              className="text-[11px] leading-tight text-muted-foreground line-clamp-2"
+              className="text-xs leading-tight text-muted-foreground line-clamp-2"
               title={developmentalNote}
             >
               {developmentalNote}
@@ -451,7 +450,6 @@ export const GradebookCellButton = memo(function GradebookCellButton({
 
                 {hasUnreadComments && (
                   <Badge variant="secondary" title="Unread parent/teacher comments">
-                    <MessageSquare data-icon="inline-start" aria-hidden="true" />
                     Unread
                   </Badge>
                 )}
@@ -535,7 +533,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
             tabIndex={-1}
             onClick={() => startEditing()}
             aria-label={`Edit score for ${label ?? "student"}`}
-            className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
+            className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-2.5 md:after:-inset-1.5 size-6 rounded-sm cursor-pointer"
           >
             <Pencil aria-hidden="true" />
           </Button>
@@ -547,7 +545,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
           tabIndex={-1}
           onClick={onOpen}
           aria-label={`Inspect details for ${label ?? "student"}`}
-          className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
+          className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-2.5 md:after:-inset-1.5 size-6 rounded-sm cursor-pointer"
         >
           <SlidersHorizontal aria-hidden="true" />
         </Button>

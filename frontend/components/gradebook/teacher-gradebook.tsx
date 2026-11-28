@@ -32,6 +32,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 import { hasUnreadWorkComments } from "@/lib/comments/selection";
 import { gradebookRequest, downloadGradebookCsv } from "@/lib/gradebook/transport";
+import { isBlockingOverlayOpen } from "@/lib/utils/keyboard";
 import { GradebookCellButton, TouchDeviceContext, useIsTouchDevice } from "./gradebook-cell";
 import { MobileGradebookList } from "./mobile-gradebook-list";
 import { WorkGradeSheet } from "./work-grade-sheet";
@@ -159,9 +160,14 @@ export function TeacherGradebook({
 
   if (!active)
     return (
-      <Alert role="status">
-        <AlertDescription>Sign in again to view grades.</AlertDescription>
-      </Alert>
+      <div className="flex w-full min-w-0 flex-col gap-5 sm:gap-6">
+        <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
+          Gradebook
+        </h1>
+        <Alert role="status">
+          <AlertDescription>Sign in again to view grades.</AlertDescription>
+        </Alert>
+      </div>
     );
 
   return (
@@ -298,6 +304,7 @@ function SectionGrid({
   // "/" focuses search; Escape clears bulk student selection
   useEffect(() => {
     function handleKeyDown(e: globalThis.KeyboardEvent) {
+      if (isBlockingOverlayOpen()) return;
       const target = e.target as HTMLElement | null;
       const isTyping =
         target &&
