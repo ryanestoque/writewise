@@ -7,9 +7,19 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -36,7 +46,6 @@ import {
 } from "@/components/shared/diagnostic-overlay";
 import { cn } from "@/lib/utils";
 import {
-  Clock,
   FileText,
   ChevronLeft,
   ChevronRight,
@@ -69,6 +78,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -845,47 +855,49 @@ export function SubmissionDetailContent({
 
   const pagerControl =
     hasMultipleSubmissions && submissions && onNavigate ? (
-      <div className="inline-flex items-center gap-0.5 sm:gap-1 bg-muted/50 p-0.5 sm:p-1 rounded-lg border border-border h-10 sm:h-9 shrink-0">
+      <ButtonGroup aria-label="Student navigation" className="shrink-0">
         <Button
           ref={prevButtonRef}
-          variant="ghost"
-          size="sm"
+          type="button"
+          variant="outline"
+          size="icon-sm"
           disabled={!canGoPrev}
           onClick={() => {
             if (canGoPrev && submissions) {
               requestNavigate(submissions[effectiveIndex - 1]);
             }
           }}
-          className="size-9 sm:size-7 min-h-9 min-w-9 sm:min-h-0 sm:min-w-0 p-0 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+          className="size-10 sm:size-8 text-muted-foreground hover:text-foreground disabled:opacity-30"
           aria-label="Previous student (Key: J or ←)"
           title="Previous student (← / J)"
         >
-          <ChevronLeft className="size-4" aria-hidden="true" />
+          <ChevronLeft aria-hidden="true" />
         </Button>
-        <span
-          className="text-xs text-muted-foreground px-1.5 tabular-nums font-medium select-none whitespace-nowrap"
+        <ButtonGroupText
+          className="bg-muted/50 px-2.5 text-xs text-muted-foreground tabular-nums select-none whitespace-nowrap"
           aria-live="polite"
           aria-atomic="true"
         >
           {effectiveIndex + 1} of {submissions.length}
-        </span>
+        </ButtonGroupText>
         <Button
           ref={nextButtonRef}
-          variant="ghost"
-          size="sm"
+          type="button"
+          variant="outline"
+          size="icon-sm"
           disabled={!canGoNext}
           onClick={() => {
             if (canGoNext && submissions) {
               requestNavigate(submissions[effectiveIndex + 1]);
             }
           }}
-          className="size-9 sm:size-7 min-h-9 min-w-9 sm:min-h-0 sm:min-w-0 p-0 rounded-md text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer flex items-center justify-center touch-manipulation"
+          className="size-10 sm:size-8 text-muted-foreground hover:text-foreground disabled:opacity-30"
           aria-label="Next student (Key: K or →)"
           title="Next student (→ / K)"
         >
-          <ChevronRight className="size-4" aria-hidden="true" />
+          <ChevronRight aria-hidden="true" />
         </Button>
-      </div>
+      </ButtonGroup>
     ) : null;
 
   const moreActionsMenu = (
@@ -895,25 +907,27 @@ export function SubmissionDetailContent({
           <Button
             type="button"
             variant="outline"
-            size="sm"
+            size="icon-sm"
             disabled={deleteMutation.isPending}
-            className="size-10 sm:size-8 min-h-10 min-w-10 sm:min-h-0 sm:min-w-0 p-0 rounded-lg border-border/70 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation shrink-0"
+            className="size-10 sm:size-8 rounded-lg border-border/70 text-muted-foreground hover:text-foreground shrink-0"
             aria-label="More submission actions"
             title="More submission actions"
           />
         }
       >
-        <MoreHorizontal className="size-4" aria-hidden="true" />
+        <MoreHorizontal aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44 rounded-xl p-1">
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => setIsDeleteDialogOpen(true)}
-          className="rounded-lg px-2.5 py-2 text-xs gap-2 cursor-pointer"
-        >
-          <Trash2 className="size-3.5" aria-hidden="true" />
-          <span>Delete Attempt</span>
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="rounded-lg px-2.5 py-2 text-xs cursor-pointer"
+          >
+            <Trash2 data-icon="inline-start" aria-hidden="true" />
+            <span>Delete Attempt</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -1005,10 +1019,11 @@ export function SubmissionDetailContent({
             variant="ghost"
             size="sm"
             onClick={handleProtectedClose}
-            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground font-medium group rounded-lg px-2 py-1.5 h-auto min-h-10 sm:min-h-8 hover:bg-muted/50 cursor-pointer"
+            className="text-xs text-muted-foreground hover:text-foreground font-medium group rounded-lg px-2 py-1.5 h-auto min-h-10 sm:min-h-8 hover:bg-muted/50"
           >
             <ArrowLeft
-              className="size-3.5 transition-transform group-hover:-translate-x-0.5"
+              data-icon="inline-start"
+              className="transition-transform group-hover:-translate-x-0.5"
               aria-hidden="true"
             />
             <span className="truncate max-w-xs sm:max-w-md">
@@ -1020,21 +1035,22 @@ export function SubmissionDetailContent({
 
       {/* Header */}
       {variant === "modal" ? (
-        <DialogHeader className="pb-2.5 sm:pb-3 border-b border-border/70 shrink-0 text-left">
+        <DialogHeader className="pb-2.5 sm:pb-3 shrink-0 text-left">
           {headerContent}
         </DialogHeader>
       ) : (
-        <header className="pb-2.5 sm:pb-3 border-b border-border/70">
+        <header className="pb-2.5 sm:pb-3">
           {headerContent}
         </header>
       )}
+      <Separator />
 
       {/* Body: Split view (Image + Diagnostic details & Comments) */}
       <div
         ref={variant === "modal" ? scrollContainerRef : undefined}
         onScroll={variant === "modal" ? handleScroll : undefined}
         className={cn(
-          "space-y-3 sm:space-y-3.5",
+          "flex flex-col gap-3 sm:gap-3.5",
           variant === "modal"
             ? "flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain py-2.5 sm:py-3"
             : "py-2.5 sm:py-3.5"
@@ -1045,67 +1061,68 @@ export function SubmissionDetailContent({
 
         {/* Mobile Sticky Preview Bar (< lg screens, both modal and page views) */}
         {isScrolledPastInspector && (
-          <div
+          <Card
+            size="sm"
             className={cn(
-              "lg:hidden sticky z-20 px-3 sm:px-4 py-2 bg-surface/95 dark:bg-card/95 backdrop-blur-md border border-border/80 flex items-center justify-between gap-2 shadow-warm-sm animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none",
-              variant === "modal"
-                ? "-top-3 -mx-4 sm:-mx-6 rounded-none border-x-0 border-t-0"
-                : "top-14 rounded-xl"
+              "sticky top-0 z-20 lg:hidden py-0 bg-card/95 backdrop-blur-md shadow-warm-sm animate-in fade-in slide-in-from-top-2 duration-150 motion-reduce:animate-none",
+              variant === "page" && "top-14"
             )}
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
-                {imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={imageUrl}
-                    alt={`Worksheet preview for ${submission.student?.full_name ?? "student"}`}
-                    width={28}
-                    height={28}
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <FileText className="size-full p-1 text-muted-foreground" aria-hidden="true" />
-                )}
+            <CardContent className="flex items-center justify-between gap-3 py-2 px-3 sm:px-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="size-7 rounded-md bg-muted overflow-hidden border border-border shrink-0">
+                  {imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={imageUrl}
+                      alt={`Worksheet preview for ${submission.student?.full_name ?? "student"}`}
+                      width={28}
+                      height={28}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <FileText className="size-full p-1 text-muted-foreground" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="min-w-0 flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-foreground truncate">
+                    {submission.student?.full_name ?? "Student"}
+                  </span>
+                  {submission.status === "rejected" ? (
+                    <Badge
+                      variant="destructive"
+                      className="text-[10px] px-2 py-0.5 shrink-0 font-semibold"
+                    >
+                      Photo Rejected
+                    </Badge>
+                  ) : selectedCriterion ? (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0 truncate"
+                    >
+                      {selectedCriterion}
+                    </Badge>
+                  ) : null}
+                </div>
               </div>
-              <div className="min-w-0 flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-foreground truncate">
-                  {submission.student?.full_name ?? "Student"}
-                </span>
-                {submission.status === "rejected" ? (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] px-2 py-0.5 bg-background dark:bg-card text-destructive border-destructive/40 shrink-0 font-semibold shadow-2xs"
-                  >
-                    Photo Rejected
-                  </Badge>
-                ) : selectedCriterion ? (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] px-1.5 py-0 bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-300 truncate"
-                  >
-                    {selectedCriterion}
-                  </Badge>
-                ) : null}
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (variant === "modal") {
-                  scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-                } else {
-                  worksheetColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-              }}
-              className="min-h-11 h-11 sm:h-9 px-3 text-xs gap-1.5 rounded-lg cursor-pointer shrink-0 touch-manipulation font-medium text-brand-800 dark:text-brand-300 border-brand-300 dark:border-brand-800 hover:bg-brand-50 dark:hover:bg-brand-950/60"
-            >
-              <Eye className="size-3.5 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>View Image</span>
-            </Button>
-          </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (variant === "modal") {
+                    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+                  } else {
+                    worksheetColumnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
+                className="min-h-11 h-11 sm:h-9 px-3 text-xs rounded-lg shrink-0 font-medium"
+              >
+                <Eye data-icon="inline-start" aria-hidden="true" />
+                <span>View Image</span>
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start">
@@ -1161,7 +1178,7 @@ export function SubmissionDetailContent({
                         size="sm"
                         pressed={showGuideLines}
                         onPressedChange={toggleGuideLines}
-                        className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-brand-100 aria-pressed:text-brand-900 dark:aria-pressed:bg-brand-950 dark:aria-pressed:text-brand-200 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
+                        className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-primary/15 aria-pressed:text-primary shrink-0"
                         title="Toggle 3-line penmanship paper guides"
                       >
                         <span className="hidden sm:inline">Paper lines</span>
@@ -1201,33 +1218,35 @@ export function SubmissionDetailContent({
               </WorksheetImageInspector>
 
               {/* Target prompt & recognized text card */}
-              <div className="shrink-0 space-y-2 px-3 py-2 rounded-xl bg-card border border-border/70 text-xs text-muted-foreground shadow-2xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
-                  <span className="font-medium text-foreground truncate">
-                    {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
-                  </span>
-                </div>
-
-                {casingMismatches.length > 0 && (
-                  <div className="flex items-start gap-1.5 pt-2 border-t border-border/40 text-xs text-warning-foreground bg-warning/10 dark:bg-warning/15 p-2 rounded-lg border border-warning/30">
-                    <Info className="size-3.5 text-warning-foreground shrink-0 mt-0.5" aria-hidden="true" />
-                    <span className="font-medium leading-tight text-warning-foreground">
-                      <strong className="font-semibold">Capitalization Note:</strong>{" "}
-                      {casingMismatches.map((m, idx) => (
-                        <span key={idx}>
-                          {idx > 0 && ", "}
-                          expected &quot;{m.expected}&quot;, recognized &quot;{m.detected}&quot;
-                        </span>
-                      ))}
+              <Card size="sm" className="shrink-0 py-2 shadow-2xs">
+                <CardContent className="flex flex-col gap-2 px-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
+                    <span className="font-medium text-foreground truncate">
+                      {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
                     </span>
                   </div>
-                )}
-              </div>
+
+                  {casingMismatches.length > 0 && (
+                    <Alert className="border-warning/30 bg-warning/10 px-2.5 py-2 text-xs text-warning-foreground">
+                      <Info aria-hidden="true" />
+                      <AlertDescription className="text-xs leading-tight text-warning-foreground">
+                        <strong className="font-semibold">Capitalization Note:</strong>{" "}
+                        {casingMismatches.map((m, idx) => (
+                          <span key={idx}>
+                            {idx > 0 && ", "}
+                            expected &quot;{m.expected}&quot;, recognized &quot;{m.detected}&quot;
+                          </span>
+                        ))}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             {/* Right: Diagnostic Assessment Details & Comments */}
-            <div className="lg:col-span-6 flex flex-col justify-between space-y-3">
+            <div className="lg:col-span-6 flex flex-col justify-between gap-3">
               <h2 className="sr-only">Diagnostic Assessment and Comments</h2>
 
               {/* Unified Right-Pane Tab Bar (keeps worksheet visible on the left while replying to comments) */}
@@ -1250,25 +1269,26 @@ export function SubmissionDetailContent({
 
                 const desktopGuideCard =
                   isDesktopGuideRendered && activeCriterionInfo ? (
-                    <div
+                    <Alert
                       id="criterion-diagnostic-guide"
-                      className="hidden lg:block p-3 sm:p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 space-y-1.5 text-xs sm:text-sm animate-in fade-in-50 duration-200 motion-reduce:animate-none"
+                      className="hidden lg:grid border-primary/25 bg-primary/5 text-xs sm:text-sm animate-in fade-in-50 duration-200 motion-reduce:animate-none"
                     >
-                      {selectedCriterion === "Spacing" && spacingNotApplicableReason && (
-                        <p className="text-muted-foreground font-medium leading-relaxed">
-                          {spacingNotApplicableReason}
+                      <Info aria-hidden="true" />
+                      <AlertTitle className="text-xs sm:text-sm font-semibold text-foreground">
+                        {selectedCriterion}
+                      </AlertTitle>
+                      <AlertDescription className="flex flex-col gap-1 text-xs sm:text-sm text-foreground/85 [&>p:not(:last-child)]:mb-0">
+                        {selectedCriterion === "Spacing" && spacingNotApplicableReason && (
+                          <p className="text-muted-foreground font-medium leading-relaxed">
+                            {spacingNotApplicableReason}
+                          </p>
+                        )}
+                        <p className="leading-relaxed">{activeCriterionInfo.rubricGoal}</p>
+                        <p className="text-primary leading-relaxed">
+                          <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
                         </p>
-                      )}
-                      <p className="text-foreground/85 leading-relaxed">
-                        <strong className="font-semibold text-brand-900 dark:text-brand-200">
-                          {selectedCriterion}:
-                        </strong>{" "}
-                        {activeCriterionInfo.rubricGoal}
-                      </p>
-                      <p className="text-brand-800 dark:text-brand-300 leading-relaxed">
-                        <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                      </p>
-                    </div>
+                      </AlertDescription>
+                    </Alert>
                   ) : null;
 
                 return (
@@ -1290,7 +1310,7 @@ export function SubmissionDetailContent({
                           value={tab.id}
                           id={`submission-tab-${tab.id}`}
                           aria-controls={`submission-tabpanel-${tab.id}`}
-                          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 group-data-[variant=default]/tabs-list:h-auto group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-0 touch-manipulation data-active:bg-surface dark:data-active:bg-card data-active:text-foreground dark:data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
+                          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 group-data-[variant=default]/tabs-list:h-auto group-data-[variant=default]/tabs-list:rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer min-h-11 sm:min-h-0 touch-manipulation data-active:bg-card data-active:text-foreground data-active:shadow-xs data-active:border-border/60!"
                         >
                           <span className="truncate">{tab.label}</span>
                           {tab.id === "comments" && hasUnreadComments && (
@@ -1309,7 +1329,7 @@ export function SubmissionDetailContent({
                     <TabsContent
                       value="comments"
                       id="submission-tabpanel-comments"
-                      className="rounded-xl border border-border/80 bg-surface dark:bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
+                      className="rounded-xl border border-border/80 bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
                     >
                       {open && (commentUserId ? (
                         <SubmissionCommentThread
@@ -1326,7 +1346,7 @@ export function SubmissionDetailContent({
                           open
                         />
                       ) : (
-                        <div className="p-4 space-y-3" role="status" aria-label="Loading conversation">
+                        <div className="p-4 flex flex-col gap-3" role="status" aria-label="Loading conversation">
                           <Skeleton className="h-6 w-48 rounded-md" />
                           <Skeleton className="h-16 w-full rounded-xl" />
                         </div>
@@ -1337,7 +1357,7 @@ export function SubmissionDetailContent({
                     <TabsContent
                       value="rubric"
                       id="submission-tabpanel-rubric"
-                      className="space-y-2.5"
+                      className="flex flex-col gap-2.5"
                     >
                       {/* REJECTED / QUALITY GATE FAILED STATE */}
                       {submission.status === "rejected" && (
@@ -1349,51 +1369,56 @@ export function SubmissionDetailContent({
 
                       {/* PROCESSING STATE */}
                       {submission.status === "processing" && (
-                        <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-warning/10 border border-warning/30 space-y-2.5 text-center">
-                          <div className="flex size-11 items-center justify-center rounded-2xl bg-warning/20 text-warning-foreground mx-auto motion-safe:animate-pulse">
-                            <Clock className="size-5 sm:size-6" aria-hidden="true" />
-                          </div>
-                          <div className="space-y-1 max-w-sm mx-auto">
-                            <h3 className="text-sm font-heading font-semibold text-foreground">
+                        <Empty className="border border-warning/30 bg-warning/10 p-5 sm:p-6">
+                          <EmptyMedia variant="icon" className="bg-warning/20 text-warning-foreground">
+                            <Spinner />
+                          </EmptyMedia>
+                          <EmptyHeader>
+                            <EmptyTitle className="text-sm font-semibold">
                               Analyzing Handwriting
-                            </h3>
-                            <p className="text-xs text-muted-foreground leading-relaxed">
+                            </EmptyTitle>
+                            <EmptyDescription className="text-xs">
                               Evaluating letter formation, spacing, slant, and baseline alignment.
-                            </p>
-                          </div>
-                        </div>
+                            </EmptyDescription>
+                          </EmptyHeader>
+                        </Empty>
                       )}
 
                       {/* COMPLETED STATE */}
                       {(submission.status === "completed" || submission.status === "returned") && (
-                        <div className="space-y-2.5">
+                        <div className="flex flex-col gap-2.5">
                           {hasCalibratedScores ? (
-                            <div className="space-y-4">
+                            <div className="flex flex-col gap-4">
                               {/* Phase 2: Overall Composite Score Card */}
                               <Card size="sm" className="border-border/80 shadow-none gap-2.5">
-                                <CardContent className="space-y-2.5">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      {compositeBandMeta && (
-                                        <span
-                                          className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
-                                          aria-hidden="true"
-                                        />
-                                      )}
-                                      <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
-                                        {compositeBandMeta?.label ?? "Overall Score"}
-                                      </h3>
-                                    </div>
-                                    {compositeScore !== null && compositeScore !== undefined && (
+                                <CardHeader className="items-center">
+                                  <CardTitle
+                                    as="h3"
+                                    className="flex items-center gap-2 text-base sm:text-lg font-semibold text-foreground truncate"
+                                  >
+                                    {compositeBandMeta && (
+                                      <span
+                                        className={cn("size-2.5 rounded-full shrink-0", compositeBandMeta.dotColor)}
+                                        aria-hidden="true"
+                                      />
+                                    )}
+                                    <span className="truncate">
+                                      {compositeBandMeta?.label ?? "Overall Score"}
+                                    </span>
+                                  </CardTitle>
+                                  {compositeScore !== null && compositeScore !== undefined && (
+                                    <CardAction>
                                       <Badge
                                         variant="outline"
                                         className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60 shrink-0"
                                       >
                                         {Math.round(compositeScore)}% overall
                                       </Badge>
-                                    )}
-                                  </div>
-                                  {compositeScore !== null && compositeScore !== undefined && (
+                                    </CardAction>
+                                  )}
+                                </CardHeader>
+                                {compositeScore !== null && compositeScore !== undefined && (
+                                  <CardContent>
                                     <BandPositionBar
                                       score={compositeScore}
                                       height="sm"
@@ -1402,17 +1427,18 @@ export function SubmissionDetailContent({
                                       ariaLabel={`Overall score: ${Math.round(compositeScore)}%`}
                                       ariaValueText={`${Math.round(compositeScore)}% overall`}
                                     />
-                                  )}
-                                </CardContent>
+                                  </CardContent>
+                                )}
                               </Card>
 
                               {/* Phase 2: Unified Skill Breakdown Card */}
-                              <div className="space-y-2">
-                                <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
-                                  Skill breakdown
-                                </h3>
-
-                                <Card className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60">
+                              <Card className="border-border/80 shadow-none py-0 gap-0">
+                                <CardHeader className="py-3 border-b border-border/60">
+                                  <CardTitle as="h3" className="text-sm font-semibold text-foreground">
+                                    Skill breakdown
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0 divide-y divide-border/60">
                                   {criteria.map((c) => {
                                     const isCriterionNA = c.score === null || c.score === undefined;
                                     const isSelected = selectedCriterion === c.name;
@@ -1459,59 +1485,62 @@ export function SubmissionDetailContent({
                                       />
                                     );
                                   })}
-                                </Card>
-                              </div>
+                                </CardContent>
+                              </Card>
                             </div>
                           ) : (
-                            <div className="space-y-4">
+                            <div className="flex flex-col gap-4">
                               {submission.manual_score && (!isEditingRubric || !canEditRubric) ? (
                                 <>
                                   {/* READ-ONLY / CONFIRMED RUBRIC STATE */}
                                   <Card size="sm" className="border-border/80 shadow-none gap-2.5">
-                                    <CardContent className="space-y-2.5">
-                                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          {recordedComposite && (
-                                            <span
-                                              className={cn(
-                                                "size-2.5 rounded-full shrink-0",
-                                                recordedComposite.overallBandMeta.dotColor
-                                              )}
-                                              aria-hidden="true"
-                                            />
-                                          )}
-                                          <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground truncate">
-                                            {recordedComposite?.overallBandMeta.label ?? "Teacher Benchmark"}
-                                          </h3>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                          {recordedComposite && (
-                                            <Badge
-                                              variant="outline"
-                                              className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60"
-                                            >
-                                              {recordedComposite.isComplete
-                                                ? `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts · ${recordedComposite.avgPercentage}%`
-                                                : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
-                                            </Badge>
-                                          )}
-                                          {canEditRubric && (
-                                            <Button
-                                              ref={editButtonRef}
-                                              type="button"
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => setIsEditingRubric(true)}
-                                              className="h-10 sm:h-7 min-h-10 sm:min-h-0 px-3 sm:px-2.5 text-xs rounded-lg text-brand-800 dark:text-brand-200 border-brand-300 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 gap-1.5 cursor-pointer touch-manipulation shrink-0 font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                                              aria-label="Edit recorded rubric scores"
-                                            >
-                                              <Edit3 className="size-3" aria-hidden="true" />
-                                              <span>Edit</span>
-                                            </Button>
-                                          )}
-                                        </div>
-                                      </div>
-                                      {recordedComposite?.isComplete && (
+                                    <CardHeader className="items-center">
+                                      <CardTitle
+                                        as="h3"
+                                        className="flex items-center gap-2 text-base sm:text-lg font-semibold text-foreground truncate"
+                                      >
+                                        {recordedComposite && (
+                                          <span
+                                            className={cn(
+                                              "size-2.5 rounded-full shrink-0",
+                                              recordedComposite.overallBandMeta.dotColor
+                                            )}
+                                            aria-hidden="true"
+                                          />
+                                        )}
+                                        <span className="truncate">
+                                          {recordedComposite?.overallBandMeta.label ?? "Teacher Benchmark"}
+                                        </span>
+                                      </CardTitle>
+                                      <CardAction className="flex items-center gap-2 shrink-0">
+                                        {recordedComposite && (
+                                          <Badge
+                                            variant="outline"
+                                            className="h-auto rounded-md text-xs font-semibold font-sans tabular-nums text-muted-foreground bg-muted/60 px-2 py-0.5 border-border/60"
+                                          >
+                                            {recordedComposite.isComplete
+                                              ? `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts · ${recordedComposite.avgPercentage}%`
+                                              : `${recordedComposite.totalPoints}/${recordedComposite.maxPoints} pts`}
+                                          </Badge>
+                                        )}
+                                        {canEditRubric && (
+                                          <Button
+                                            ref={editButtonRef}
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIsEditingRubric(true)}
+                                            className="h-10 sm:h-7 min-h-10 sm:min-h-0 px-3 sm:px-2.5 text-xs rounded-lg text-primary border-primary/30 hover:bg-primary/10 shrink-0 font-medium"
+                                            aria-label="Edit recorded rubric scores"
+                                          >
+                                            <Edit3 data-icon="inline-start" aria-hidden="true" />
+                                            <span>Edit</span>
+                                          </Button>
+                                        )}
+                                      </CardAction>
+                                    </CardHeader>
+                                    {recordedComposite?.isComplete && (
+                                      <CardContent>
                                         <BandPositionBar
                                           score={recordedComposite.avgPercentage}
                                           height="sm"
@@ -1520,20 +1549,21 @@ export function SubmissionDetailContent({
                                           ariaLabel={`Teacher benchmark score: ${recordedComposite.avgPercentage}%`}
                                           ariaValueText={`${recordedComposite.avgPercentage}% overall`}
                                         />
-                                      )}
-                                    </CardContent>
+                                      </CardContent>
+                                    )}
                                   </Card>
 
-                                  <div className="space-y-2">
-                                    <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
-                                      Skill breakdown
-                                    </h3>
-
-                                    <Card
-                                      role="group"
-                                      aria-label="Recorded criterion breakdown"
-                                      className="border-border/80 shadow-none py-0 gap-0 divide-y divide-border/60"
-                                    >
+                                  <Card
+                                    role="group"
+                                    aria-label="Recorded criterion breakdown"
+                                    className="border-border/80 shadow-none py-0 gap-0"
+                                  >
+                                    <CardHeader className="py-3 border-b border-border/60">
+                                      <CardTitle as="h3" className="text-sm font-semibold text-foreground">
+                                        Skill breakdown
+                                      </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-0 divide-y divide-border/60">
                                       {RUBRIC_CRITERIA.map((criterion) => {
                                         const bandValue =
                                           submission.manual_score?.[criterion.key] ?? null;
@@ -1564,9 +1594,10 @@ export function SubmissionDetailContent({
                                               metric || attentionCount > 0 ? (
                                                 <>
                                                   {metric && (
-                                                    <span
+                                                    <Badge
+                                                      variant="outline"
                                                       className={cn(
-                                                        "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-sans font-medium border tabular-nums",
+                                                        "h-auto gap-1 px-1.5 py-0.5 rounded text-[11px] font-sans font-medium tabular-nums",
                                                         metric.badgeClass
                                                       )}
                                                       title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
@@ -1576,7 +1607,7 @@ export function SubmissionDetailContent({
                                                         aria-hidden="true"
                                                       />
                                                       <span>{metric.value}</span>
-                                                    </span>
+                                                    </Badge>
                                                   )}
                                                   {attentionCount > 0 && (
                                                     <span className="text-xs font-medium text-band-1-text tabular-nums">
@@ -1604,8 +1635,8 @@ export function SubmissionDetailContent({
                                           />
                                         );
                                       })}
-                                    </Card>
-                                  </div>
+                                    </CardContent>
+                                  </Card>
                                 </>
                               ) : canEditRubric ? (
                                 /* INTERACTIVE RUBRIC ENTRY FORM */
@@ -1639,13 +1670,16 @@ export function SubmissionDetailContent({
                                   }}
                                 />
                               ) : (
-                                <p className="rounded-xl border border-border/80 bg-surface p-3 text-xs text-muted-foreground dark:bg-card">
-                                  {scoringEngine.isPending || scoringEngine.isFetching
-                                    ? "Checking the active scoring mode…"
-                                    : scoringEngine.isError
-                                      ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
-                                      : "Manual rubric scoring is unavailable while calibrated scoring is active."}
-                                </p>
+                                <Alert role="status">
+                                  <Info aria-hidden="true" />
+                                  <AlertDescription className="text-xs">
+                                    {scoringEngine.isPending || scoringEngine.isFetching
+                                      ? "Checking the active scoring mode…"
+                                      : scoringEngine.isError
+                                        ? "Rubric editing is unavailable because the scoring mode could not be confirmed."
+                                        : "Manual rubric scoring is unavailable while calibrated scoring is active."}
+                                  </AlertDescription>
+                                </Alert>
                               )}
                             </div>
                           )}
@@ -1661,7 +1695,7 @@ export function SubmissionDetailContent({
                       <TabsContent
                         value="metrics"
                         id="submission-tabpanel-metrics"
-                        className="space-y-2.5"
+                        className="flex flex-col gap-2.5"
                       >
                         <RawMeasurementsTable
                           measurement={measurement}
@@ -1686,7 +1720,7 @@ export function SubmissionDetailContent({
                   (!submission.manual_score || isEditingRubric);
 
                 return (
-                  <div className="space-y-2.5 pt-1">
+                  <div className="flex flex-col gap-2.5 pt-1">
                     {!isRubricFormOpen && (
                       <SubmissionLifecycleControls
                         submission={submission}
@@ -1696,17 +1730,19 @@ export function SubmissionDetailContent({
                       />
                     )}
                     {variant === "page" && isSubmissionCompleted && (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 sm:px-3.5 sm:py-2.5 rounded-xl border border-border/80 bg-muted/25">
-                        <p className="text-xs text-muted-foreground leading-snug">
-                          Need another photo? Returning keeps this attempt in history.
-                        </p>
-                        <SubmissionLifecycleControls
-                          submission={submission}
-                          showRelease={false}
-                          variant="actions"
-                          className="shrink-0"
-                        />
-                      </div>
+                      <Card size="sm" className="py-2.5 bg-muted/25 shadow-none">
+                        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3 sm:px-3.5">
+                          <p className="text-xs text-muted-foreground leading-snug">
+                            Need another photo? Returning keeps this attempt in history.
+                          </p>
+                          <SubmissionLifecycleControls
+                            submission={submission}
+                            showRelease={false}
+                            variant="actions"
+                            className="shrink-0"
+                          />
+                        </CardContent>
+                      </Card>
                     )}
                   </div>
                 );
@@ -1716,20 +1752,23 @@ export function SubmissionDetailContent({
         </div>
       {/* Footer (Modal Only) */}
       {variant === "modal" ? (
-        <DialogFooter className="pt-3 sm:pt-3.5 border-t border-border/70 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleProtectedClose}
-            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg cursor-pointer touch-manipulation ml-auto"
-          >
-            Close
-          </Button>
-        </DialogFooter>
+        <>
+          <Separator />
+          <DialogFooter className="pt-3 sm:pt-3.5 shrink-0 flex flex-row items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <SubmissionLifecycleControls submission={submission} showRelease={false} variant="actions" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleProtectedClose}
+              className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg ml-auto"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </>
       ) : null}
 
       {/* Unsaved Rubric Navigation Guard Dialog */}

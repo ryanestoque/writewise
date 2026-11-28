@@ -8,6 +8,8 @@ import { Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export function formatMetric(
   mean: number | null | undefined,
@@ -85,11 +87,11 @@ export function RawMeasurementsTable({
       ? `${slantAnalysis.measured_words} / ${slantAnalysis.total_words}`
       : "Not recorded";
     const optimalBadgeClass =
-      "bg-band-4/15 text-band-4-text border-band-4/40 dark:bg-band-4/25 dark:border-band-4/50";
+      "bg-band-4/15 text-band-4-text border-band-4/40";
     const borderlineBadgeClass =
-      "bg-band-2/15 text-band-2-text border-band-2/40 dark:bg-band-2/25 dark:border-band-2/50";
+      "bg-band-2/15 text-band-2-text border-band-2/40";
     const deviatingBadgeClass =
-      "bg-band-1/15 text-band-1-text border-band-1/40 dark:bg-band-1/25 dark:border-band-1/50";
+      "bg-band-1/15 text-band-1-text border-band-1/40";
 
     // 1. Letter formation benchmark
     let formationBenchmark: BenchmarkIndicator;
@@ -121,8 +123,8 @@ export function RawMeasurementsTable({
       formationBenchmark = {
         status: "qualitative",
         label: "Teacher Rubric",
-        badgeClass: "bg-brand-50 text-brand-800 border-brand-300 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800",
-        dotClass: "bg-brand-600",
+        badgeClass: "bg-secondary text-secondary-foreground border-border",
+        dotClass: "bg-primary",
       };
     }
 
@@ -377,20 +379,20 @@ export function RawMeasurementsTable({
   }, [measurement]);
 
   return (
-    <div className="space-y-1.5">
+    <div className="flex flex-col gap-1.5">
       {!measurement && (
         <Alert
           role="status"
           className="bg-muted/40 border-border/70 px-3 py-2 text-xs text-muted-foreground items-center"
         >
-          <Info className="size-3.5 text-muted-foreground shrink-0 translate-y-0!" aria-hidden="true" />
+          <Info aria-hidden="true" />
           <AlertDescription className="text-xs">
             Physical geometric measurements are pending computer vision feature extraction.
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="space-y-1.5">
+      <div className="flex flex-col gap-1.5">
         {rawCriteria.map((c) => {
           const isSelected = selectedCriterion === c.name;
           const activeCriterionInfo = CRITERIA_GUIDE[c.name] ?? null;
@@ -406,105 +408,118 @@ export function RawMeasurementsTable({
                 : null;
 
           return (
-            <div key={c.name} className="space-y-1">
-              <div
-                className={`w-full flex flex-col p-2.5 sm:px-3 sm:py-2.5 rounded-xl border transition-colors text-xs text-left ${
+            <div key={c.name} className="flex flex-col gap-1">
+              <Card
+                size="sm"
+                className={cn(
+                  "py-2.5 shadow-none transition-colors text-xs text-left",
                   isSelected
-                    ? "bg-brand-50/80 dark:bg-brand-950/60 border-brand-300 dark:border-brand-800 shadow-xs ring-1 ring-brand-400/40"
-                    : "bg-surface dark:bg-card border-border/70 hover:border-brand-300 dark:hover:border-brand-800 hover:bg-muted/30"
-                }`}
-              >
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onSelectCriterion(c.name)}
-                  aria-pressed={isSelected}
-                  aria-labelledby={`${titleId} ${valueId}`}
-                  className="w-full h-auto px-0 justify-between gap-2 text-left font-normal whitespace-normal hover:bg-transparent dark:hover:bg-transparent cursor-pointer rounded-lg touch-manipulation min-h-11 sm:min-h-0"
-                >
-                  <div className="min-w-0 flex items-center gap-2 flex-wrap">
-                    <span id={titleId} className="font-semibold text-foreground truncate block">
-                      {c.name}
-                    </span>
-                    {c.benchmark && (
-                      <Badge
-                        variant="outline"
-                        className={`h-auto rounded-full text-[11px] font-semibold px-2 py-0.5 gap-1 ${c.benchmark.badgeClass}`}
-                      >
-                        <span className={`size-1.5 rounded-full shrink-0 ${c.benchmark.dotClass}`} aria-hidden="true" />
-                        <span>{c.benchmark.label}</span>
-                      </Badge>
-                    )}
-                  </div>
-                  <Badge
-                    id={valueId}
-                    variant="outline"
-                    className="h-auto font-sans font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border-border/60 shrink-0"
-                  >
-                    {c.primaryValue}
-                  </Badge>
-                </Button>
-
-                {/* Visual Target Range Meter */}
-                {c.benchmark?.meter && (
-                  <div className="mt-2 space-y-1 w-full">
-                    <div
-                      role="meter"
-                      aria-label={`${c.name} target range meter`}
-                      aria-valuenow={c.benchmark.meter.current}
-                      aria-valuemin={c.benchmark.meter.min}
-                      aria-valuemax={c.benchmark.meter.max}
-                      aria-valuetext={`${c.benchmark.label}: ${c.primaryValue} (Target: ${c.targetText})`}
-                      className="relative h-1.5 w-full bg-muted/70 dark:bg-muted/40 rounded-full overflow-hidden border border-border/50"
-                    >
-                      {/* Target Window Highlight */}
-                      <div
-                        className="absolute top-0 bottom-0 bg-band-4/25 dark:bg-band-4/35 border-x border-band-4/50"
-                        style={{
-                          left: `${Math.max(0, Math.min(100, ((c.benchmark.meter.targetMin - c.benchmark.meter.min) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
-                          width: `${Math.max(4, Math.min(100, ((c.benchmark.meter.targetMax - c.benchmark.meter.targetMin) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
-                        }}
-                        title="Target Guideline Window"
-                      />
-                      {/* Measured Value Tick */}
-                      <div
-                        className={`absolute top-0 bottom-0 w-2 -ml-1 rounded-full shadow-xs transition-all ${
-                          c.benchmark.status === "within_target"
-                            ? "bg-band-4"
-                            : c.benchmark.status === "borderline"
-                              ? "bg-band-2"
-                              : "bg-band-1"
-                        }`}
-                        style={{
-                          left: `${Math.max(2, Math.min(98, ((c.benchmark.meter.current - c.benchmark.meter.min) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
-                        }}
-                        title={`Measured value: ${c.primaryValue}`}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground tabular-nums">
-                      <span>{secondaryNote ?? c.description}</span>
-                      <span className="shrink-0 font-medium">Target: {c.targetText}</span>
-                    </div>
-                  </div>
+                    ? "bg-primary/5 border-primary/40 shadow-xs ring-1 ring-primary/25"
+                    : "border-border/70 hover:border-primary/40 hover:bg-muted/30"
                 )}
-              </div>
+              >
+                <CardContent className="flex flex-col px-2.5 sm:px-3">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => onSelectCriterion(c.name)}
+                    aria-pressed={isSelected}
+                    aria-labelledby={`${titleId} ${valueId}`}
+                    className="w-full h-auto px-0 justify-between gap-2 text-left font-normal whitespace-normal hover:bg-transparent cursor-pointer rounded-lg touch-manipulation min-h-11 sm:min-h-0"
+                  >
+                    <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                      <span id={titleId} className="font-semibold text-foreground truncate block">
+                        {c.name}
+                      </span>
+                      {c.benchmark && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "h-auto rounded-full text-[11px] font-semibold px-2 py-0.5 gap-1",
+                            c.benchmark.badgeClass
+                          )}
+                        >
+                          <span
+                            className={cn("size-1.5 rounded-full shrink-0", c.benchmark.dotClass)}
+                            aria-hidden="true"
+                          />
+                          <span>{c.benchmark.label}</span>
+                        </Badge>
+                      )}
+                    </div>
+                    <Badge
+                      id={valueId}
+                      variant="outline"
+                      className="h-auto font-sans font-semibold text-foreground tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted/60 border-border/60 shrink-0"
+                    >
+                      {c.primaryValue}
+                    </Badge>
+                  </Button>
+
+                  {/* Visual Target Range Meter */}
+                  {c.benchmark?.meter && (
+                    <div className="mt-2 flex flex-col gap-1 w-full">
+                      <div
+                        role="meter"
+                        aria-label={`${c.name} target range meter`}
+                        aria-valuenow={c.benchmark.meter.current}
+                        aria-valuemin={c.benchmark.meter.min}
+                        aria-valuemax={c.benchmark.meter.max}
+                        aria-valuetext={`${c.benchmark.label}: ${c.primaryValue} (Target: ${c.targetText})`}
+                        className="relative h-1.5 w-full bg-muted/70 rounded-full overflow-hidden border border-border/50"
+                      >
+                        {/* Target Window Highlight */}
+                        <div
+                          className="absolute top-0 bottom-0 bg-band-4/25 border-x border-band-4/50"
+                          style={{
+                            left: `${Math.max(0, Math.min(100, ((c.benchmark.meter.targetMin - c.benchmark.meter.min) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
+                            width: `${Math.max(4, Math.min(100, ((c.benchmark.meter.targetMax - c.benchmark.meter.targetMin) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
+                          }}
+                          title="Target Guideline Window"
+                        />
+                        {/* Measured Value Tick */}
+                        <div
+                          className={cn(
+                            "absolute top-0 bottom-0 w-2 -ml-1 rounded-full shadow-xs transition-all",
+                            c.benchmark.status === "within_target"
+                              ? "bg-band-4"
+                              : c.benchmark.status === "borderline"
+                                ? "bg-band-2"
+                                : "bg-band-1"
+                          )}
+                          style={{
+                            left: `${Math.max(2, Math.min(98, ((c.benchmark.meter.current - c.benchmark.meter.min) / (c.benchmark.meter.max - c.benchmark.meter.min)) * 100))}%`,
+                          }}
+                          title={`Measured value: ${c.primaryValue}`}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground tabular-nums">
+                        <span>{secondaryNote ?? c.description}</span>
+                        <span className="shrink-0 font-medium">Target: {c.targetText}</span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Inline Mobile & Tablet Coaching Tip when selected (lg:hidden) */}
               {isSelected && activeCriterionInfo && (
-                <div
+                <Alert
                   id={inlineId}
                   role="region"
                   aria-label={`${c.name} coaching tip`}
-                  className="lg:hidden p-2.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900 text-[11px] space-y-1 animate-in fade-in-50 duration-150 motion-reduce:animate-none text-left"
+                  className="lg:hidden rounded-lg bg-primary/5 border-primary/25 p-2.5 text-[11px] animate-in fade-in-50 duration-150 motion-reduce:animate-none text-left"
                 >
-                  <p className="text-foreground/85 leading-snug">
-                    <strong className="font-semibold text-brand-900 dark:text-brand-200">{c.name}:</strong>{" "}
-                    {activeCriterionInfo.rubricGoal}
-                  </p>
-                  <p className="text-brand-800 dark:text-brand-300 leading-snug">
-                    <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
-                  </p>
-                </div>
+                  <AlertDescription className="flex flex-col gap-1 text-[11px] text-left [&>p:not(:last-child)]:mb-0">
+                    <p className="text-foreground/85 leading-snug">
+                      <strong className="font-semibold text-foreground">{c.name}:</strong>{" "}
+                      {activeCriterionInfo.rubricGoal}
+                    </p>
+                    <p className="text-primary leading-snug">
+                      <strong>Tip:</strong> {activeCriterionInfo.coachingTip}
+                    </p>
+                  </AlertDescription>
+                </Alert>
               )}
             </div>
           );

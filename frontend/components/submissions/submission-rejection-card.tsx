@@ -3,7 +3,9 @@
 import { useMemo } from "react";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertCircle,
   Camera,
@@ -206,31 +208,24 @@ export function SubmissionRejectionCard({
   }, [submission.rejection_details]);
 
   return (
-    <div className="space-y-3.5">
+    <div className="flex flex-col gap-3.5">
       <Alert
         variant="destructive"
         role="region"
         aria-labelledby="rejection-heading"
-        className="rounded-xl sm:rounded-2xl border-destructive/25 bg-destructive/10 p-4 sm:p-5 shadow-xs space-y-3 block [&_svg]:translate-y-0"
+        className="rounded-xl sm:rounded-2xl border-destructive/25 bg-destructive/10 p-4 sm:p-5 shadow-xs"
       >
-        <div className="flex items-start gap-2.5 min-w-0">
-          <AlertCircle
-            className="size-4.5 text-destructive shrink-0 mt-0.5"
-            aria-hidden="true"
-          />
-          <div className="min-w-0 flex-1">
-            <AlertTitle className="font-heading text-sm sm:text-base font-semibold text-destructive tracking-tight leading-snug">
-              <h3
-                id="rejection-heading"
-                className="text-balance break-words font-inherit"
-              >
-                {rejectionInfo.title}
-              </h3>
-            </AlertTitle>
-          </div>
-        </div>
+        <AlertCircle aria-hidden="true" />
+        <AlertTitle className="font-heading text-sm sm:text-base font-semibold text-destructive tracking-tight leading-snug">
+          <h3
+            id="rejection-heading"
+            className="text-balance break-words font-inherit"
+          >
+            {rejectionInfo.title}
+          </h3>
+        </AlertTitle>
 
-        <AlertDescription className="!text-foreground/90 text-xs sm:text-sm leading-relaxed font-sans space-y-2">
+        <AlertDescription className="flex flex-col gap-2 text-foreground/90 text-xs sm:text-sm leading-relaxed font-sans [&>p:not(:last-child)]:mb-0">
           <p>{rejectionInfo.description}</p>
           {detailMessage && detailMessage !== rejectionInfo.description && (
             <p className="font-sans text-xs text-muted-foreground bg-background/60 p-2 rounded-md border border-destructive/20">
@@ -239,10 +234,13 @@ export function SubmissionRejectionCard({
           )}
 
           {structuredDetails && (
-            <div className="space-y-1.5 pt-0.5">
+            <div className="flex flex-col gap-1.5 pt-0.5">
               {typeof structuredDetails.detectedWords === "number" &&
                 typeof structuredDetails.expectedWords === "number" && (
-                  <div className="inline-flex items-center gap-2 text-xs font-sans tabular-nums text-muted-foreground bg-background/60 px-2.5 py-1 rounded-md border border-destructive/20">
+                  <Badge
+                    variant="outline"
+                    className="h-auto gap-2 px-2.5 py-1 text-xs font-sans tabular-nums text-muted-foreground bg-background/60 border-destructive/20"
+                  >
                     <span>
                       Detected: <strong className="text-foreground">{structuredDetails.detectedWords}</strong> words
                     </span>
@@ -250,14 +248,14 @@ export function SubmissionRejectionCard({
                     <span>
                       Expected: <strong className="text-foreground">{structuredDetails.expectedWords}</strong> words
                     </span>
-                  </div>
+                  </Badge>
                 )}
 
               {(typeof structuredDetails.detectedText === "string" ||
                 typeof structuredDetails.expectedText === "string") && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                   {typeof structuredDetails.detectedText === "string" && (
-                    <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 space-y-0.5">
+                    <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 flex flex-col gap-0.5">
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                         Recognized Text
                       </span>
@@ -267,7 +265,7 @@ export function SubmissionRejectionCard({
                     </div>
                   )}
                   {typeof structuredDetails.expectedText === "string" && (
-                    <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 space-y-0.5">
+                    <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 flex flex-col gap-0.5">
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
                         Assigned Prompt
                       </span>
@@ -282,74 +280,94 @@ export function SubmissionRejectionCard({
           )}
         </AlertDescription>
 
-        <div className="rounded-lg sm:rounded-xl bg-background/95 dark:bg-card/90 border border-destructive/20 p-3 space-y-1.5 shadow-2xs">
-          <h4 className="text-xs font-semibold text-foreground">
-            {rejectionInfo.actionLabel}
-          </h4>
-          <p
-            id="rejection-advice"
-            className="text-xs text-foreground/80 leading-relaxed"
-          >
-            {rejectionInfo.actionAdvice}
-          </p>
-        </div>
+        <Card
+          size="sm"
+          className="col-span-full mt-2.5 gap-1.5 py-3 border-destructive/20 bg-background/95 shadow-2xs"
+        >
+          <CardHeader className="px-3">
+            <CardTitle as="h4" className="text-xs font-semibold text-foreground">
+              {rejectionInfo.actionLabel}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3">
+            <p
+              id="rejection-advice"
+              className="text-xs text-foreground/80 leading-relaxed"
+            >
+              {rejectionInfo.actionAdvice}
+            </p>
+          </CardContent>
+        </Card>
 
         <Button
           type="button"
           onClick={onReupload}
           aria-describedby="rejection-advice"
           aria-label={`Take and re-upload new worksheet photo for ${submission.student?.full_name ?? "student"}`}
-          className="w-full min-h-11 h-11 bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-semibold rounded-lg gap-2 shadow-xs cursor-pointer touch-manipulation transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="col-span-full mt-2.5 w-full min-h-11 h-11 text-xs sm:text-sm font-semibold rounded-lg shadow-xs"
         >
-          <Camera className="size-4" aria-hidden="true" />
-          Take & Re-upload New Photo
+          <Camera data-icon="inline-start" aria-hidden="true" />
+          Take &amp; Re-upload New Photo
         </Button>
       </Alert>
 
       {/* Photo Quality Guidelines for Reliable Scoring */}
-      <div className="p-3.5 sm:p-4 rounded-xl border border-border/80 bg-muted/30 dark:bg-muted/15 space-y-3">
-        <h4 className="text-xs font-semibold text-foreground">
-          Photo Quality Guidelines for Reliable Scoring
-        </h4>
-        <ol className="space-y-2.5 text-xs text-muted-foreground">
-          <li className="flex items-start gap-2.5">
-            <span className="size-5 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 font-sans tabular-nums text-[11px] font-semibold">
-              1
-            </span>
-            <span className="leading-relaxed">
-              <strong className="text-foreground font-medium">
-                Bright, Indirect Lighting:
-              </strong>{" "}
-              Avoid heavy phone shadows and direct overhead fluorescent glare on
-              the paper.
-            </span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="size-5 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 font-sans tabular-nums text-[11px] font-semibold">
-              2
-            </span>
-            <span className="leading-relaxed">
-              <strong className="text-foreground font-medium">
-                Flat Top-Down Framing:
-              </strong>{" "}
-              Hold the camera parallel directly above the page so 3-line
-              penmanship ruling remains straight.
-            </span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <span className="size-5 rounded-md bg-brand-100 dark:bg-brand-950/80 text-brand-800 dark:text-brand-200 flex items-center justify-center shrink-0 mt-0.5 border border-brand-200/60 dark:border-brand-900/60 font-sans tabular-nums text-[11px] font-semibold">
-              3
-            </span>
-            <span className="leading-relaxed">
-              <strong className="text-foreground font-medium">
-                Tap to Focus:
-              </strong>{" "}
-              Ensure pencil strokes and midlines are crisp and sharp before
-              pressing capture.
-            </span>
-          </li>
-        </ol>
-      </div>
+      <Card size="sm" className="gap-3 py-3.5 sm:py-4 bg-muted/30 shadow-none">
+        <CardHeader className="px-3.5 sm:px-4">
+          <CardTitle as="h4" className="text-xs font-semibold text-foreground">
+            Photo Quality Guidelines for Reliable Scoring
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-3.5 sm:px-4">
+          <ol className="flex flex-col gap-2.5 text-xs text-muted-foreground">
+            <li className="flex items-start gap-2.5">
+              <Badge
+                variant="secondary"
+                className="size-5 px-0 justify-center shrink-0 mt-0.5 tabular-nums text-[11px] font-semibold"
+              >
+                1
+              </Badge>
+              <span className="leading-relaxed">
+                <strong className="text-foreground font-medium">
+                  Bright, Indirect Lighting:
+                </strong>{" "}
+                Avoid heavy phone shadows and direct overhead fluorescent glare on
+                the paper.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <Badge
+                variant="secondary"
+                className="size-5 px-0 justify-center shrink-0 mt-0.5 tabular-nums text-[11px] font-semibold"
+              >
+                2
+              </Badge>
+              <span className="leading-relaxed">
+                <strong className="text-foreground font-medium">
+                  Flat Top-Down Framing:
+                </strong>{" "}
+                Hold the camera parallel directly above the page so 3-line
+                penmanship ruling remains straight.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <Badge
+                variant="secondary"
+                className="size-5 px-0 justify-center shrink-0 mt-0.5 tabular-nums text-[11px] font-semibold"
+              >
+                3
+              </Badge>
+              <span className="leading-relaxed">
+                <strong className="text-foreground font-medium">
+                  Tap to Focus:
+                </strong>{" "}
+                Ensure pencil strokes and midlines are crisp and sharp before
+                pressing capture.
+              </span>
+            </li>
+          </ol>
+        </CardContent>
+      </Card>
     </div>
   );
 }

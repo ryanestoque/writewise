@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { gradebookRequest } from "@/lib/gradebook/transport";
 import {
   useActiveGradebookAccount,
@@ -101,18 +106,34 @@ export function ActivityReleaseGradePreview({
   activityId: string;
 }) {
   if (!inventory.active)
-    return <p role="alert">Your account changed. Sign in again before reviewing grades.</p>;
+    return (
+      <Alert variant="destructive">
+        <AlertCircle aria-hidden="true" />
+        <AlertDescription>
+          Your account changed. Sign in again before reviewing grades.
+        </AlertDescription>
+      </Alert>
+    );
   if (inventory.failed)
     return (
       <div className="flex flex-col gap-2">
-        <p role="alert">Could not load all point grades. Retry before continuing.</p>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertDescription>
+            Could not load all point grades. Retry before continuing.
+          </AlertDescription>
+        </Alert>
         <Button variant="outline" onClick={inventory.retry} disabled={inventory.pending}>
           Retry point grades
         </Button>
       </div>
     );
   if (inventory.pending)
-    return <p role="status">Checking point grades across assigned sections…</p>;
+    return (
+      <div role="status" aria-label="Checking point grades across assigned sections">
+        <Skeleton className="h-5 w-48" />
+      </div>
+    );
   return (
     <section aria-label="Point grades ready for release" className="flex flex-col gap-3 text-sm">
       <p>
@@ -122,25 +143,30 @@ export function ActivityReleaseGradePreview({
           : " in the covered sections. This is a partial inventory."}
       </p>
       {inventory.entries.length > 0 && (
-        <ul
-          className="flex max-h-48 flex-col gap-2 overflow-y-auto"
-          tabIndex={0}
-          aria-label="Draft point grades"
-        >
-          {inventory.entries.map(({ student, cell }) => (
-            <li key={student.id} className="flex flex-col gap-1 border-b pb-2">
-              <strong className="font-medium break-words">{student.full_name}</strong>
-              <span>
-                {student.section || "No section"} · {cell.final_points} / {cell.points_possible}{" "}
-                points
-              </span>
-              <span className="flex flex-wrap gap-2">
-                {cell.points_override !== null && <Badge variant="outline">Override</Badge>}
-                {Number(cell.final_points) === 0 && <Badge variant="outline">Zero</Badge>}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <ScrollArea className="max-h-48">
+          <ul
+            className="flex flex-col gap-2 pr-3"
+            tabIndex={0}
+            aria-label="Draft point grades"
+          >
+            {inventory.entries.map(({ student, cell }, idx) => (
+              <li key={student.id} className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1">
+                  <strong className="font-medium break-words">{student.full_name}</strong>
+                  <span>
+                    {student.section || "No section"} · {cell.final_points} / {cell.points_possible}{" "}
+                    points
+                  </span>
+                  <span className="flex flex-wrap gap-2">
+                    {cell.points_override !== null && <Badge variant="outline">Override</Badge>}
+                    {Number(cell.final_points) === 0 && <Badge variant="outline">Zero</Badge>}
+                  </span>
+                </div>
+                {idx < inventory.entries.length - 1 && <Separator />}
+              </li>
+            ))}
+          </ul>
+        </ScrollArea>
       )}
       {!inventory.complete && (
         <div className="flex flex-col gap-2">

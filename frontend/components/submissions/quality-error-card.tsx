@@ -1,7 +1,10 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -15,6 +18,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+} from "@/components/ui/empty";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
@@ -641,11 +652,6 @@ export function QualityErrorCard({
     typeof error.details?.expected_words === "number" ||
     Boolean(error.details?.submission_id);
 
-  const visibleTips =
-    showAllTips || presentation.tips.length <= 1
-      ? presentation.tips
-      : presentation.tips.slice(0, 1);
-
   const handleRetakeClick = useCallback(() => {
     const topTip = presentation.tips[0];
     onRetake(topTip ? { tip: topTip, badgeLabel: presentation.badgeLabel } : undefined);
@@ -744,140 +750,146 @@ export function QualityErrorCard({
   ]);
 
   return (
-    <div
+    <Card
       ref={cardRef}
       role="region"
       aria-labelledby="quality-error-card-title"
+      size="sm"
       className={cn(
-        "flex flex-col gap-3.5 p-4 rounded-xl border text-foreground animate-in fade-in-50 duration-200 motion-reduce:animate-none shadow-warm-sm",
+        "py-4 text-foreground animate-in fade-in-50 duration-200 motion-reduce:animate-none shadow-warm-sm",
         presentation.isQualityCheck
-          ? "border-warning/35 bg-warning/8 dark:bg-warning/10"
-          : "border-destructive/30 bg-destructive/5 dark:bg-destructive/10"
+          ? "border-warning/35 bg-warning/10"
+          : "border-destructive/30 bg-destructive/10"
       )}
     >
-      {/* Screen-reader polite announcement on error render */}
-      <div role="status" aria-live="polite" className="sr-only">
-        {presentation.isQualityCheck ? "Quality check warning: " : "Submission error: "}
-        {presentation.title}. {presentation.description}
-      </div>
-      {/* Header section with badge & thumbnail */}
-      <div className="flex items-start gap-3">
-        {/* Compact captured thumbnail if available */}
-        {previewUrl ? (
-          <div className="relative shrink-0 flex flex-col items-center">
-            <button
-              type="button"
-              onClick={openInspectionModal}
-              aria-haspopup="dialog"
-              aria-label="Enlarge captured worksheet photo to inspect quality"
-              className={cn(
-                "relative w-20 h-24 rounded-lg overflow-hidden bg-muted shadow-2xs group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 text-left border transition-all",
-                presentation.isQualityCheck
-                  ? "border-warning/40 hover:border-warning/60 focus-visible:ring-warning"
-                  : "border-destructive/30 hover:border-destructive/50 focus-visible:ring-destructive"
-              )}
-            >
-              {imageError ? (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-1 text-center">
-                  <ImageOff className="size-4 mb-0.5" aria-hidden="true" />
-                  <span className="text-xs leading-tight font-medium">No preview</span>
-                </div>
-              ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={previewUrl}
-                  alt="Captured worksheet preview thumbnail"
-                  onError={() => setImageError(true)}
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                />
-              )}
-              {/* Floating zoom indicator - non-obstructive corner pill */}
-              <div className="absolute bottom-1 right-1 bg-foreground/85 backdrop-blur-xs text-background text-xs font-medium py-0.5 px-1.5 rounded flex items-center gap-1 transition-[background-color,transform] group-hover:bg-foreground group-hover:scale-105 shadow-2xs">
-                <Eye className="size-3 shrink-0" aria-hidden="true" />
-                <span>Zoom</span>
-              </div>
-            </button>
-            <span className="block text-xs text-center text-muted-foreground mt-1 font-medium">
-              Your photo
-            </span>
-          </div>
-        ) : (
-          <div
-            className={cn(
-              "size-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border",
-              presentation.isQualityCheck
-                ? "bg-warning/15 text-warning-foreground border-warning/30"
-                : "bg-destructive/15 text-destructive border-destructive/25"
-            )}
-          >
-            <IconComponent className="size-5" aria-hidden="true" />
-          </div>
-        )}
-
-        {/* Text information */}
-        <div className="space-y-1.5 min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h4
-              id="quality-error-card-title"
-              className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug"
-            >
-              {presentation.title}
-            </h4>
-            {presentation.badgeLabel && (
-              <Badge
-                variant="outline"
+      <CardContent className="flex flex-col gap-3.5 px-4">
+        {/* Screen-reader polite announcement on error render */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {presentation.isQualityCheck ? "Quality check warning: " : "Submission error: "}
+          {presentation.title}. {presentation.description}
+        </div>
+        {/* Header section with badge & thumbnail */}
+        <div className="flex items-start gap-3">
+          {/* Compact captured thumbnail if available */}
+          {previewUrl ? (
+            <div className="relative shrink-0 flex flex-col items-center">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={openInspectionModal}
+                aria-haspopup="dialog"
+                aria-label="Enlarge captured worksheet photo to inspect quality"
                 className={cn(
-                  "h-auto gap-1.5 px-2.5 py-0.5 text-xs font-medium",
+                  "relative w-20 h-24 p-0 rounded-lg overflow-hidden bg-muted shadow-2xs group text-left border transition-all",
                   presentation.isQualityCheck
-                    ? "bg-warning/15 text-warning-foreground border-warning/30"
-                    : "bg-destructive/15 text-destructive border-destructive/25"
+                    ? "border-warning/40 hover:border-warning/60 focus-visible:ring-warning"
+                    : "border-destructive/30 hover:border-destructive/50 focus-visible:ring-destructive"
                 )}
               >
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full shrink-0",
-                    presentation.isQualityCheck ? "bg-warning" : "bg-destructive"
-                  )}
-                  aria-hidden="true"
-                />
-                {presentation.badgeLabel}
-              </Badge>
-            )}
-          </div>
-
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            {presentation.description}
-          </p>
-
-          {/* Technical diagnostic disclosure (for teachers & calibration) */}
-          {hasTechnicalDetails && variant !== "parent" && (
-            <Collapsible
-              open={showTechDetails}
-              onOpenChange={setShowTechDetails}
-              className="pt-0.5"
+                {imageError ? (
+                  <div className="size-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-1 text-center">
+                    <ImageOff className="size-4 mb-0.5" aria-hidden="true" />
+                    <span className="text-xs leading-tight font-medium">No preview</span>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={previewUrl}
+                    alt="Captured worksheet preview thumbnail"
+                    onError={() => setImageError(true)}
+                    className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  />
+                )}
+                {/* Floating zoom indicator - non-obstructive corner pill */}
+                <Badge
+                  variant="secondary"
+                  className="absolute bottom-1 right-1 h-auto bg-foreground/85 backdrop-blur-xs text-background text-xs font-medium py-0.5 px-1.5 rounded shadow-2xs"
+                >
+                  <Eye data-icon="inline-start" aria-hidden="true" />
+                  <span>Zoom</span>
+                </Badge>
+              </Button>
+              <span className="block text-xs text-center text-muted-foreground mt-1 font-medium">
+                Your photo
+              </span>
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "size-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5 border",
+                presentation.isQualityCheck
+                  ? "bg-warning/15 text-warning-foreground border-warning/30"
+                  : "bg-destructive/15 text-destructive border-destructive/25"
+              )}
             >
-              <CollapsibleTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    className="h-auto gap-1.5 py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer rounded-md min-h-[38px] sm:min-h-0"
-                    aria-controls="technical-diagnostic-details"
-                  >
-                    <span>{showTechDetails ? "Hide advanced details" : "Show advanced details"}</span>
-                    {showTechDetails ? (
-                      <ChevronUp className="size-3.5" aria-hidden="true" />
-                    ) : (
-                      <ChevronDown className="size-3.5" aria-hidden="true" />
-                    )}
-                  </Button>
-                }
-              />
-              <CollapsibleContent
-                id="technical-diagnostic-details"
-                className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-xs font-sans tabular-nums text-muted-foreground space-y-1"
+              <IconComponent className="size-5" aria-hidden="true" />
+            </div>
+          )}
+
+          {/* Text information */}
+          <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4
+                id="quality-error-card-title"
+                className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug"
               >
+                {presentation.title}
+              </h4>
+              {presentation.badgeLabel && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-auto gap-1.5 px-2.5 py-0.5 text-xs font-medium",
+                    presentation.isQualityCheck
+                      ? "bg-warning/15 text-warning-foreground border-warning/30"
+                      : "bg-destructive/15 text-destructive border-destructive/25"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "size-1.5 rounded-full shrink-0",
+                      presentation.isQualityCheck ? "bg-warning" : "bg-destructive"
+                    )}
+                    aria-hidden="true"
+                  />
+                  {presentation.badgeLabel}
+                </Badge>
+              )}
+            </div>
+
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {presentation.description}
+            </p>
+
+            {/* Technical diagnostic disclosure (for teachers & calibration) */}
+            {hasTechnicalDetails && variant !== "parent" && (
+              <Collapsible
+                open={showTechDetails}
+                onOpenChange={setShowTechDetails}
+                className="pt-0.5"
+              >
+                <CollapsibleTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className="h-auto py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground rounded-md min-h-[38px] sm:min-h-0"
+                      aria-controls="technical-diagnostic-details"
+                    />
+                  }
+                >
+                  <span>{showTechDetails ? "Hide advanced details" : "Show advanced details"}</span>
+                  {showTechDetails ? (
+                    <ChevronUp data-icon="inline-end" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown data-icon="inline-end" aria-hidden="true" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent
+                  id="technical-diagnostic-details"
+                  className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-xs font-sans tabular-nums text-muted-foreground flex flex-col gap-1"
+                >
                   {typeof error.details?.measured_value === "number" && (
                     <div className="flex justify-between items-center gap-2">
                       <span className="font-sans">Measured:</span>
@@ -918,193 +930,220 @@ export function QualityErrorCard({
                       </span>
                     </div>
                   )}
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-        </div>
-      </div>
-
-      {/* Expected Practice Sentence Callout for Parents on TARGET_TEXT_MISMATCH */}
-      {variant === "parent" &&
-        error.code === "TARGET_TEXT_MISMATCH" &&
-        typeof error.details?.expected_text === "string" &&
-        error.details.expected_text.trim().length > 0 && (
-          <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 space-y-1 shadow-2xs">
-            <span className="text-xs font-semibold text-muted-foreground block">
-              Practice sentence for this worksheet
-            </span>
-            <p className="font-sans text-sm text-foreground font-medium italic break-words">
-              &ldquo;{error.details.expected_text}&rdquo;
-            </p>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
-        )}
+        </div>
 
-      {/* Recognized Text Comparison Callout (Teacher-only diagnostic comparison) */}
-      {variant !== "parent" &&
-        (typeof error.details?.detected_text === "string" ||
-          typeof error.details?.expected_text === "string") && (
-        <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <span className="text-xs font-semibold text-foreground">
-              Handwriting Recognition Output
-            </span>
-            {typeof error.details?.similarity === "number" && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-xs px-2 py-0.5 font-semibold font-sans tabular-nums",
-                  error.details.similarity >= 0.8
-                    ? "bg-success/10 text-success border-success/30"
-                    : error.details.similarity >= 0.4
-                    ? "bg-warning/10 text-warning border-warning/30"
-                    : "bg-destructive/10 text-destructive border-destructive/30"
+        {/* Expected Practice Sentence Callout for Parents on TARGET_TEXT_MISMATCH */}
+        {variant === "parent" &&
+          error.code === "TARGET_TEXT_MISMATCH" &&
+          typeof error.details?.expected_text === "string" &&
+          error.details.expected_text.trim().length > 0 && (
+            <Card size="sm" className="py-3 sm:py-3.5 border-border/80 shadow-2xs">
+              <CardHeader className="px-3 sm:px-3.5">
+                <CardTitle as="h5" className="text-xs font-semibold text-muted-foreground">
+                  Practice sentence for this worksheet
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 sm:px-3.5">
+                <p className="font-sans text-sm text-foreground font-medium italic break-words">
+                  &ldquo;{error.details.expected_text}&rdquo;
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+        {/* Recognized Text Comparison Callout (Teacher-only diagnostic comparison) */}
+        {variant !== "parent" &&
+          (typeof error.details?.detected_text === "string" ||
+            typeof error.details?.expected_text === "string") && (
+            <Card size="sm" className="gap-2.5 py-3 sm:py-3.5 border-border/80 shadow-2xs">
+              <CardHeader className="items-center px-3 sm:px-3.5">
+                <CardTitle as="h5" className="text-xs font-semibold text-foreground">
+                  Handwriting Recognition Output
+                </CardTitle>
+                {typeof error.details?.similarity === "number" && (
+                  <CardAction>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs px-2 py-0.5 font-semibold font-sans tabular-nums",
+                        error.details.similarity >= 0.8
+                          ? "bg-success/10 text-success border-success/30"
+                          : error.details.similarity >= 0.4
+                          ? "bg-warning/10 text-warning border-warning/30"
+                          : "bg-destructive/10 text-destructive border-destructive/30"
+                      )}
+                    >
+                      {Math.round(error.details.similarity * 100)}% Prompt Match
+                    </Badge>
+                  </CardAction>
                 )}
-              >
-                {Math.round(error.details.similarity * 100)}% Prompt Match
-              </Badge>
-            )}
-          </div>
+              </CardHeader>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            {typeof error.details?.detected_text === "string" && (
-              <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-1">
-                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
-                  Recognized Cursive Text
-                </span>
-                <p className="font-sans text-xs text-foreground font-medium italic break-words">
-                  &quot;{error.details.detected_text || "<no text recognized>"}&quot;
-                </p>
-              </div>
-            )}
-            {typeof error.details?.expected_text === "string" && (
-              <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 space-y-1">
-                <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
-                  Assigned Activity Prompt
-                </span>
-                <p className="font-sans text-xs text-foreground font-medium italic break-words">
-                  &quot;{error.details.expected_text}&quot;
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Actionable Tips box - flattened integrated callout without nested card border */}
-      {presentation.tips.length > 0 && (
-        <div
-          className={cn(
-            "rounded-lg p-3 sm:p-3.5 space-y-2 border-0",
-            presentation.isQualityCheck
-              ? "bg-warning/10 dark:bg-warning/15"
-              : "bg-destructive/10 dark:bg-destructive/15"
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-3 sm:px-3.5 text-xs">
+                {typeof error.details?.detected_text === "string" && (
+                  <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 flex flex-col gap-1">
+                    <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
+                      Recognized Cursive Text
+                    </span>
+                    <p className="font-sans text-xs text-foreground font-medium italic break-words">
+                      &quot;{error.details.detected_text || "<no text recognized>"}&quot;
+                    </p>
+                  </div>
+                )}
+                {typeof error.details?.expected_text === "string" && (
+                  <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 flex flex-col gap-1">
+                    <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
+                      Assigned Activity Prompt
+                    </span>
+                    <p className="font-sans text-xs text-foreground font-medium italic break-words">
+                      &quot;{error.details.expected_text}&quot;
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
-        >
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+
+        {/* Actionable Tips box */}
+        {presentation.tips.length > 0 && (
+          <Alert
+            className={cn(
+              "rounded-lg p-3 sm:p-3.5 border-0",
+              presentation.isQualityCheck ? "bg-warning/10" : "bg-destructive/10"
+            )}
+          >
             <Lightbulb
               className={cn(
-                "size-4 shrink-0",
-                presentation.isQualityCheck
-                  ? "text-warning-foreground dark:text-warning"
-                  : "text-destructive"
+                presentation.isQualityCheck ? "text-warning-foreground" : "text-destructive"
               )}
               aria-hidden="true"
             />
-            <span>
+            <AlertTitle className="text-xs font-semibold text-foreground">
               {presentation.isQualityCheck ? "Tips for a clear scan:" : "Suggested steps:"}
-            </span>
-          </div>
-          <ul
-            id="remediation-tips-list"
-            role="list"
-            className="space-y-1.5 text-xs text-muted-foreground pl-0.5"
-          >
-            {visibleTips.map((tip, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span
-                  className={cn(
-                    "font-bold select-none text-xs leading-relaxed",
-                    presentation.isQualityCheck
-                      ? "text-warning-foreground dark:text-warning"
-                      : "text-destructive"
-                  )}
-                  aria-hidden="true"
-                >
-                  •
-                </span>
-                <span className="leading-relaxed">{tip}</span>
-              </li>
-            ))}
-          </ul>
-          {presentation.tips.length > 1 && (
-            <div className="pt-0.5 flex justify-center">
-              <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                onClick={() => setShowAllTips((prev) => !prev)}
-                className="h-auto gap-1.5 py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer rounded-md min-h-11 sm:min-h-0"
-                aria-expanded={showAllTips}
-                aria-controls="remediation-tips-list"
+            </AlertTitle>
+            <AlertDescription className="flex flex-col gap-2 text-xs text-muted-foreground">
+              <Collapsible
+                open={showAllTips}
+                onOpenChange={setShowAllTips}
+                className="flex flex-col gap-1.5"
               >
-                <span>
-                  {showAllTips
-                    ? "Show fewer tips"
-                    : `+${presentation.tips.length - 1} more tips`}
-                </span>
-                {showAllTips ? (
-                  <ChevronUp className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="size-3.5" aria-hidden="true" />
+                <ul
+                  id="remediation-tips-list"
+                  role="list"
+                  className="flex flex-col gap-1.5 text-xs text-muted-foreground pl-0.5"
+                >
+                  <li className="flex items-start gap-2">
+                    <span
+                      className={cn(
+                        "font-bold select-none text-xs leading-relaxed",
+                        presentation.isQualityCheck ? "text-warning-foreground" : "text-destructive"
+                      )}
+                      aria-hidden="true"
+                    >
+                      •
+                    </span>
+                    <span className="leading-relaxed">{presentation.tips[0]}</span>
+                  </li>
+                  {presentation.tips.length > 1 && (
+                    <CollapsibleContent className="flex flex-col gap-1.5">
+                      {presentation.tips.slice(1).map((tip, idx) => (
+                        <li key={idx + 1} className="flex items-start gap-2">
+                          <span
+                            className={cn(
+                              "font-bold select-none text-xs leading-relaxed",
+                              presentation.isQualityCheck
+                                ? "text-warning-foreground"
+                                : "text-destructive"
+                            )}
+                            aria-hidden="true"
+                          >
+                            •
+                          </span>
+                          <span className="leading-relaxed">{tip}</span>
+                        </li>
+                      ))}
+                    </CollapsibleContent>
+                  )}
+                </ul>
+                {presentation.tips.length > 1 && (
+                  <div className="pt-0.5 flex justify-center">
+                    <CollapsibleTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="xs"
+                          className="h-auto py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground rounded-md min-h-11 sm:min-h-0"
+                          aria-controls="remediation-tips-list"
+                        />
+                      }
+                    >
+                      <span>
+                        {showAllTips
+                          ? "Show fewer tips"
+                          : `+${presentation.tips.length - 1} more tips`}
+                      </span>
+                      {showAllTips ? (
+                        <ChevronUp data-icon="inline-end" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown data-icon="inline-end" aria-hidden="true" />
+                      )}
+                    </CollapsibleTrigger>
+                  </div>
                 )}
-              </Button>
-            </div>
+              </Collapsible>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Separator
+          className={cn(
+            presentation.isQualityCheck ? "bg-warning/20" : "bg-destructive/20"
+          )}
+        />
+
+        {/* Action buttons - natural DOM and visual hierarchy across viewports */}
+        <div className="flex flex-col sm:flex-row-reverse sm:items-center gap-2 sm:justify-start">
+          <Button
+            ref={retryRef}
+            type="button"
+            onClick={handleRetakeClick}
+            title="Retake photo (or press R)"
+            className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold shadow-warm-sm"
+          >
+            <Camera data-icon="inline-start" aria-hidden="true" />
+            Retake Photo
+          </Button>
+
+          {variant !== "parent" && error.code === "TARGET_TEXT_MISMATCH" && onProceedAnyway && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onProceedAnyway}
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium shadow-warm-xs"
+            >
+              <CheckCircle data-icon="inline-start" className="text-primary" aria-hidden="true" />
+              Proceed Anyway
+            </Button>
+          )}
+
+          {!presentation.isQualityCheck && error.code !== "TARGET_TEXT_MISMATCH" && onRetry && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onRetry}
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium shadow-warm-xs"
+            >
+              <RotateCcw data-icon="inline-start" aria-hidden="true" />
+              {retryLabel ?? "Retry Upload"}
+            </Button>
           )}
         </div>
-      )}
-
-      {/* Action buttons - natural DOM and visual hierarchy across viewports */}
-      <div
-        className={cn(
-          "flex flex-col sm:flex-row-reverse sm:items-center gap-2 pt-3 border-t sm:justify-start",
-          presentation.isQualityCheck ? "border-warning/20" : "border-destructive/20"
-        )}
-      >
-        <Button
-          ref={retryRef}
-          type="button"
-          onClick={handleRetakeClick}
-          title="Retake photo (or press R)"
-          className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-semibold gap-2 cursor-pointer touch-manipulation shadow-warm-sm"
-        >
-          <Camera className="size-4" aria-hidden="true" />
-          Retake Photo
-        </Button>
-
-        {variant !== "parent" && error.code === "TARGET_TEXT_MISMATCH" && onProceedAnyway && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onProceedAnyway}
-            className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-2 border-border hover:bg-accent text-foreground cursor-pointer touch-manipulation shadow-warm-xs"
-          >
-            <CheckCircle className="size-4 text-primary" aria-hidden="true" />
-            Proceed Anyway
-          </Button>
-        )}
-
-        {!presentation.isQualityCheck && error.code !== "TARGET_TEXT_MISMATCH" && onRetry && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onRetry}
-            className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium gap-2 border-border hover:bg-accent cursor-pointer touch-manipulation shadow-warm-xs"
-          >
-            <RotateCcw className="size-4" aria-hidden="true" />
-            {retryLabel ?? "Retry Upload"}
-          </Button>
-        )}
-      </div>
+      </CardContent>
 
       {/* Inspect photo modal with interactive zoom, pan, and direct remediation */}
       {previewUrl && (
@@ -1120,7 +1159,7 @@ export function QualityErrorCard({
             className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100dvh-2rem))] border border-border shadow-warm-lg"
           >
             {/* Modal Header: Title and Zoom Toolbar */}
-            <DialogHeader className="p-3 sm:p-3.5 border-b border-border bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
+            <DialogHeader className="p-3 sm:p-3.5 bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-2 pr-10 sm:pr-0">
                 <DialogTitle className="text-sm sm:text-base font-semibold text-foreground">
                   Captured Worksheet Photo
@@ -1132,37 +1171,39 @@ export function QualityErrorCard({
 
               {/* Zoom & Inspection Controls */}
               {!imageError && (
-                <div className="flex items-center gap-1 sm:self-center pr-6 sm:pr-8">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleZoomOut}
-                    disabled={zoomScale <= 1}
-                    aria-label="Zoom out photo"
-                    className="h-11 w-11 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                  >
-                    <ZoomOut className="size-4 sm:size-3.5" aria-hidden="true" />
-                  </Button>
+                <div className="flex items-center gap-1.5 sm:self-center pr-6 sm:pr-8">
+                  <ButtonGroup aria-label="Zoom controls">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={handleZoomOut}
+                      disabled={zoomScale <= 1}
+                      aria-label="Zoom out photo"
+                      className="size-11 sm:size-7 text-muted-foreground hover:text-foreground"
+                    >
+                      <ZoomOut aria-hidden="true" />
+                    </Button>
 
-                  <div
-                    aria-label={`Current zoom level: ${Math.round(zoomScale * 100)} percent`}
-                    className="text-xs font-sans tabular-nums font-medium text-muted-foreground w-12 text-center select-none"
-                  >
-                    {Math.round(zoomScale * 100)}%
-                  </div>
+                    <ButtonGroupText
+                      aria-label={`Current zoom level: ${Math.round(zoomScale * 100)} percent`}
+                      className="text-xs font-sans tabular-nums font-medium text-muted-foreground w-12 justify-center bg-background select-none px-1"
+                    >
+                      {Math.round(zoomScale * 100)}%
+                    </ButtonGroupText>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleZoomIn}
-                    disabled={zoomScale >= 3}
-                    aria-label="Zoom in photo"
-                    className="h-11 w-11 sm:h-7 sm:w-7 p-0 cursor-pointer text-muted-foreground hover:text-foreground"
-                  >
-                    <ZoomIn className="size-4 sm:size-3.5" aria-hidden="true" />
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={handleZoomIn}
+                      disabled={zoomScale >= 3}
+                      aria-label="Zoom in photo"
+                      className="size-11 sm:size-7 text-muted-foreground hover:text-foreground"
+                    >
+                      <ZoomIn aria-hidden="true" />
+                    </Button>
+                  </ButtonGroup>
 
                   <Button
                     type="button"
@@ -1171,14 +1212,15 @@ export function QualityErrorCard({
                     onClick={handleResetZoom}
                     disabled={zoomScale === 1 && panOffset.x === 0 && panOffset.y === 0}
                     aria-label="Reset zoom to fit"
-                    className="h-11 sm:h-7 px-3 sm:px-2 text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground"
+                    className="h-11 sm:h-7 px-3 sm:px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
                   >
-                    <RotateCcw className="size-3.5 sm:size-3 mr-1" aria-hidden="true" />
+                    <RotateCcw data-icon="inline-start" aria-hidden="true" />
                     Fit
                   </Button>
                 </div>
               )}
             </DialogHeader>
+            <Separator />
 
             {/* Interactive Image Canvas */}
             <div
@@ -1195,25 +1237,33 @@ export function QualityErrorCard({
               role="region"
               aria-label="Worksheet photo magnification viewport. Use plus or minus to zoom, arrow keys to pan"
               className={cn(
-                "relative flex-1 min-h-[220px] max-h-[58dvh] sm:max-h-[60dvh] w-full flex items-center justify-center overflow-hidden bg-muted/30 dark:bg-black/40 select-none touch-none outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
+                "relative flex-1 min-h-[220px] max-h-[58dvh] sm:max-h-[60dvh] w-full flex items-center justify-center overflow-hidden bg-muted/30 select-none touch-none outline-none focus-visible:ring-1 focus-visible:ring-ring/30",
                 zoomScale > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"
               )}
             >
               {imageError ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-muted-foreground gap-3">
-                  <ImageOff className="size-8 text-muted-foreground/60" aria-hidden="true" />
-                  <p className="text-xs">Image preview could not be loaded.</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setImageError(false)}
-                    className="h-8 px-3 text-xs gap-1.5 cursor-pointer"
-                  >
-                    <RotateCcw className="size-3.5" aria-hidden="true" />
-                    Retry Loading
-                  </Button>
-                </div>
+                <Empty className="py-12 px-4 gap-3">
+                  <EmptyMedia variant="icon">
+                    <ImageOff aria-hidden="true" />
+                  </EmptyMedia>
+                  <EmptyHeader>
+                    <EmptyDescription className="text-xs">
+                      Image preview could not be loaded.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <EmptyContent>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setImageError(false)}
+                      className="h-8 px-3 text-xs"
+                    >
+                      <RotateCcw data-icon="inline-start" aria-hidden="true" />
+                      Retry Loading
+                    </Button>
+                  </EmptyContent>
+                </Empty>
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
@@ -1234,18 +1284,23 @@ export function QualityErrorCard({
 
               {/* Floating hint pill when zoomed */}
               {!imageError && (
-                <div className="absolute bottom-2 left-2 pointer-events-none bg-black/70 backdrop-blur-xs text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-2xs">
+                <Badge
+                  variant="secondary"
+                  className="absolute bottom-2 left-2 pointer-events-none h-auto bg-foreground/80 backdrop-blur-xs text-background text-xs px-2.5 py-1 rounded-full shadow-2xs"
+                >
                   {zoomScale > 1 ? (
                     <span>Drag, swipe, or use Arrow keys to pan</span>
                   ) : (
                     <span>Double-click, pinch, or +/- to zoom (max 300%)</span>
                   )}
-                </div>
+                </Badge>
               )}
             </div>
 
+            <Separator />
+
             {/* Modal Footer: Targeted Diagnostic Advice & Direct Remediation Action */}
-            <DialogFooter className="p-3 sm:p-3.5 border-t border-border bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
+            <DialogFooter className="p-3 sm:p-3.5 bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Lightbulb className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
                 <span className="line-clamp-1 sm:line-clamp-none">
@@ -1258,7 +1313,7 @@ export function QualityErrorCard({
                   type="button"
                   variant="outline"
                   onClick={closeInspectionModal}
-                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium"
                 >
                   Done
                 </Button>
@@ -1269,9 +1324,9 @@ export function QualityErrorCard({
                     closeInspectionModal();
                     handleRetakeClick();
                   }}
-                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium gap-1.5 shadow-warm-sm cursor-pointer"
+                  className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium shadow-warm-sm"
                 >
-                  <Camera className="size-3.5" aria-hidden="true" />
+                  <Camera data-icon="inline-start" aria-hidden="true" />
                   <span>Retake Photo</span>
                   <Kbd
                     aria-hidden="true"
@@ -1286,6 +1341,6 @@ export function QualityErrorCard({
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </Card>
   );
 }

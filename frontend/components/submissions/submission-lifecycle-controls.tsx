@@ -3,9 +3,23 @@
 import { useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { toast } from "@/components/ui/toast";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Badge } from "@/components/ui/badge";
-import { Table2, Send, RotateCcw, ExternalLink, CheckCircle2, ArrowRight } from "lucide-react";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Table2,
+  Send,
+  RotateCcw,
+  ExternalLink,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import {
@@ -26,13 +40,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldDescription, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectSeparator,
   SelectTrigger,
@@ -152,9 +167,10 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
         </Field>
       </FieldGroup>
       {error && (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       <DialogFooter>
         <Button
@@ -167,7 +183,14 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
           Cancel
         </Button>
         <Button className="min-h-11 md:min-h-9" type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? "Returning…" : "Return worksheet"}
+          {mutation.isPending ? (
+            <>
+              <Spinner data-icon="inline-start" />
+              <span>Returning…</span>
+            </>
+          ) : (
+            "Return worksheet"
+          )}
         </Button>
       </DialogFooter>
     </form>
@@ -187,7 +210,7 @@ export function SubmissionLifecycleControls({
   className?: string;
   onNavigateNext?: () => void;
 }) {
-  const focusTarget = useRef<HTMLElement>(null);
+  const focusTarget = useRef<HTMLDivElement>(null);
   const { data: states, isError } = useActivityWork(submission.activity_id);
   const work = states?.find((row) => row.student_id === submission.student_id);
   const release = useReleaseSubmission();
@@ -244,9 +267,10 @@ export function SubmissionLifecycleControls({
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
-          <p role="alert" className="text-destructive text-xs font-medium">
-            {error}
-          </p>
+          <Alert variant="destructive">
+            <AlertCircle aria-hidden="true" />
+            <AlertDescription className="text-xs font-medium">{error}</AlertDescription>
+          </Alert>
         )}
         <AlertDialogFooter>
           <AlertDialogCancel
@@ -262,16 +286,16 @@ export function SubmissionLifecycleControls({
               e.preventDefault();
               void act("release");
             }}
-            className="min-h-11 sm:min-h-9 gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg cursor-pointer"
+            className="min-h-11 sm:min-h-9 rounded-lg"
           >
             {release.isPending ? (
               <>
-                <Spinner className="size-3.5" />
+                <Spinner data-icon="inline-start" />
                 <span>Releasing…</span>
               </>
             ) : (
               <>
-                <Send className="size-3.5" aria-hidden="true" />
+                <Send data-icon="inline-start" aria-hidden="true" />
                 <span>Release Result</span>
               </>
             )}
@@ -327,82 +351,84 @@ export function SubmissionLifecycleControls({
   if (variant === "completion") {
     if (completed && active && submission.released_at) {
       return (
-        <div
+        <Card
+          size="sm"
           className={cn(
-            "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-band-4/40 bg-band-4/10 shadow-warm-sm",
+            "py-3 sm:py-3.5 border-band-4/40 bg-band-4/10 shadow-warm-sm",
             className
           )}
         >
-          <div className="min-w-0 space-y-0.5">
-            <p className="text-xs font-semibold text-band-4-text flex items-center gap-1.5">
-              <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" aria-hidden="true" />
-              <span>Result released to parent</span>
-            </p>
-            <p className="text-xs text-muted-foreground leading-snug">
-              Scores and diagnostic feedback are visible to the student&apos;s family in the parent portal.
-            </p>
-          </div>
-          {onNavigateNext && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={onNavigateNext}
-              className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground shrink-0 rounded-lg shadow-xs"
-            >
-              <span>Next student</span>
-              <ArrowRight className="size-3.5" aria-hidden="true" />
-            </Button>
-          )}
-        </div>
+          <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 sm:px-3.5">
+            <div className="min-w-0 flex flex-col gap-0.5">
+              <p className="text-xs font-semibold text-band-4-text flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5 text-band-4-text shrink-0" aria-hidden="true" />
+                <span>Result released to parent</span>
+              </p>
+              <p className="text-xs text-muted-foreground leading-snug">
+                Scores and diagnostic feedback are visible to the student&apos;s family in the parent portal.
+              </p>
+            </div>
+            {onNavigateNext && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={onNavigateNext}
+                className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold shrink-0 rounded-lg shadow-xs"
+              >
+                <span>Next student</span>
+                <ArrowRight data-icon="inline-end" aria-hidden="true" />
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       );
     }
 
     if (!canRelease) return null;
     return (
-      <div
+      <Card
+        size="sm"
         className={cn(
-          "flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl border border-brand-300/80 dark:border-brand-800/80 bg-brand-50/60 dark:bg-brand-950/40 shadow-warm-sm",
+          "py-3 sm:py-3.5 border-primary/30 bg-primary/5 shadow-warm-sm",
           className
         )}
       >
-        <div className="min-w-0 space-y-0.5">
-          <p className="text-xs font-semibold text-foreground">
-            Ready to share with parent
-          </p>
-          <p className="text-xs text-muted-foreground leading-snug">
-            Scores and diagnostic feedback stay private until you release this result.
-          </p>
-          {error && (
-            <p role="alert" className="text-destructive text-xs font-medium pt-0.5">
-              {error}
+        <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 sm:px-3.5">
+          <div className="min-w-0 flex flex-col gap-0.5">
+            <p className="text-xs font-semibold text-foreground">
+              Ready to share with parent
             </p>
-          )}
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => {
-            setError(null);
-            setReleaseConfirmOpen(true);
-          }}
-          disabled={pending}
-          aria-busy={release.isPending}
-          className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold cursor-pointer touch-manipulation gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground shrink-0 rounded-lg shadow-xs"
-        >
-          {release.isPending ? (
-            <>
-              <Spinner className="size-3.5" />
-              <span>Releasing…</span>
-            </>
-          ) : (
-            <>
-              <Send className="size-3.5" aria-hidden="true" />
-              <span>Release Result</span>
-            </>
-          )}
-        </Button>
+            <p className="text-xs text-muted-foreground leading-snug">
+              Scores and diagnostic feedback stay private until you release this result.
+            </p>
+            {error && <FieldError className="text-xs font-medium pt-0.5">{error}</FieldError>}
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setError(null);
+              setReleaseConfirmOpen(true);
+            }}
+            disabled={pending}
+            aria-busy={release.isPending}
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold shrink-0 rounded-lg shadow-xs"
+          >
+            {release.isPending ? (
+              <>
+                <Spinner data-icon="inline-start" />
+                <span>Releasing…</span>
+              </>
+            ) : (
+              <>
+                <Send data-icon="inline-start" aria-hidden="true" />
+                <span>Release Result</span>
+              </>
+            )}
+          </Button>
+        </CardContent>
         {releaseConfirmDialog}
-      </div>
+      </Card>
     );
   }
 
@@ -416,10 +442,10 @@ export function SubmissionLifecycleControls({
             variant="outline"
             onClick={() => setReturnOpen(true)}
             disabled={pending}
-            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3 text-xs font-medium rounded-lg cursor-pointer touch-manipulation gap-1.5"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3 text-xs font-medium rounded-lg"
             title="Return worksheet to student/parent for another attempt"
           >
-            <RotateCcw className="size-3.5" aria-hidden="true" />
+            <RotateCcw data-icon="inline-start" aria-hidden="true" />
             <span>Return worksheet</span>
           </Button>
         )}
@@ -432,17 +458,17 @@ export function SubmissionLifecycleControls({
             }}
             disabled={pending}
             aria-busy={release.isPending}
-            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg cursor-pointer touch-manipulation gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg"
             title="Release score and diagnostic feedback to parent"
           >
             {release.isPending ? (
               <>
-                <Spinner className="size-3.5" />
+                <Spinner data-icon="inline-start" />
                 <span>Releasing…</span>
               </>
             ) : (
               <>
-                <Send className="size-3.5" aria-hidden="true" />
+                <Send data-icon="inline-start" aria-hidden="true" />
                 <span>Release Result</span>
               </>
             )}
@@ -454,7 +480,7 @@ export function SubmissionLifecycleControls({
             variant="outline"
             onClick={() => act("pin")}
             disabled={pending || !work}
-            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3 text-xs font-medium rounded-lg cursor-pointer touch-manipulation"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-3 text-xs font-medium rounded-lg"
           >
             Count this attempt
           </Button>
@@ -465,16 +491,19 @@ export function SubmissionLifecycleControls({
             variant="ghost"
             onClick={() => act("unpin")}
             disabled={pending}
-            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-2.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+            className="h-11 sm:h-9 min-h-11 sm:min-h-0 px-2.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground"
           >
             Use automatic selection
           </Button>
         )}
 
         {(error || isError) && (
-          <span role="alert" className="text-destructive text-xs font-medium">
-            {error ?? "Could not load status"}
-          </span>
+          <Alert variant="destructive" className="py-2 px-3 text-xs">
+            <AlertCircle aria-hidden="true" />
+            <AlertDescription className="text-xs font-medium">
+              {error ?? "Could not load status"}
+            </AlertDescription>
+          </Alert>
         )}
 
         {releaseConfirmDialog}
@@ -502,91 +531,104 @@ export function SubmissionLifecycleControls({
   }
 
   return (
-    <section
+    <Card
       aria-label="Worksheet return and release"
       ref={focusTarget}
       tabIndex={-1}
-      className="border-border bg-card my-3 flex flex-col gap-3 rounded-xl border p-3"
+      size="sm"
+      className="my-3 py-3 shadow-none"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">
-          {submission.status === "returned"
-            ? "Returned"
-            : !work
-              ? isError
-                ? "Status unavailable"
-                : "Loading work status…"
-              : active
-                ? work.work_status
-                : "Historical attempt"}
-        </Badge>
-        {active && <Badge variant="outline">Counted attempt</Badge>}
-        {work?.pinned_submission_id === submission.id && <Badge variant="outline">Pinned</Badge>}
-        {completed && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setReturnOpen(true)}
-            disabled={pending}
-          >
-            Return worksheet
-          </Button>
-        )}
-        {canRelease && (
-          <Button
-            size="sm"
-            onClick={() => {
-              setError(null);
-              setReleaseConfirmOpen(true);
-            }}
-            disabled={pending}
-            aria-busy={release.isPending}
-          >
-            {release.isPending ? "Releasing…" : "Release result"}
-          </Button>
-        )}
-        {completed && !active && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => act("pin")}
-            disabled={pending || !work}
-          >
-            Count this attempt
-          </Button>
-        )}
-        {work?.pinned_submission_id && (
-          <Button size="sm" variant="ghost" onClick={() => act("unpin")} disabled={pending}>
-            Use automatic selection
-          </Button>
-        )}
-      </div>
-      {submission.status === "returned" && (
-        <div className="flex flex-col gap-1 text-sm">
-          <p>
-            Reason:{" "}
-            {REASONS.find((reason) => reason.value === submission.return_reason)?.label ??
-              submission.return_reason}
-          </p>
-          {submission.return_note && (
-            <p className="whitespace-pre-wrap">{submission.return_note}</p>
+      <CardContent className="flex flex-col gap-3 px-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">
+            {submission.status === "returned"
+              ? "Returned"
+              : !work
+                ? isError
+                  ? "Status unavailable"
+                  : "Loading work status…"
+                : active
+                  ? work.work_status
+                  : "Historical attempt"}
+          </Badge>
+          {active && <Badge variant="outline">Counted attempt</Badge>}
+          {work?.pinned_submission_id === submission.id && <Badge variant="outline">Pinned</Badge>}
+          {completed && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setReturnOpen(true)}
+              disabled={pending}
+            >
+              Return worksheet
+            </Button>
           )}
-          <p className="text-muted-foreground">
-            This attempt is kept in history and does not count toward progress.
-          </p>
+          {canRelease && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setError(null);
+                setReleaseConfirmOpen(true);
+              }}
+              disabled={pending}
+              aria-busy={release.isPending}
+            >
+              {release.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  <span>Releasing…</span>
+                </>
+              ) : (
+                "Release result"
+              )}
+            </Button>
+          )}
+          {completed && !active && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => act("pin")}
+              disabled={pending || !work}
+            >
+              Count this attempt
+            </Button>
+          )}
+          {work?.pinned_submission_id && (
+            <Button size="sm" variant="ghost" onClick={() => act("unpin")} disabled={pending}>
+              Use automatic selection
+            </Button>
+          )}
         </div>
-      )}
-      {completed && active && !submission.released_at && (
-        <p className="text-muted-foreground text-sm">
-          The parent can see the upload. Scores and diagnostic feedback are shared when you release
-          the result.
-        </p>
-      )}
-      {(error || isError) && (
-        <p role="alert" className="text-destructive text-sm">
-          {error ?? "Could not load the current work status. Refresh to try again."}
-        </p>
-      )}
+        {submission.status === "returned" && (
+          <div className="flex flex-col gap-1 text-sm">
+            <p>
+              Reason:{" "}
+              {REASONS.find((reason) => reason.value === submission.return_reason)?.label ??
+                submission.return_reason}
+            </p>
+            {submission.return_note && (
+              <p className="whitespace-pre-wrap">{submission.return_note}</p>
+            )}
+            <p className="text-muted-foreground">
+              This attempt is kept in history and does not count toward progress.
+            </p>
+          </div>
+        )}
+        {completed && active && !submission.released_at && (
+          <p className="text-muted-foreground text-sm">
+            The parent can see the upload. Scores and diagnostic feedback are shared when you release
+            the result.
+          </p>
+        )}
+        {(error || isError) && (
+          <Alert variant="destructive">
+            <AlertCircle aria-hidden="true" />
+            <AlertDescription>
+              {error ?? "Could not load the current work status. Refresh to try again."}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
       {releaseConfirmDialog}
       <Dialog open={returnOpen} onOpenChange={(open) => setReturnOpen(open)}>
         <DialogContent finalFocus={focusTarget}>
@@ -606,7 +648,7 @@ export function SubmissionLifecycleControls({
           )}
         </DialogContent>
       </Dialog>
-    </section>
+    </Card>
   );
 }
 
@@ -617,26 +659,28 @@ export function SubmissionReturnedAlert({ submission }: { submission: Submission
     submission.return_reason;
 
   return (
-    <div
+    <Alert
       role="status"
-      className="rounded-xl border border-band-2/40 bg-band-2/15 p-3 text-xs text-band-2-text space-y-1 shadow-2xs"
+      className="border-band-2/40 bg-band-2/15 text-band-2-text shadow-2xs"
     >
-      <div className="flex items-center gap-1.5 font-semibold text-band-2-text">
-        <RotateCcw className="size-3.5 shrink-0" aria-hidden="true" />
-        <span>Worksheet Returned for Revision</span>
-      </div>
-      <p className="leading-relaxed">
-        <strong>Reason:</strong> {reasonLabel}
-      </p>
-      {submission.return_note && (
-        <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
-          {submission.return_note}
+      <RotateCcw aria-hidden="true" />
+      <AlertTitle className="text-xs font-semibold text-band-2-text">
+        Worksheet Returned for Revision
+      </AlertTitle>
+      <AlertDescription className="flex flex-col gap-1 text-xs text-band-2-text [&>p:not(:last-child)]:mb-0">
+        <p className="leading-relaxed">
+          <strong>Reason:</strong> {reasonLabel}
         </p>
-      )}
-      <p className="text-[11px] text-muted-foreground pt-0.5">
-        This attempt is preserved in history and does not count toward grading progress.
-      </p>
-    </div>
+        {submission.return_note && (
+          <p className="whitespace-pre-wrap text-foreground/80 leading-relaxed">
+            {submission.return_note}
+          </p>
+        )}
+        <p className="text-[11px] text-muted-foreground pt-0.5">
+          This attempt is preserved in history and does not count toward grading progress.
+        </p>
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -736,46 +780,45 @@ function WorkSettingsForm({
           />
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             <span className="text-xs text-muted-foreground mr-1">Quick extend:</span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs rounded-md"
-              onClick={() => addDays(1)}
-              disabled={update.isPending}
-            >
-              +1 day
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs rounded-md"
-              onClick={() => addDays(3)}
-              disabled={update.isPending}
-            >
-              +3 days
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs rounded-md"
-              onClick={() => addDays(7)}
-              disabled={update.isPending}
-            >
-              +1 week
-            </Button>
+            <ButtonGroup aria-label="Quick deadline extension">
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => addDays(1)}
+                disabled={update.isPending}
+              >
+                +1 day
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => addDays(3)}
+                disabled={update.isPending}
+              >
+                +3 days
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={() => addDays(7)}
+                disabled={update.isPending}
+              >
+                +1 week
+              </Button>
+            </ButtonGroup>
             {due && (
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1 ml-auto"
+                size="xs"
+                className="text-muted-foreground hover:text-foreground ml-auto"
                 onClick={resetToClassDeadline}
                 disabled={update.isPending}
               >
-                <RotateCcw className="size-3" aria-hidden="true" />
+                <RotateCcw data-icon="inline-start" aria-hidden="true" />
                 Reset
               </Button>
             )}
@@ -844,99 +887,113 @@ function WorkSettingsForm({
               sideOffset={4}
               className="w-(--anchor-width) min-w-[320px]"
             >
-              <SelectItem value="auto" className="cursor-pointer py-2">
-                <div className="flex flex-col text-left gap-0.5">
-                  <span className="font-medium text-foreground">Automatic: latest eligible completed attempt</span>
-                  <span className="text-xs text-muted-foreground">Recommended · updates when a new attempt is submitted</span>
-                </div>
-              </SelectItem>
+              <SelectGroup>
+                <SelectItem value="auto" className="cursor-pointer py-2">
+                  <div className="flex flex-col text-left gap-0.5">
+                    <span className="font-medium text-foreground">Automatic: latest eligible completed attempt</span>
+                    <span className="text-xs text-muted-foreground">Recommended · updates when a new attempt is submitted</span>
+                  </div>
+                </SelectItem>
+              </SelectGroup>
               {completedAttempts.length > 0 && <SelectSeparator />}
-              {completedAttempts.map((row) => {
-                const { compositeScore, scoreBand } = resolveSubmissionScore(row);
-                const isCurrent = row.id === state?.active_submission_id;
-                return (
-                  <SelectItem key={row.id} value={row.id} className="cursor-pointer py-2">
-                    <div className="flex flex-col text-left gap-1 w-full">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-foreground tabular-nums">
-                          {formatActivityDueAt(row.created_at)}
-                        </span>
-                        {isCurrent && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5 shrink-0">
-                            Current
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {compositeScore == null ? (
-                          <span>Not scored yet</span>
-                        ) : (
-                          <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal tabular-nums">
-                            {Math.round(compositeScore)}% · {scoreBand.band}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {completedAttempts.length > 0 && (
+                <SelectGroup>
+                  {completedAttempts.map((row) => {
+                    const { compositeScore, scoreBand } = resolveSubmissionScore(row);
+                    const isCurrent = row.id === state?.active_submission_id;
+                    return (
+                      <SelectItem key={row.id} value={row.id} className="cursor-pointer py-2">
+                        <div className="flex flex-col text-left gap-1 w-full">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-foreground tabular-nums">
+                              {formatActivityDueAt(row.created_at)}
+                            </span>
+                            {isCurrent && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal border-primary/40 text-primary bg-primary/5 shrink-0">
+                                Current
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {compositeScore == null ? (
+                              <span>Not scored yet</span>
+                            ) : (
+                              <Badge variant="secondary" className="text-[11px] px-1.5 py-0 font-normal tabular-nums">
+                                {Math.round(compositeScore)}% · {scoreBand.band}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectGroup>
+              )}
             </SelectContent>
           </Select>
           <FieldDescription>
             Choose an earlier completed attempt to keep it as the graded worksheet for this activity.
           </FieldDescription>
           {selectedAttempt && (
-            <div className="flex flex-col items-start gap-2.5 rounded-xl border border-border/70 bg-card p-3.5 text-sm shadow-xs mt-1">
-              <div className="flex items-center justify-between w-full">
-                <span className="font-medium text-foreground">
+            <Card size="sm" className="mt-1 py-3.5 shadow-xs">
+              <CardHeader className="items-center px-3.5">
+                <CardTitle as="h3" className="text-sm font-medium">
                   Selected attempt details
-                </span>
+                </CardTitle>
                 {selectedAttempt.id === state?.active_submission_id && (
-                  <Badge variant="outline" className="text-xs font-normal border-primary/40 text-primary bg-primary/5">
-                    Active in gradebook
-                  </Badge>
+                  <CardAction>
+                    <Badge variant="outline" className="text-xs font-normal border-primary/40 text-primary bg-primary/5">
+                      Active in gradebook
+                    </Badge>
+                  </CardAction>
                 )}
-              </div>
-              <div className="grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
-                <div>
-                  <span className="block font-medium text-foreground">Uploaded</span>
-                  <time dateTime={selectedAttempt.created_at}>
-                    {formatActivityDueAt(selectedAttempt.created_at)}
-                  </time>
+              </CardHeader>
+              <CardContent className="flex flex-col items-start gap-2.5 px-3.5 text-sm">
+                <div className="grid grid-cols-2 gap-2 w-full text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
+                  <div>
+                    <span className="block font-medium text-foreground">Uploaded</span>
+                    <time dateTime={selectedAttempt.created_at}>
+                      {formatActivityDueAt(selectedAttempt.created_at)}
+                    </time>
+                  </div>
+                  <div>
+                    <span className="block font-medium text-foreground">Diagnostic score</span>
+                    <span>
+                      {selectedScore.compositeScore == null
+                        ? "Not scored yet"
+                        : `${Math.round(selectedScore.compositeScore)}% (${selectedScore.scoreBand.band})`}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="block font-medium text-foreground">Diagnostic score</span>
-                  <span>
-                    {selectedScore.compositeScore == null
-                      ? "Not scored yet"
-                      : `${Math.round(selectedScore.compositeScore)}% (${selectedScore.scoreBand.band})`}
-                  </span>
-                </div>
-              </div>
-              <Link
-                href={`/activities/${activityId}/submissions/${selectedAttempt.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonVariants({
-                  variant: "outline",
-                  size: "sm",
-                  className: "h-8 text-xs gap-1.5",
-                })}
-              >
-                <span>Inspect worksheet</span>
-                <ExternalLink className="size-3 text-muted-foreground" aria-hidden="true" />
-              </Link>
-              <p className="text-muted-foreground text-xs">
-                Your selection takes effect after clicking Save changes.
-              </p>
-            </div>
+                <Button
+                  nativeButton={false}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  render={
+                    <Link
+                      href={`/activities/${activityId}/submissions/${selectedAttempt.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                >
+                  <span>Inspect worksheet</span>
+                  <ExternalLink data-icon="inline-end" className="text-muted-foreground" aria-hidden="true" />
+                </Button>
+                <p className="text-muted-foreground text-xs">
+                  Your selection takes effect after clicking Save changes.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </Field>
       </FieldGroup>
       {error && (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       <DialogFooter>
         <Button
@@ -953,7 +1010,14 @@ function WorkSettingsForm({
           type="submit"
           disabled={update.isPending || (!dueEdited && !pinEdited)}
         >
-          {update.isPending ? "Saving changes…" : "Save changes"}
+          {update.isPending ? (
+            <>
+              <Spinner data-icon="inline-start" />
+              <span>Saving changes…</span>
+            </>
+          ) : (
+            "Save changes"
+          )}
         </Button>
       </DialogFooter>
     </form>
@@ -1082,17 +1146,20 @@ export function ReleaseActivityButton({
   return (
     <span ref={focusTarget} tabIndex={-1} className="inline-flex flex-wrap items-center gap-2 empty:hidden">
       {hasPointGrades && (
-        <Link
-          href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
-          aria-label="Open point grades in Gradebook"
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "min-h-[44px] md:min-h-[36px] px-3 rounded-lg text-xs font-medium cursor-pointer gap-1.5"
-          )}
+        <Button
+          nativeButton={false}
+          variant="outline"
+          className="min-h-[44px] md:min-h-[36px] px-3 rounded-lg text-xs font-medium"
+          render={
+            <Link
+              href={`/gradebook?activity=${encodeURIComponent(activityId)}`}
+              aria-label="Open point grades in Gradebook"
+            />
+          }
         >
-          <Table2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <Table2 data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
           <span>Gradebook</span>
-        </Link>
+        </Button>
       )}
 
       {(isPending || isError || !rosterReady || count > 0 || hasPointGrades) && (
@@ -1100,7 +1167,7 @@ export function ReleaseActivityButton({
           variant="outline"
           disabled={isPending || !rosterReady || (!count && !hasPointGrades && !isError)}
           aria-describedby={hasDescription ? descriptionId : undefined}
-          className="min-h-[44px] md:min-h-[36px] px-3.5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
+          className="min-h-[44px] md:min-h-[36px] px-3.5 rounded-lg text-xs font-semibold shadow-xs"
           onClick={() => {
             setError(null);
             setStep("review");
@@ -1109,7 +1176,11 @@ export function ReleaseActivityButton({
             void refetch();
           }}
         >
-          <Send className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          {isPending ? (
+            <Spinner data-icon="inline-start" />
+          ) : (
+            <Send data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+          )}
           <span>{isPending ? "Checking release…" : count > 0 ? `Review & Release (${count})` : "Review release"}</span>
         </Button>
       )}
@@ -1150,37 +1221,45 @@ export function ReleaseActivityButton({
           {step === "review" ? (
             <div className="flex flex-col gap-4">
               {isFiltered && (
-                <div className="rounded-lg border border-amber-300/80 bg-amber-50/80 p-3 text-xs text-amber-900 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-200">
-                  <p className="font-semibold">⚠️ Filtered view active on page ({filteredCount ?? 0} of {totalCount ?? 0} students shown)</p>
-                  <p className="mt-0.5">
+                <Alert className="border-band-2/40 bg-band-2/15 text-band-2-text">
+                  <AlertTriangle aria-hidden="true" />
+                  <AlertTitle className="text-xs font-semibold text-band-2-text">
+                    Filtered view active on page ({filteredCount ?? 0} of {totalCount ?? 0} students shown)
+                  </AlertTitle>
+                  <AlertDescription className="text-xs text-band-2-text">
                     Releasing will share results for <strong>all {count} eligible draft worksheets</strong> across all assigned sections, not just the students currently visible.
-                  </p>
-                </div>
+                  </AlertDescription>
+                </Alert>
               )}
               <p className="text-sm">
                 {count} draft worksheet {count === 1 ? "result" : "results"} ready across this
                 activity. Search and filters on the page do not limit this release.
               </p>
               {count > 0 && (
-                <ul
-                  aria-label="Worksheet results ready for release"
-                  className="flex max-h-48 flex-col gap-2 overflow-y-auto text-sm"
-                  tabIndex={0}
-                >
-                  {drafts.map((row) => {
-                    const student = students.find((entry) => entry.id === row.student_id);
-                    return (
-                      <li key={row.student_id} className="flex flex-col gap-0.5 border-b pb-2">
-                        <strong className="font-medium break-words">
-                          {student?.full_name ?? "Student unavailable"}
-                        </strong>
-                        <span className="text-muted-foreground">
-                          {student?.section || "No section"} · Counted worksheet result
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <ScrollArea className="max-h-48">
+                  <ul
+                    aria-label="Worksheet results ready for release"
+                    className="flex flex-col gap-2 text-sm pr-3"
+                    tabIndex={0}
+                  >
+                    {drafts.map((row, idx) => {
+                      const student = students.find((entry) => entry.id === row.student_id);
+                      return (
+                        <li key={row.student_id} className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-0.5">
+                            <strong className="font-medium break-words">
+                              {student?.full_name ?? "Student unavailable"}
+                            </strong>
+                            <span className="text-muted-foreground">
+                              {student?.section || "No section"} · Counted worksheet result
+                            </span>
+                          </div>
+                          {idx < drafts.length - 1 && <Separator />}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </ScrollArea>
               )}
             </div>
           ) : (
@@ -1217,22 +1296,32 @@ export function ReleaseActivityButton({
           )}
           {isError && (
             <div className="flex flex-col gap-2">
-              <p role="alert">Could not refresh worksheet results. Retry before continuing.</p>
+              <Alert variant="destructive">
+                <AlertCircle aria-hidden="true" />
+                <AlertDescription>
+                  Could not refresh worksheet results. Retry before continuing.
+                </AlertDescription>
+              </Alert>
               <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+                {isFetching && <Spinner data-icon="inline-start" />}
                 Retry worksheet results
               </Button>
             </div>
           )}
           {changedSinceReview && (
-            <p role="alert" className="text-sm">
-              Worksheet results or point grades changed. Go back and review the updated inventory
-              before releasing.
-            </p>
+            <Alert variant="destructive">
+              <AlertCircle aria-hidden="true" />
+              <AlertDescription>
+                Worksheet results or point grades changed. Go back and review the updated inventory
+                before releasing.
+              </AlertDescription>
+            </Alert>
           )}
           {error && (
-            <p role="alert" className="text-destructive text-sm">
-              {error}
-            </p>
+            <Alert variant="destructive">
+              <AlertCircle aria-hidden="true" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
           <DialogFooter className="sm:flex-col sm:items-stretch">
             {step === "confirm" && (
@@ -1270,13 +1359,18 @@ export function ReleaseActivityButton({
                 (!count && !hasPointGrades)
               }
             >
-              {mutation.isPending
-                ? "Releasing…"
-                : step === "review"
-                  ? "Continue to confirmation"
-                  : hasPointGrades
-                    ? "Release all eligible results and grades"
-                    : "Release all eligible results"}
+              {mutation.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  <span>Releasing…</span>
+                </>
+              ) : step === "review" ? (
+                "Continue to confirmation"
+              ) : hasPointGrades ? (
+                "Release all eligible results and grades"
+              ) : (
+                "Release all eligible results"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

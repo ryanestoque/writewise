@@ -5,11 +5,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FieldLegend, FieldSet } from "@/components/ui/field";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Field, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Kbd } from "@/components/ui/kbd";
-import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +29,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -125,7 +133,7 @@ export const RUBRIC_BANDS: Array<{
       score: "12.5%",
       points: 1,
       activeClass:
-        "bg-band-1/15 dark:bg-band-1/30 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
+        "bg-band-1/15 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-1/15 text-band-1-text border-band-1/40",
       dotColor: "bg-band-1" },
@@ -137,7 +145,7 @@ export const RUBRIC_BANDS: Array<{
       score: "37.5%",
       points: 2,
       activeClass:
-        "bg-band-2/15 dark:bg-band-2/30 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
+        "bg-band-2/15 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-2/15 text-band-2-text border-band-2/40",
       dotColor: "bg-band-2" },
@@ -149,7 +157,7 @@ export const RUBRIC_BANDS: Array<{
       score: "62.5%",
       points: 3,
       activeClass:
-        "bg-band-3/15 dark:bg-band-3/30 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
+        "bg-band-3/15 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-3/15 text-band-3-text border-band-3/40",
       dotColor: "bg-band-3" },
@@ -161,7 +169,7 @@ export const RUBRIC_BANDS: Array<{
       score: "87.5%",
       points: 4,
       activeClass:
-        "bg-band-4/15 dark:bg-band-4/30 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
+        "bg-band-4/15 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-4/15 text-band-4-text border-band-4/40",
       dotColor: "bg-band-4" },
@@ -322,10 +330,10 @@ export function extractCriterionCVMetric(
         ? "text-band-2-text"
         : "text-band-1-text",
     badgeClass: isOptimal
-      ? "bg-band-4/15 border-band-4/40 text-band-4-text dark:bg-band-4/25 dark:border-band-4/50"
+      ? "bg-band-4/15 border-band-4/40 text-band-4-text"
       : isBorderline
-        ? "bg-band-2/15 border-band-2/40 text-band-2-text dark:bg-band-2/25 dark:border-band-2/50"
-        : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:border-band-1/50" });
+        ? "bg-band-2/15 border-band-2/40 text-band-2-text"
+        : "bg-band-1/15 border-band-1/40 text-band-1-text" });
 
   switch (criterionKey) {
     case "letter_formation_band": {
@@ -589,6 +597,7 @@ export function ManualRubricEntryForm({
             toast.add({
               type: "success",
               title: "Rubric recorded — advancing to next student",
+              timeout: 6000,
               actionProps: onNavigateBack
                 ? {
                     children: "Undo",
@@ -904,670 +913,725 @@ export function ManualRubricEntryForm({
   };
 
   return (
-    <div
+    <Card
       ref={formRef}
-      className="@container p-2.5 sm:p-3.5 rounded-xl bg-surface dark:bg-card border border-border shadow-xs space-y-2.5"
+      size="sm"
+      className="@container py-2.5 sm:py-3.5 shadow-xs"
     >
-      {/* Screen reader live announcement region */}
-      <div className="sr-only" role="status" aria-live="polite">
-        {accessibilityAnnouncement}
-      </div>
+      <CardContent className="flex flex-col gap-2.5 px-2.5 sm:px-3.5">
+        {/* Screen reader live announcement region */}
+        <div className="sr-only" role="status" aria-live="polite">
+          {accessibilityAnnouncement}
+        </div>
 
-      {/* Single-row toolbar: status badge on left, quick fill + layout mode + keyboard help on right */}
-      <div className="flex items-center justify-between gap-2 pb-2 border-b border-border/60 flex-wrap">
-        <Badge
-          variant="outline"
-          className={`text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center ${allBandsSelected && compositeRubric
-              ? compositeRubric.overallBandMeta.badgeClass
-              : "bg-band-2/15 text-band-2-text dark:bg-band-2/25 border-band-2/40"
-            }`}
+        {/* Single-row toolbar + collapsible keyboard shortcuts */}
+        <Collapsible
+          open={showKeyboardHelp}
+          onOpenChange={setShowKeyboardHelp}
+          className="flex flex-col gap-2.5"
         >
-          {allBandsSelected && compositeRubric ? (
-            <span>
-              {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%) • {compositeRubric.overallBandMeta.label}
-            </span>
-          ) : (
-            <span>{selectedCount}/5 rated</span>
-          )}
-        </Badge>
-
-        <div className="flex items-center gap-1.5 flex-wrap ml-auto">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isSubmittingScore}
-                  className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 text-xs sm:text-[11px] font-medium gap-1.5 rounded-lg cursor-pointer touch-manipulation text-muted-foreground hover:text-foreground"
-                />
-              }
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[11px] font-semibold px-2 py-0.5 shrink-0 font-sans tabular-nums inline-flex items-center",
+                allBandsSelected && compositeRubric
+                  ? compositeRubric.overallBandMeta.badgeClass
+                  : "bg-band-2/15 text-band-2-text border-band-2/40"
+              )}
             >
-              <SlidersHorizontal className="size-3.5 sm:size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>Quick fill</span>
-              <ChevronDown className="size-3.5 sm:size-3 opacity-70" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-52 rounded-xl p-1">
-              <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground">
-                Set all 5 criteria at once
-              </DropdownMenuLabel>
-              {RUBRIC_BANDS.map((option) => (
-                <DropdownMenuItem
-                  key={option.band}
-                  onClick={() => handleApplyPreset(option.band)}
-                  className="rounded-lg px-2.5 py-2 text-xs justify-between cursor-pointer"
+              {allBandsSelected && compositeRubric ? (
+                <span>
+                  {compositeRubric.totalPoints}/{compositeRubric.maxPoints} pts ({compositeRubric.avgPercentage}%) • {compositeRubric.overallBandMeta.label}
+                </span>
+              ) : (
+                <span>{selectedCount}/5 rated</span>
+              )}
+            </Badge>
+
+            <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={isSubmittingScore}
+                      className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2.5 text-xs sm:text-[11px] font-medium rounded-lg text-muted-foreground hover:text-foreground"
+                    />
+                  }
                 >
-                  <span className="inline-flex items-center gap-2">
-                    <span className={`size-2 rounded-full ${option.dotColor}`} aria-hidden="true" />
-                    <span>All {option.label}</span>
-                  </span>
-                  <Kbd className="ml-3 h-auto min-w-0 bg-transparent px-1 font-mono text-[10px] text-muted-foreground">
-                    Alt+{option.shortcutKey}
-                  </Kbd>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <SlidersHorizontal data-icon="inline-start" className="text-primary" aria-hidden="true" />
+                  <span>Quick fill</span>
+                  <ChevronDown data-icon="inline-end" className="opacity-70" aria-hidden="true" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-52 rounded-xl p-1">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground">
+                      Set all 5 criteria at once
+                    </DropdownMenuLabel>
+                    {RUBRIC_BANDS.map((option) => (
+                      <DropdownMenuItem
+                        key={option.band}
+                        onClick={() => handleApplyPreset(option.band)}
+                        className="rounded-lg px-2.5 py-2 text-xs justify-between cursor-pointer"
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <span className={cn("size-2 rounded-full", option.dotColor)} aria-hidden="true" />
+                          <span>All {option.label}</span>
+                        </span>
+                        <Kbd className="ml-3 h-auto min-w-0 bg-transparent px-1 font-mono text-[10px] text-muted-foreground">
+                          Alt+{option.shortcutKey}
+                        </Kbd>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-          <div className="flex items-center p-0.5 rounded-lg bg-muted/60 border border-border/80 shrink-0">
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={() => setLayoutMode("stepper")}
-              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer h-auto min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation ${layoutMode === "stepper"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60 hover:bg-surface dark:hover:bg-card"
-                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                }`}
-              aria-pressed={layoutMode === "stepper"}
-              title="Focus Mode (1 criterion at a time)"
-            >
-              <Layers className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>Focus</span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={() => setLayoutMode("list")}
-              className={`px-2 py-1 rounded-md text-xs sm:text-[11px] font-semibold transition-colors cursor-pointer h-auto min-h-11 sm:min-h-[26px] flex items-center gap-1 touch-manipulation ${layoutMode === "list"
-                  ? "bg-surface dark:bg-card text-foreground shadow-xs border border-border/60 hover:bg-surface dark:hover:bg-card"
-                  : "text-muted-foreground hover:text-foreground hover:bg-transparent"
-                }`}
-              aria-pressed={layoutMode === "list"}
-              title="All Mode (show all 5 criteria)"
-            >
-              <LayoutList className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>All (5)</span>
-            </Button>
+              <ToggleGroup
+                value={[layoutMode]}
+                multiple={false}
+                spacing={0}
+                variant="outline"
+                size="sm"
+                onValueChange={(vals) => {
+                  if (vals.length > 0) setLayoutMode(vals[0] as "stepper" | "list");
+                }}
+                aria-label="Rubric layout mode"
+                className="shrink-0"
+              >
+                <ToggleGroupItem
+                  value="stepper"
+                  title="Focus Mode (1 criterion at a time)"
+                  className="h-auto min-h-11 sm:min-h-7 px-2 py-1 text-xs sm:text-[11px] font-semibold data-pressed:bg-primary data-pressed:text-primary-foreground"
+                >
+                  <Layers data-icon="inline-start" aria-hidden="true" />
+                  <span>Focus</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="list"
+                  title="All Mode (show all 5 criteria)"
+                  className="h-auto min-h-11 sm:min-h-7 px-2 py-1 text-xs sm:text-[11px] font-semibold data-pressed:bg-primary data-pressed:text-primary-foreground"
+                >
+                  <LayoutList data-icon="inline-start" aria-hidden="true" />
+                  <span>All (5)</span>
+                </ToggleGroupItem>
+              </ToggleGroup>
+
+              <CollapsibleTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-foreground rounded-lg size-11 sm:size-7"
+                    title="Toggle Keyboard Shortcuts (Keys 1–4)"
+                    aria-label="Toggle Keyboard Shortcuts"
+                  />
+                }
+              >
+                <Keyboard aria-hidden="true" />
+              </CollapsibleTrigger>
+            </div>
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowKeyboardHelp((prev) => !prev)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer size-11 min-h-11 min-w-11 sm:size-7 sm:min-h-7 sm:min-w-7 touch-manipulation"
-            title="Toggle Keyboard Shortcuts (Keys 1–4)"
-            aria-label="Toggle Keyboard Shortcuts"
-            aria-expanded={showKeyboardHelp}
-          >
-            <Keyboard className="size-3.5" aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
+          <Separator />
 
-      {/* Keyboard Shortcuts Hint Bar */}
-      {showKeyboardHelp && (
-        <div className="p-2.5 rounded-lg bg-muted/40 border border-border/70 text-[11px] text-muted-foreground flex items-center justify-between gap-x-3 gap-y-1.5 flex-wrap animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">1–4</Kbd> Rate</span>
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</Kbd> Quick fill</span>
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</Kbd> Student</span>
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">C</Kbd> Ink</span>
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">L</Kbd> Magnify</span>
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">+/-/0</Kbd> Zoom</span>
-            <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+[/]</Kbd> Focus area</span>
-          </div>
-          <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Ctrl+Enter</Kbd> Submit</span>
-        </div>
-      )}
+          {/* Keyboard Shortcuts Hint Bar */}
+          <CollapsibleContent>
+            <div className="p-2.5 rounded-lg bg-muted/40 border border-border/70 text-[11px] text-muted-foreground flex items-center justify-between gap-x-3 gap-y-1.5 flex-wrap animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+              <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">1–4</Kbd> Rate</span>
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+1–4</Kbd> Quick fill</span>
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">J/K</Kbd> Student</span>
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">C</Kbd> Ink</span>
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">L</Kbd> Magnify</span>
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">+/-/0</Kbd> Zoom</span>
+                <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Alt+[/]</Kbd> Focus area</span>
+              </div>
+              <span><Kbd className="h-auto min-w-0 px-1.5 py-0.5 rounded bg-background border border-border font-mono font-semibold text-[10px]">Ctrl+Enter</Kbd> Submit</span>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-      {submitErrorMsg && (
-        <Alert variant="destructive" aria-live="polite" className="text-xs">
-          <AlertCircle aria-hidden="true" />
-          <AlertTitle>Submission Error</AlertTitle>
-          <AlertDescription className="text-xs [&>p]:mb-0">
-            {submitErrorMsg}
-          </AlertDescription>
-        </Alert>
-      )}
+        {submitErrorMsg && (
+          <Alert variant="destructive" aria-live="polite" className="text-xs">
+            <AlertCircle aria-hidden="true" />
+            <AlertTitle>Submission Error</AlertTitle>
+            <AlertDescription className="text-xs [&>p]:mb-0">
+              {submitErrorMsg}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {/* ---------------- FOCUS STEPPER MODE (Unified across all viewports) ---------------- */}
-      {layoutMode === "stepper" && (
-        <div className="space-y-2.5">
-          {/* 5-Step Navigation Pills (with criterion names + dual-signal score indicators) */}
-          <div className="grid grid-cols-2 @[360px]:grid-cols-3 @[480px]:grid-cols-5 gap-1.5 pt-0.5">
-            {RUBRIC_CRITERIA.map((criterion, idx) => {
-              const isStepActive = activeCriterionIndex === idx;
-              const stepBand = rubricScores[criterion.key];
-              const isRated = stepBand !== null;
-              const bandMeta = getBandMeta(stepBand);
+        {/* ---------------- FOCUS STEPPER MODE (Unified across all viewports) ---------------- */}
+        {layoutMode === "stepper" && (
+          <div className="flex flex-col gap-2.5">
+            {/* 5-Step Navigation Pills (with criterion names + dual-signal score indicators) */}
+            <ToggleGroup
+              value={[RUBRIC_CRITERIA[activeCriterionIndex].key]}
+              multiple={false}
+              spacing={1.5}
+              variant="outline"
+              onValueChange={(vals) => {
+                if (vals.length === 0) return;
+                const idx = RUBRIC_CRITERIA.findIndex((c) => c.key === vals[0]);
+                if (idx >= 0) handleSelectCriterion(idx);
+              }}
+              aria-label="Select criterion to rate"
+              className="grid w-full grid-cols-2 @[360px]:grid-cols-3 @[480px]:grid-cols-5 gap-1.5 pt-0.5"
+            >
+              {RUBRIC_CRITERIA.map((criterion, idx) => {
+                const isStepActive = activeCriterionIndex === idx;
+                const stepBand = rubricScores[criterion.key];
+                const isRated = stepBand !== null;
+                const bandMeta = getBandMeta(stepBand);
+
+                return (
+                  <ToggleGroupItem
+                    key={criterion.key}
+                    value={criterion.key}
+                    className={cn(
+                      "h-auto whitespace-normal flex flex-col items-center justify-center gap-0 py-1.5 px-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[42px] touch-manipulation",
+                      isStepActive
+                        ? "bg-primary/10 hover:bg-primary/10 text-primary hover:text-primary border-primary ring-2 ring-primary/30 font-bold"
+                        : isRated
+                          ? "bg-card border-primary/30 text-foreground hover:bg-card"
+                          : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border hover:bg-muted/30 hover:text-muted-foreground"
+                    )}
+                    aria-label={`Step ${idx + 1}: ${criterion.shortName}${
+                      isRated
+                        ? stepBand === "not_applicable"
+                          ? " (Not applicable)"
+                          : ` (Rated: ${bandMeta.label}, ${bandMeta.points} of 4 points)`
+                        : " (Unrated)"
+                    }`}
+                    aria-current={isStepActive ? "step" : undefined}
+                  >
+                    <span className="text-[11px] font-sans tabular-nums leading-tight font-semibold truncate max-w-full">
+                      {idx + 1}. {criterion.stepLabel}
+                    </span>
+                    <div className="flex items-center gap-1 mt-0.5 text-[10px] font-sans tabular-nums leading-none">
+                      {isRated ? (
+                        <>
+                          <span
+                            className={cn("size-1.5 rounded-full shrink-0", bandMeta.dotColor)}
+                            aria-hidden="true"
+                          />
+                          <span className="font-semibold">
+                            {stepBand === "not_applicable" ? "N/A" : `${bandMeta.points}/4`}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="size-1.5 rounded-full bg-muted-foreground/50 shrink-0" aria-hidden="true" />
+                          <span className="text-muted-foreground">—</span>
+                        </>
+                      )}
+                    </div>
+                  </ToggleGroupItem>
+                );
+              })}
+            </ToggleGroup>
+
+            {/* Focused Active Criterion Card */}
+            {(() => {
+              const currentCriterion = RUBRIC_CRITERIA[activeCriterionIndex];
+              const selectedBand = rubricScores[currentCriterion.key];
+              const guide = CRITERIA_GUIDE[currentCriterion.shortName];
+              const metric = extractCriterionCVMetric(currentCriterion.key, measurement);
 
               return (
-                <Button
-                  key={criterion.key}
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleSelectCriterion(idx)}
-                  className={`h-auto whitespace-normal flex flex-col items-center justify-center gap-0 py-1.5 px-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[42px] touch-manipulation ${isStepActive
-                      ? "bg-brand-100 hover:bg-brand-100 dark:bg-brand-950 dark:hover:bg-brand-950 text-brand-950 hover:text-brand-950 dark:text-brand-200 dark:hover:text-brand-200 border-brand-500 ring-2 ring-brand-400/40 font-bold"
-                      : isRated
-                        ? "bg-surface dark:bg-card border-brand-200/80 dark:border-brand-900/80 text-foreground hover:bg-surface dark:hover:bg-card"
-                        : "bg-muted/30 border-border/60 text-muted-foreground hover:border-border hover:bg-muted/30 hover:text-muted-foreground"
-                    }`}
-                  aria-label={`Step ${idx + 1}: ${criterion.shortName}${isRated
-                      ? stepBand === "not_applicable"
-                        ? " (Not applicable)"
-                        : ` (Rated: ${bandMeta.label}, ${bandMeta.points} of 4 points)`
-                      : " (Unrated)"}`}
-                  aria-current={isStepActive ? "step" : undefined}
+                <FieldSet
+                  aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
+                  className="gap-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-primary/40 ring-1 ring-primary/20 shadow-xs"
                 >
-                  <span className="text-[11px] font-sans tabular-nums leading-tight font-semibold truncate max-w-full">
-                    {idx + 1}. {criterion.stepLabel}
-                  </span>
-                  <div className="flex items-center gap-1 mt-0.5 text-[10px] font-sans tabular-nums leading-none">
-                    {isRated ? (
-                      <>
-                        <span
-                          className={`size-1.5 rounded-full shrink-0 ${bandMeta.dotColor}`}
-                          aria-hidden="true"
-                        />
-                        <span className="font-semibold">
-                          {stepBand === "not_applicable" ? "N/A" : `${bandMeta.points}/4`}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="size-1.5 rounded-full bg-muted-foreground/50 shrink-0" aria-hidden="true" />
-                        <span className="text-muted-foreground">—</span>
-                      </>
+                  <div className="min-w-0">
+                    <FieldLegend
+                      variant="label"
+                      id={`stepper-criterion-label-${currentCriterion.key}`}
+                      className="mb-0 text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
+                    >
+                      <span>{currentCriterion.name}</span>
+                      {metric && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "h-auto gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium tabular-nums",
+                            metric.badgeClass
+                          )}
+                          title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                        >
+                          <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
+                          <span className="font-semibold">{metric.value}</span>
+                        </Badge>
+                      )}
+                    </FieldLegend>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
+                      {guide?.rubricGoal ?? currentCriterion.hint}
+                    </p>
+                    {currentCriterion.key === "spacing_band" && isSingleWordMeasurement && (
+                      <p className="text-[11px] text-primary mt-1 font-medium">
+                        No inter-word gaps detected — N/A recommended
+                      </p>
                     )}
                   </div>
-                </Button>
-              );
-            })}
-          </div>
 
-          {/* Focused Active Criterion Card */}
-          {(() => {
-            const currentCriterion = RUBRIC_CRITERIA[activeCriterionIndex];
-            const selectedBand = rubricScores[currentCriterion.key];
-            const guide = CRITERIA_GUIDE[currentCriterion.shortName];
-            const metric = extractCriterionCVMetric(currentCriterion.key, measurement);
-
-            return (
-              <FieldSet
-                aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
-                className="gap-2 space-y-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
-              >
-                <div className="min-w-0">
-                  <FieldLegend
-                    variant="label"
-                    id={`stepper-criterion-label-${currentCriterion.key}`}
-                    className="mb-0 text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
-                  >
-                    <span>{currentCriterion.name}</span>
-                    {metric && (
-                      <Badge
-                        variant="outline"
-                        className={`h-auto gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium tabular-nums ${metric.badgeClass}`}
-                        title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                      >
-                        <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
-                        <span className="font-semibold">{metric.value}</span>
-                      </Badge>
-                    )}
-                  </FieldLegend>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
-                    {guide?.rubricGoal ?? currentCriterion.hint}
-                  </p>
-                  {currentCriterion.key === "spacing_band" && isSingleWordMeasurement && (
-                    <p className="text-[11px] text-brand-700 dark:text-brand-300 mt-1 font-medium">
-                      No inter-word gaps detected — N/A recommended
-                    </p>
-                  )}
-                </div>
-
-                {/* Segmented Rating Buttons with Responsive Grid */}
-                <ToggleGroup
-                  value={selectedBand ? [selectedBand] : []}
-                  multiple={false}
-                  spacing={1.5}
-                  disabled={isSubmittingScore}
-                  onValueChange={(vals) => {
-                    if (vals.length === 0) return;
-                    const nextBand = vals[0] as ScoreBand | "not_applicable";
-                    setRubricScores((prev) => ({
-                      ...prev,
-                      [currentCriterion.key]: nextBand }));
-                    setSubmitErrorMsg(null);
-                    if (nextBand === "not_applicable") {
-                      setAccessibilityAnnouncement("Spacing marked not applicable.");
-                    } else {
-                      const opt = RUBRIC_BANDS.find((o) => o.band === nextBand);
-                      if (opt) {
-                        setAccessibilityAnnouncement(
-                          `${currentCriterion.shortName} rated ${opt.label} (${opt.score}).`
-                        );
-                      }
-                    }
-                    if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
-                      const nextIdx = activeCriterionIndex + 1;
-                      setActiveCriterionIndex(nextIdx);
-                      onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
-                    }
-                  }}
-                  aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
-                  className={`grid w-full grid-cols-2 gap-1.5 pt-0.5 ${
-                    currentCriterion.key === "spacing_band"
-                      ? "@[480px]:grid-cols-5"
-                      : "@[480px]:grid-cols-4"
-                  }`}
-                >
-                  {RUBRIC_BANDS.map((option, optIdx) => {
-                    const isChecked = selectedBand === option.band;
-
-                    return (
-                      <ToggleGroupItem
-                        key={option.band}
-                        value={option.band}
-                        variant="outline"
-                        data-criterion={currentCriterion.key}
-                        data-band={option.band}
-                        aria-label={`${currentCriterion.shortName}: ${option.label} (${option.score})`}
-                        onKeyDown={(e) =>
-                          handleCriterionKeyDown(
-                            e,
-                            currentCriterion.key,
-                            activeCriterionIndex,
-                            optIdx
-                          )
+                  {/* Segmented Rating Buttons with Responsive Grid */}
+                  <ToggleGroup
+                    value={selectedBand ? [selectedBand] : []}
+                    multiple={false}
+                    spacing={1.5}
+                    disabled={isSubmittingScore}
+                    onValueChange={(vals) => {
+                      if (vals.length === 0) return;
+                      const nextBand = vals[0] as ScoreBand | "not_applicable";
+                      setRubricScores((prev) => ({
+                        ...prev,
+                        [currentCriterion.key]: nextBand }));
+                      setSubmitErrorMsg(null);
+                      if (nextBand === "not_applicable") {
+                        setAccessibilityAnnouncement("Spacing marked not applicable.");
+                      } else {
+                        const opt = RUBRIC_BANDS.find((o) => o.band === nextBand);
+                        if (opt) {
+                          setAccessibilityAnnouncement(
+                            `${currentCriterion.shortName} rated ${opt.label} (${opt.score}).`
+                          );
                         }
-                        className={`h-auto flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation ${isChecked
-                            ? option.activeClass
-                            : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                          }`}
-                      >
-                        <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
-                          [{option.shortcutKey}]
-                        </span>
-                        <span className="text-xs leading-tight font-semibold truncate">
-                          {option.shortLabel}
-                        </span>
-                      </ToggleGroupItem>
-                    );
-                  })}
-                  {currentCriterion.key === "spacing_band" && (
-                    <ToggleGroupItem
-                      value="not_applicable"
-                      variant="outline"
-                      data-criterion="spacing_band"
-                      data-band="not_applicable"
-                      aria-label="Spacing: Not applicable (single-word sample)"
-                      onKeyDown={(e) =>
-                        handleCriterionKeyDown(
-                          e,
-                          "spacing_band",
-                          activeCriterionIndex,
-                          RUBRIC_BANDS.length
-                        )
                       }
-                      className={`h-auto col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation ${selectedBand === "not_applicable"
-                          ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
-                          : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                        }`}
-                    >
-                      <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
-                        [0]
-                      </span>
-                      <span className="text-xs leading-tight font-semibold truncate">
-                        N/A
-                      </span>
-                    </ToggleGroupItem>
-                  )}
-                </ToggleGroup>
-
-                {/* Stepper Navigation: Previous / Next Criterion */}
-                <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={activeCriterionIndex === 0}
-                    onClick={() => {
-                      if (activeCriterionIndex > 0) {
-                        const prevIdx = activeCriterionIndex - 1;
-                        setActiveCriterionIndex(prevIdx);
-                        onFocusCriterion?.(RUBRIC_CRITERIA[prevIdx].shortName);
-                      }
-                    }}
-                    className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
-                  >
-                    <ChevronLeft className="size-3.5" aria-hidden="true" />
-                    <span>Prev</span>
-                  </Button>
-
-                  <span className="text-[11px] text-muted-foreground font-medium tabular-nums">
-                    {activeCriterionIndex + 1} / {RUBRIC_CRITERIA.length}
-                  </span>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={activeCriterionIndex === RUBRIC_CRITERIA.length - 1}
-                    onClick={() => {
                       if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
                         const nextIdx = activeCriterionIndex + 1;
                         setActiveCriterionIndex(nextIdx);
                         onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
                       }
                     }}
-                    className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-30 touch-manipulation"
-                  >
-                    <span>Next</span>
-                    <ChevronRight className="size-3.5" aria-hidden="true" />
-                  </Button>
-                </div>
-              </FieldSet>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* ---------------- 5 CRITERIA LIST (All Mode) ---------------- */}
-      {layoutMode === "list" && (
-        <div
-          className="space-y-2"
-          role="group"
-          aria-label="5-Criterion Handwriting Rubric"
-        >
-          {RUBRIC_CRITERIA.map((criterion, idx) => {
-            const selectedBand = rubricScores[criterion.key];
-            const isFocused = activeCriterionIndex === idx;
-            const metric = extractCriterionCVMetric(criterion.key, measurement);
-
-            return (
-              <FieldSet
-                key={criterion.key}
-                aria-labelledby={`criterion-label-${criterion.key}`}
-                className={`gap-1.5 space-y-1.5 p-2.5 rounded-xl border transition-colors ${isFocused
-                    ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
-                    : "bg-muted/15 border-border/60 hover:border-border"
-                  }`}
-                onClick={() => handleSelectCriterion(idx)}
-                onFocus={() => {
-                  if (activeCriterionIndex !== idx) {
-                    handleSelectCriterion(idx);
-                  }
-                }}
-              >
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <FieldLegend
-                    variant="label"
-                    id={`criterion-label-${criterion.key}`}
-                    className="mb-0 text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
-                  >
-                    <span>{idx + 1}. {criterion.name}</span>
-                    {metric && (
-                      <Badge
-                        variant="outline"
-                        className={`h-auto gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium tabular-nums ${metric.badgeClass}`}
-                        title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
-                      >
-                        <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
-                        <span className="font-semibold">{metric.value}</span>
-                      </Badge>
+                    aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
+                    className={cn(
+                      "grid w-full grid-cols-2 gap-1.5 pt-0.5",
+                      currentCriterion.key === "spacing_band"
+                        ? "@[480px]:grid-cols-5"
+                        : "@[480px]:grid-cols-4"
                     )}
-                  </FieldLegend>
-                  {criterion.key === "spacing_band" && isSingleWordMeasurement && (
-                    <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
-                      No inter-word gaps detected — N/A recommended
-                    </span>
-                  )}
-                </div>
+                  >
+                    {RUBRIC_BANDS.map((option, optIdx) => {
+                      const isChecked = selectedBand === option.band;
 
-                {/* Segmented Rating Buttons with Responsive Grid */}
-                <ToggleGroup
-                  value={selectedBand ? [selectedBand] : []}
-                  multiple={false}
-                  spacing={1.5}
-                  disabled={isSubmittingScore}
-                  onValueChange={(vals) => {
-                    if (vals.length === 0) return;
-                    const nextBand = vals[0] as ScoreBand | "not_applicable";
-                    handleSelectCriterion(idx);
-                    setRubricScores((prev) => ({
-                      ...prev,
-                      [criterion.key]: nextBand }));
-                    setSubmitErrorMsg(null);
-                    if (nextBand === "not_applicable") {
-                      setAccessibilityAnnouncement("Spacing marked not applicable.");
-                    } else {
-                      const opt = RUBRIC_BANDS.find((o) => o.band === nextBand);
-                      if (opt) {
-                        setAccessibilityAnnouncement(
-                          `${criterion.shortName} rated ${opt.label} (${opt.score}).`
-                        );
-                      }
-                    }
-                  }}
-                  aria-labelledby={`criterion-label-${criterion.key}`}
-                  className={`grid w-full grid-cols-2 gap-1.5 ${
-                    criterion.key === "spacing_band"
-                      ? "@[480px]:grid-cols-5"
-                      : "@[480px]:grid-cols-4"
-                  }`}
-                >
-                  {RUBRIC_BANDS.map((option, optIdx) => {
-                    const isChecked = selectedBand === option.band;
-
-                    return (
+                      return (
+                        <ToggleGroupItem
+                          key={option.band}
+                          value={option.band}
+                          variant="outline"
+                          data-criterion={currentCriterion.key}
+                          data-band={option.band}
+                          aria-label={`${currentCriterion.shortName}: ${option.label} (${option.score})`}
+                          onKeyDown={(e) =>
+                            handleCriterionKeyDown(
+                              e,
+                              currentCriterion.key,
+                              activeCriterionIndex,
+                              optIdx
+                            )
+                          }
+                          className={cn(
+                            "h-auto flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation",
+                            isChecked
+                              ? option.activeClass
+                              : "bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                          )}
+                        >
+                          <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
+                            [{option.shortcutKey}]
+                          </span>
+                          <span className="text-xs leading-tight font-semibold truncate">
+                            {option.shortLabel}
+                          </span>
+                        </ToggleGroupItem>
+                      );
+                    })}
+                    {currentCriterion.key === "spacing_band" && (
                       <ToggleGroupItem
-                        key={option.band}
-                        value={option.band}
+                        value="not_applicable"
                         variant="outline"
-                        data-criterion={criterion.key}
-                        data-band={option.band}
-                        aria-label={`${criterion.shortName}: ${option.label} (${option.score})`}
+                        data-criterion="spacing_band"
+                        data-band="not_applicable"
+                        aria-label="Spacing: Not applicable (single-word sample)"
                         onKeyDown={(e) =>
                           handleCriterionKeyDown(
                             e,
-                            criterion.key,
+                            "spacing_band",
+                            activeCriterionIndex,
+                            RUBRIC_BANDS.length
+                          )
+                        }
+                        className={cn(
+                          "h-auto col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation",
+                          selectedBand === "not_applicable"
+                            ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
+                            : "bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                        )}
+                      >
+                        <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
+                          [0]
+                        </span>
+                        <span className="text-xs leading-tight font-semibold truncate">
+                          N/A
+                        </span>
+                      </ToggleGroupItem>
+                    )}
+                  </ToggleGroup>
+
+                  <Separator />
+
+                  {/* Stepper Navigation: Previous / Next Criterion */}
+                  <div className="flex items-center justify-between pt-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={activeCriterionIndex === 0}
+                      onClick={() => {
+                        if (activeCriterionIndex > 0) {
+                          const prevIdx = activeCriterionIndex - 1;
+                          setActiveCriterionIndex(prevIdx);
+                          onFocusCriterion?.(RUBRIC_CRITERIA[prevIdx].shortName);
+                        }
+                      }}
+                      className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    >
+                      <ChevronLeft data-icon="inline-start" aria-hidden="true" />
+                      <span>Prev</span>
+                    </Button>
+
+                    <span className="text-[11px] text-muted-foreground font-medium tabular-nums">
+                      {activeCriterionIndex + 1} / {RUBRIC_CRITERIA.length}
+                    </span>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={activeCriterionIndex === RUBRIC_CRITERIA.length - 1}
+                      onClick={() => {
+                        if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
+                          const nextIdx = activeCriterionIndex + 1;
+                          setActiveCriterionIndex(nextIdx);
+                          onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
+                        }
+                      }}
+                      className="h-11 sm:h-7 min-h-11 sm:min-h-0 px-2 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
+                    >
+                      <span>Next</span>
+                      <ChevronRight data-icon="inline-end" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </FieldSet>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ---------------- 5 CRITERIA LIST (All Mode) ---------------- */}
+        {layoutMode === "list" && (
+          <div
+            className="flex flex-col gap-2"
+            role="group"
+            aria-label="5-Criterion Handwriting Rubric"
+          >
+            {RUBRIC_CRITERIA.map((criterion, idx) => {
+              const selectedBand = rubricScores[criterion.key];
+              const isFocused = activeCriterionIndex === idx;
+              const metric = extractCriterionCVMetric(criterion.key, measurement);
+
+              return (
+                <FieldSet
+                  key={criterion.key}
+                  aria-labelledby={`criterion-label-${criterion.key}`}
+                  className={cn(
+                    "gap-1.5 p-2.5 rounded-xl border transition-colors",
+                    isFocused
+                      ? "bg-muted/30 border-primary/40 ring-1 ring-primary/20 shadow-xs"
+                      : "bg-muted/15 border-border/60 hover:border-border"
+                  )}
+                  onClick={() => handleSelectCriterion(idx)}
+                  onFocus={() => {
+                    if (activeCriterionIndex !== idx) {
+                      handleSelectCriterion(idx);
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <FieldLegend
+                      variant="label"
+                      id={`criterion-label-${criterion.key}`}
+                      className="mb-0 text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
+                    >
+                      <span>{idx + 1}. {criterion.name}</span>
+                      {metric && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "h-auto gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium tabular-nums",
+                            metric.badgeClass
+                          )}
+                          title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
+                        >
+                          <span className={cn("size-1.5 rounded-full", metric.dotClass)} aria-hidden="true" />
+                          <span className="font-semibold">{metric.value}</span>
+                        </Badge>
+                      )}
+                    </FieldLegend>
+                    {criterion.key === "spacing_band" && isSingleWordMeasurement && (
+                      <span className="text-[11px] text-primary font-medium">
+                        No inter-word gaps detected — N/A recommended
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Segmented Rating Buttons with Responsive Grid */}
+                  <ToggleGroup
+                    value={selectedBand ? [selectedBand] : []}
+                    multiple={false}
+                    spacing={1.5}
+                    disabled={isSubmittingScore}
+                    onValueChange={(vals) => {
+                      if (vals.length === 0) return;
+                      const nextBand = vals[0] as ScoreBand | "not_applicable";
+                      handleSelectCriterion(idx);
+                      setRubricScores((prev) => ({
+                        ...prev,
+                        [criterion.key]: nextBand }));
+                      setSubmitErrorMsg(null);
+                      if (nextBand === "not_applicable") {
+                        setAccessibilityAnnouncement("Spacing marked not applicable.");
+                      } else {
+                        const opt = RUBRIC_BANDS.find((o) => o.band === nextBand);
+                        if (opt) {
+                          setAccessibilityAnnouncement(
+                            `${criterion.shortName} rated ${opt.label} (${opt.score}).`
+                          );
+                        }
+                      }
+                    }}
+                    aria-labelledby={`criterion-label-${criterion.key}`}
+                    className={cn(
+                      "grid w-full grid-cols-2 gap-1.5",
+                      criterion.key === "spacing_band"
+                        ? "@[480px]:grid-cols-5"
+                        : "@[480px]:grid-cols-4"
+                    )}
+                  >
+                    {RUBRIC_BANDS.map((option, optIdx) => {
+                      const isChecked = selectedBand === option.band;
+
+                      return (
+                        <ToggleGroupItem
+                          key={option.band}
+                          value={option.band}
+                          variant="outline"
+                          data-criterion={criterion.key}
+                          data-band={option.band}
+                          aria-label={`${criterion.shortName}: ${option.label} (${option.score})`}
+                          onKeyDown={(e) =>
+                            handleCriterionKeyDown(
+                              e,
+                              criterion.key,
+                              idx,
+                              optIdx
+                            )
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            "h-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation",
+                            isChecked
+                              ? option.activeClass
+                              : "bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                          )}
+                        >
+                          <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
+                            [{option.shortcutKey}]
+                          </span>
+                          <span className="text-[11px] leading-tight font-medium truncate">
+                            {option.shortLabel}
+                          </span>
+                        </ToggleGroupItem>
+                      );
+                    })}
+                    {criterion.key === "spacing_band" && (
+                      <ToggleGroupItem
+                        value="not_applicable"
+                        variant="outline"
+                        data-criterion="spacing_band"
+                        data-band="not_applicable"
+                        aria-label="Spacing: Not applicable (single-word sample)"
+                        onKeyDown={(e) =>
+                          handleCriterionKeyDown(
+                            e,
+                            "spacing_band",
                             idx,
-                            optIdx
+                            RUBRIC_BANDS.length
                           )
                         }
                         onClick={(e) => e.stopPropagation()}
-                        className={`h-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation ${isChecked
-                            ? option.activeClass
-                            : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                          }`}
+                        className={cn(
+                          "h-auto col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation",
+                          selectedBand === "not_applicable"
+                            ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
+                            : "bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
+                        )}
                       >
                         <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
-                          [{option.shortcutKey}]
+                          [0]
                         </span>
                         <span className="text-[11px] leading-tight font-medium truncate">
-                          {option.shortLabel}
+                          N/A
                         </span>
                       </ToggleGroupItem>
-                    );
-                  })}
-                  {criterion.key === "spacing_band" && (
-                    <ToggleGroupItem
-                      value="not_applicable"
-                      variant="outline"
-                      data-criterion="spacing_band"
-                      data-band="not_applicable"
-                      aria-label="Spacing: Not applicable (single-word sample)"
-                      onKeyDown={(e) =>
-                        handleCriterionKeyDown(
-                          e,
-                          "spacing_band",
-                          idx,
-                          RUBRIC_BANDS.length
-                        )
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                      className={`h-auto col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation ${selectedBand === "not_applicable"
-                          ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
-                          : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
-                        }`}
-                    >
-                      <span className="text-[11px] font-sans tabular-nums font-medium text-muted-foreground shrink-0">
-                        [0]
-                      </span>
-                      <span className="text-[11px] leading-tight font-medium truncate">
-                        N/A
-                      </span>
-                    </ToggleGroupItem>
-                  )}
-                </ToggleGroup>
-              </FieldSet>
-            );
-          })}
-        </div>
-      )}
+                    )}
+                  </ToggleGroup>
+                </FieldSet>
+              );
+            })}
+          </div>
+        )}
 
-      {/* Form Submit Footer */}
-      <div className="flex flex-col @[460px]:flex-row @[460px]:items-center justify-between pt-2 border-t border-border/60 gap-2.5">
-        <div className="text-[11px] text-muted-foreground flex items-center justify-between @[460px]:justify-start gap-3 flex-wrap">
-          {allBandsSelected && compositeRubric ? (
-            <span className="text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1.5 font-sans tabular-nums">
-              <Check className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
-              <span>
-                {compositeRubric.isSpacingNA
-                  ? `4 criteria rated, Spacing N/A (${compositeRubric.totalPoints}/${compositeRubric.maxPoints} pts)`
-                  : `All 5 criteria rated (${compositeRubric.totalPoints}/${compositeRubric.maxPoints} pts)`}
+        <Separator />
+
+        {/* Form Submit Footer */}
+        <div className="flex flex-col @[460px]:flex-row @[460px]:items-center justify-between gap-2.5">
+          <div className="text-[11px] text-muted-foreground flex items-center justify-between @[460px]:justify-start gap-3 flex-wrap">
+            {allBandsSelected && compositeRubric ? (
+              <span className="text-primary font-medium flex items-center gap-1.5 font-sans tabular-nums">
+                <Check className="size-3 text-primary" aria-hidden="true" />
+                <span>
+                  {compositeRubric.isSpacingNA
+                    ? `4 criteria rated, Spacing N/A (${compositeRubric.totalPoints}/${compositeRubric.maxPoints} pts)`
+                    : `All 5 criteria rated (${compositeRubric.totalPoints}/${compositeRubric.maxPoints} pts)`}
+                </span>
               </span>
-            </span>
-          ) : (
-            <span className="flex items-center gap-1">
-              <HelpCircle className="size-3 text-muted-foreground" aria-hidden="true" />
-              <span>Rate all 5 to submit ({selectedCount}/5)</span>
-            </span>
-          )}
+            ) : (
+              <span className="flex items-center gap-1">
+                <HelpCircle className="size-3 text-muted-foreground" aria-hidden="true" />
+                <span>Rate all 5 to submit ({selectedCount}/5)</span>
+              </span>
+            )}
 
-          {canGoNext && (
-            <Label className="inline-flex items-center gap-1.5 text-xs sm:text-[11px] font-normal text-muted-foreground cursor-pointer select-none touch-manipulation px-2 py-1 rounded-md hover:bg-muted/40 transition-colors min-h-11 sm:min-h-0">
-              <Checkbox
-                checked={autoAdvance}
-                onCheckedChange={(checked) => setAutoAdvance(Boolean(checked))}
-              />
-              <span>Next student on save</span>
-            </Label>
-          )}
-        </div>
+            {canGoNext && (
+              <Field
+                orientation="horizontal"
+                className="w-auto gap-1.5 min-h-11 sm:min-h-0 px-2 py-1 rounded-md hover:bg-muted/40 transition-colors"
+              >
+                <Checkbox
+                  id={`rubric-auto-advance-${submissionId}`}
+                  checked={autoAdvance}
+                  onCheckedChange={(checked) => setAutoAdvance(Boolean(checked))}
+                />
+                <FieldLabel
+                  htmlFor={`rubric-auto-advance-${submissionId}`}
+                  className="text-xs sm:text-[11px] font-normal text-muted-foreground cursor-pointer select-none"
+                >
+                  Next student on save
+                </FieldLabel>
+              </Field>
+            )}
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full @[460px]:w-auto">
-          {onCancel && (
+          <div className="flex flex-wrap items-center gap-2 w-full @[460px]:w-auto">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={requestCancel}
+                className="flex-1 @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </Button>
+            )}
+
+            {canRelease && onSaveAndRelease && (
+              <Button
+                type="button"
+                size="sm"
+                disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
+                onClick={() => void handleSaveAndRelease()}
+                className="basis-full @[460px]:basis-auto @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-semibold rounded-lg shadow-xs"
+                title="Save rubric score and immediately release to parent portal"
+              >
+                {isSavingAndReleasing ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    <span>Releasing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send data-icon="inline-start" aria-hidden="true" />
+                    <span>Save &amp; Release</span>
+                  </>
+                )}
+              </Button>
+            )}
+
             <Button
               type="button"
-              variant="outline"
               size="sm"
-              onClick={requestCancel}
-              className="flex-1 @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 text-xs font-medium rounded-lg text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
-            >
-              Cancel
-            </Button>
-          )}
-
-          {canRelease && onSaveAndRelease && (
-            <Button
-              type="button"
-              size="sm"
+              variant={canRelease && onSaveAndRelease ? "outline" : "default"}
               disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
-              onClick={() => void handleSaveAndRelease()}
-              className="basis-full @[460px]:basis-auto @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-3.5 bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold rounded-lg gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation"
-              title="Save rubric score and immediately release to parent portal"
+              onClick={handleSubmitRubric}
+              className="flex-1 @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold rounded-lg shadow-xs"
             >
-              {isSavingAndReleasing ? (
+              {isSubmittingScore ? (
                 <>
-                  <Spinner className="size-3.5" />
-                  <span>Releasing...</span>
+                  <Spinner data-icon="inline-start" />
+                  <span>Saving...</span>
+                </>
+              ) : canGoNext && autoAdvance ? (
+                <>
+                  <CheckCheck data-icon="inline-start" aria-hidden="true" />
+                  <span>Submit &amp; Next</span>
                 </>
               ) : (
                 <>
-                  <Send className="size-3.5" aria-hidden="true" />
-                  <span>Save & Release</span>
+                  <CheckCheck data-icon="inline-start" aria-hidden="true" />
+                  <span>Save Privately</span>
                 </>
               )}
             </Button>
-          )}
-
-          <Button
-            type="button"
-            size="sm"
-            variant={canRelease && onSaveAndRelease ? "outline" : "default"}
-            disabled={!allBandsSelected || isSubmittingScore || isSavingAndReleasing}
-            onClick={handleSubmitRubric}
-            className={`flex-1 @[460px]:flex-initial h-11 sm:h-9 min-h-11 sm:min-h-0 px-4 text-xs font-semibold rounded-lg gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed touch-manipulation ${
-              canRelease && onSaveAndRelease
-                ? "border-border/80 hover:bg-muted/60"
-                : "bg-primary hover:bg-primary-hover text-primary-foreground"
-            }`}
-          >
-            {isSubmittingScore ? (
-              <>
-                <Spinner className="size-3.5" />
-                <span>Saving...</span>
-              </>
-            ) : canGoNext && autoAdvance ? (
-              <>
-                <CheckCheck className="size-3.5" aria-hidden="true" />
-                <span>Submit & Next</span>
-              </>
-            ) : (
-              <>
-                <CheckCheck className="size-3.5" aria-hidden="true" />
-                <span>Save Privately</span>
-              </>
-            )}
-          </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Unsaved Ratings Discard Confirmation */}
-      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard unsaved rubric ratings?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved ratings on this worksheet. Canceling now will revert them.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => setDiscardDialogOpen(false)}
-              className="min-h-11 sm:min-h-9 rounded-lg"
-            >
-              Keep editing
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setDiscardDialogOpen(false);
-                onCancel?.();
-              }}
-              variant="destructive"
-              className="min-h-11 sm:min-h-9 rounded-lg cursor-pointer"
-            >
-              Discard changes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Unsaved Ratings Discard Confirmation */}
+        <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard unsaved rubric ratings?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved ratings on this worksheet. Canceling now will revert them.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => setDiscardDialogOpen(false)}
+                className="min-h-11 sm:min-h-9 rounded-lg"
+              >
+                Keep editing
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setDiscardDialogOpen(false);
+                  onCancel?.();
+                }}
+                variant="destructive"
+                className="min-h-11 sm:min-h-9 rounded-lg"
+              >
+                Discard changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
   );
 }
