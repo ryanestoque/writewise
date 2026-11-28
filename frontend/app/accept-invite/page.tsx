@@ -174,6 +174,9 @@ function AcceptInviteForm() {
       }
 
       toast.add({ type: "success", title: "Account setup complete! Welcome to WriteWise." });
+      if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+      }
       router.push("/progress");
       router.refresh();
     } catch {

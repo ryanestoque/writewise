@@ -608,6 +608,9 @@ function LoginForm() {
         return;
       }
 
+      if (typeof window !== "undefined") {
+        window.scrollTo(0, 0);
+      }
       router.push("/dashboard");
       router.refresh();
     } catch {

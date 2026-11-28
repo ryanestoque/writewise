@@ -7,7 +7,6 @@ import {
   ChevronRight,
   ExternalLink,
   FileX,
-  MoreHorizontal,
   Send,
 } from "lucide-react";
 import type { GradebookCell, SectionGradebook } from "@/lib/hooks/use-gradebook";
@@ -195,31 +194,34 @@ function MobileStudentGradeCard({
 
   return (
     <Card size="sm">
-      <CardHeader className="items-center">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <CardHeader className="gap-1">
+        <div className="flex min-w-0 items-start gap-2.5">
           <Checkbox
             id={checkboxId}
             checked={isSelected}
             onCheckedChange={(checked) => onToggleStudent(row.student_id, Boolean(checked))}
             aria-label={`Select ${row.student_name}`}
+            className="mt-3.5 shrink-0"
           />
-          <CardTitle className="min-w-0 truncate text-sm">
-            <FieldLabel
-              htmlFor={checkboxId}
-              className="flex min-h-11 cursor-pointer items-center truncate text-sm font-medium"
-            >
-              <span className="truncate">{row.student_name}</span>
-            </FieldLabel>
-          </CardTitle>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-sm leading-snug">
+              <FieldLabel
+                htmlFor={checkboxId}
+                className="flex min-h-11 w-full cursor-pointer items-center py-1 text-sm font-medium leading-snug"
+              >
+                {row.student_name}
+              </FieldLabel>
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold tabular-nums text-foreground">
+                {row.totals.earned} / {row.totals.possible}
+              </span>
+              <Badge variant="secondary" className="tabular-nums">
+                {row.totals.percentage === null ? "No grades" : `${row.totals.percentage}%`}
+              </Badge>
+            </div>
+          </div>
         </div>
-        <CardAction className="flex items-center gap-1.5 self-center">
-          <span className="text-xs font-semibold tabular-nums text-foreground">
-            {row.totals.earned} / {row.totals.possible}
-          </span>
-          <Badge variant="secondary" className="tabular-nums">
-            {row.totals.percentage === null ? "No grades" : `${row.totals.percentage}%`}
-          </Badge>
-        </CardAction>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-2">
@@ -372,8 +374,7 @@ export function MobileGradebookList({
                 <Button type="button" variant="outline" size="sm" className="min-h-11 shrink-0" />
               }
             >
-              <span>Activity actions</span>
-              <MoreHorizontal data-icon="inline-end" aria-hidden="true" />
+              Activity actions
             </DrawerTrigger>
             <DrawerContent>
               <DrawerHeader className="text-left">
