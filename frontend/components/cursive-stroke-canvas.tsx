@@ -3,7 +3,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, useSyncExternalStore } from "react";
 import { PlayIcon, PauseIcon, RotateCcwIcon, GaugeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { getLetterStrokes, PAIRED_LETTER_OFFSETS, type StrokeStep } from "./cursive-strokes-data";
@@ -13,6 +12,7 @@ export type AnimationSpeed = 0.5 | 1 | 1.5;
 
 interface CursiveStrokeCanvasProps {
   letterId: string;
+  caseMode?: AnimationCaseMode;
   onActiveStepChange?: (mode: "upper" | "lower", stepIndex: number | null) => void;
   className?: string;
 }
@@ -111,10 +111,10 @@ const RULING_GUIDES = (
 
 export function CursiveStrokeCanvas({
   letterId,
+  caseMode = "lower",
   onActiveStepChange,
   className,
 }: CursiveStrokeCanvasProps) {
-  const [caseMode, setCaseMode] = useState<AnimationCaseMode>("lower");
   const [speed, setSpeed] = useState<AnimationSpeed>(1);
   const prefersReducedMotion = useSyncExternalStore(
     subscribeToReducedMotion,
@@ -182,13 +182,12 @@ export function CursiveStrokeCanvas({
     return progress === 1;
   }, []);
 
-  const resetAnimation = (mode = caseMode) => {
+  const resetAnimation = () => {
     elapsedRef.current = 0;
     paint(0, false);
-    if (mode === caseMode && activeSeqIndex === 0 && activeItem && !showFullLetter) {
+    if (activeSeqIndex === 0 && activeItem && !showFullLetter) {
       onActiveStepChange?.(activeItem.mode, 0);
     }
-    setCaseMode(mode);
     setActiveSeqIndex(0);
     setIsCompleted(false);
     setIsPlaying(true);
@@ -261,31 +260,8 @@ export function CursiveStrokeCanvas({
 
   return (
     <div className={cn("flex w-full flex-col gap-2.5", className)}>
-      {/* Controls & Case Selector Header */}
+      {/* Playback Controls & Speed */}
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        {/* Case Mode Selector */}
-        <ToggleGroup
-          value={[caseMode]}
-          multiple={false}
-          onValueChange={(vals) => {
-            if (vals.length > 0) resetAnimation(vals[0] as AnimationCaseMode);
-          }}
-          aria-label="Cursive letter case mode"
-          variant="outline"
-          size="sm"
-        >
-          <ToggleGroupItem value="lower" className="min-h-10 sm:min-h-8">
-            Lower ({letterId.toLowerCase()})
-          </ToggleGroupItem>
-          <ToggleGroupItem value="upper" className="min-h-10 sm:min-h-8">
-            Upper ({letterId.toUpperCase()})
-          </ToggleGroupItem>
-          <ToggleGroupItem value="both" className="min-h-10 sm:min-h-8">
-            Both ({letterId.toUpperCase()}{letterId.toLowerCase()})
-          </ToggleGroupItem>
-        </ToggleGroup>
-
-        {/* Playback Controls & Speed */}
         <div className="flex items-center gap-1.5">
           <Button
             type="button"
@@ -322,33 +298,31 @@ export function CursiveStrokeCanvas({
           >
             <RotateCcwIcon aria-hidden="true" />
           </Button>
+        </div>
 
-          <Separator orientation="vertical" className="mx-0.5 h-6 self-center" />
-
-          <div className="flex items-center gap-1">
-            <GaugeIcon className="hidden size-3.5 text-muted-foreground sm:block" aria-hidden="true" />
-            <ToggleGroup
-              value={[String(speed)]}
-              multiple={false}
-              onValueChange={(vals) => {
-                if (vals.length > 0) handleSpeedChange(Number(vals[0]) as AnimationSpeed);
-              }}
-              aria-label="Animation playback speed"
-              variant="outline"
-              size="sm"
-            >
-              {SPEEDS.map((sp) => (
-                <ToggleGroupItem
-                  key={sp}
-                  value={String(sp)}
-                  aria-label={`Set animation speed to ${sp}x`}
-                  className="min-h-10 min-w-10 sm:min-h-8 sm:min-w-0"
-                >
-                  {sp}x
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
+        <div className="flex items-center gap-1">
+          <GaugeIcon className="hidden size-3.5 text-muted-foreground sm:block" aria-hidden="true" />
+          <ToggleGroup
+            value={[String(speed)]}
+            multiple={false}
+            onValueChange={(vals) => {
+              if (vals.length > 0) handleSpeedChange(Number(vals[0]) as AnimationSpeed);
+            }}
+            aria-label="Animation playback speed"
+            variant="outline"
+            size="sm"
+          >
+            {SPEEDS.map((sp) => (
+              <ToggleGroupItem
+                key={sp}
+                value={String(sp)}
+                aria-label={`Set animation speed to ${sp}x`}
+                className="min-h-10 min-w-10 sm:min-h-8 sm:min-w-0"
+              >
+                {sp}x
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       </div>
 

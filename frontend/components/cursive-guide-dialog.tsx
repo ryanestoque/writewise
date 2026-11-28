@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,9 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { SearchInput } from "@/components/shared/search-input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
-  AlertTriangleIcon,
   ArrowLeftIcon,
-  CheckCircle2Icon,
   ChevronLeftIcon,
   ChevronRightIcon,
   RotateCcwIcon,
@@ -43,7 +40,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursiveStrokeCanvas } from "@/components/cursive-stroke-canvas";
-import { getLetterStrokes, PAIRED_LETTER_OFFSETS } from "@/components/cursive-strokes-data";
+import { getLetterStrokes } from "@/components/cursive-strokes-data";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   CURSIVE_ALPHABET,
@@ -108,17 +105,13 @@ export function CursiveGuideDialog({
       ? "detail"
       : "grid";
   });
-  const [activeStepTab, setActiveStepTab] = useState<"lower" | "upper">("lower");
   const [activeDemoStep, setActiveDemoStep] = useState<{
     mode: "lower" | "upper";
     index: number;
   } | null>(null);
-  const demoCaseRef = useRef<"lower" | "upper" | null>(null);
   const isMobile = useIsMobile();
 
   const handleActiveDemoStep = useCallback((mode: "lower" | "upper", index: number | null) => {
-    if (index === 0 || demoCaseRef.current !== mode) setActiveStepTab(mode);
-    demoCaseRef.current = mode;
     setActiveDemoStep(index === null ? null : { mode, index });
   }, []);
 
@@ -323,6 +316,10 @@ export function CursiveGuideDialog({
 
   const renderSpotlightContent = (isMobileDetail = false) => {
     if (!activeLetter) return null;
+    const canvasCaseMode = caseFilter === "pairs" ? "both" : caseFilter;
+    const stepModes: ("upper" | "lower")[] =
+      caseFilter === "pairs" ? ["upper", "lower"] : [caseFilter];
+
     return (
       <section
         aria-label={`Detailed formation guide for Letter ${activeLetter.id}`}
@@ -345,79 +342,54 @@ export function CursiveGuideDialog({
 
         {/* Realistic Animated Penmanship Stroke Display */}
         <CursiveStrokeCanvas
-          key={activeLetter.id}
+          key={`${activeLetter.id}-${canvasCaseMode}`}
           letterId={activeLetter.id}
+          caseMode={canvasCaseMode}
           onActiveStepChange={handleActiveDemoStep}
         />
 
         {/* Step-by-Step Formation Cues */}
-        <div className="flex flex-col gap-2.5 rounded-xl border border-border/80 bg-muted/20 p-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-foreground">
-              Step-by-Step Formation
-            </span>
-            <ToggleGroup
-              value={[activeStepTab]}
-              multiple={false}
-              variant="outline"
-              size="sm"
-              onValueChange={(vals) => {
-                if (vals.length > 0) {
-                  setActiveStepTab(vals[0] as "lower" | "upper");
-                }
-              }}
-              aria-label="Formation step case"
-            >
-              <ToggleGroupItem value="lower" className="min-h-10 sm:min-h-8">
-                Lower ({activeLetter.lower})
-              </ToggleGroupItem>
-              <ToggleGroupItem value="upper" className="min-h-10 sm:min-h-8">
-                Upper ({activeLetter.upper})
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
+        <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-muted/20 p-3.5">
+          <span className="text-xs font-semibold text-foreground">
+            Step-by-Step Formation
+          </span>
 
-          <ol className="flex list-none flex-col gap-1.5 pl-0 text-xs text-muted-foreground">
-            {getLetterStrokes(activeLetter.id)[activeStepTab].map((step, index) => {
-              const isActive = activeDemoStep?.mode === activeStepTab && activeDemoStep.index === index;
-              return (
-                <li
-                  key={step.d}
-                  aria-current={isActive ? "step" : undefined}
-                  className="flex items-start gap-2"
-                >
-                  <span
-                    className={cn(
-                      "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                      isActive ? "bg-primary text-primary-foreground" : "bg-primary/15 text-primary",
-                    )}
-                  >
-                    {index + 1}
-                  </span>
-                  <span className="leading-relaxed text-foreground/90">{step.instruction}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-
-        {/* Coaching Tip & Common Pitfall */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Alert className="border-primary/25 bg-primary/5 text-primary">
-            <CheckCircle2Icon aria-hidden="true" />
-            <AlertTitle className="text-xs font-semibold">Coaching Tip</AlertTitle>
-            <AlertDescription className="text-xs leading-relaxed">
-              {activeLetter.coachingTip}
-            </AlertDescription>
-          </Alert>
-
-          <Alert className="border-warning/35 bg-warning/10 text-warning-foreground">
-            <AlertTriangleIcon aria-hidden="true" />
-            <AlertTitle className="text-xs font-semibold">Watch Out</AlertTitle>
-            <AlertDescription className="text-xs leading-relaxed">
-              {activeLetter.commonPitfall}
-            </AlertDescription>
-          </Alert>
+          {stepModes.map((mode) => (
+            <div key={mode} className="flex flex-col gap-1.5">
+              {stepModes.length > 1 && (
+                <span className="text-xs font-medium text-muted-foreground">
+                  {mode === "upper"
+                    ? `Uppercase (${activeLetter.upper})`
+                    : `Lowercase (${activeLetter.lower})`}
+                </span>
+              )}
+              <ol className="flex list-none flex-col gap-1.5 pl-0 text-xs text-muted-foreground">
+                {getLetterStrokes(activeLetter.id)[mode].map((step, index) => {
+                  const isActive =
+                    activeDemoStep?.mode === mode && activeDemoStep.index === index;
+                  return (
+                    <li
+                      key={step.d}
+                      aria-current={isActive ? "step" : undefined}
+                      className="flex items-start gap-2"
+                    >
+                      <span
+                        className={cn(
+                          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-primary/15 text-primary",
+                        )}
+                      >
+                        {index + 1}
+                      </span>
+                      <span className="leading-relaxed text-foreground/90">{step.instruction}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ))}
         </div>
 
         {/* Practice Vocabulary Words */}
@@ -809,10 +781,12 @@ export function CursiveGuideDialog({
                 >
                   {filteredLetters.map((item) => {
                     const isSelected = activeLetter.id === item.id;
-                    const strokes = getLetterStrokes(item.id);
-                    const previewCases = caseFilter === "pairs"
-                      ? (["upper", "lower"] as const)
-                      : [caseFilter];
+                    const letterDisplayText =
+                      caseFilter === "pairs"
+                        ? `${item.upper}${item.lower}`
+                        : caseFilter === "upper"
+                          ? item.upper
+                          : item.lower;
 
                     return (
                       <div key={item.id} className="min-w-0 print:break-inside-avoid">
@@ -833,29 +807,15 @@ export function CursiveGuideDialog({
                             </span>
                           </div>
                           <div className="relative flex-1 w-full min-h-0 overflow-hidden flex items-center justify-center">
-                            <svg
-                              aria-hidden="true"
-                              viewBox={caseFilter === "pairs" ? "105 18 180 87" : "150 18 94 87"}
-                              className="size-full text-foreground print:text-black"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                            <span
+                              className="font-cursive text-foreground print:text-black leading-none"
+                              style={{
+                                fontSize: caseFilter === "pairs" ? "36px" : "42px",
+                                fontWeight: 500,
+                              }}
                             >
-                              {previewCases.map((mode) => (
-                                <g
-                                  key={mode}
-                                  transform={caseFilter === "pairs"
-                                    ? `translate(${PAIRED_LETTER_OFFSETS[mode]}, 0)`
-                                    : undefined}
-                                >
-                                  {strokes[mode].map((step) => (
-                                    <path key={step.d} d={step.d} />
-                                  ))}
-                                </g>
-                              ))}
-                            </svg>
+                              {letterDisplayText}
+                            </span>
                           </div>
                         </ToggleGroupItem>
                       </div>
