@@ -18,6 +18,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
@@ -242,16 +243,16 @@ export function GradebookBulkDialog({
         {operation === "release" && (
           <div className="flex flex-col gap-3.5">
             {/* Section Publication Overview */}
-            <div className="rounded-lg border border-border/80 bg-card overflow-hidden text-xs">
-              <div className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex items-center justify-between">
+            <Card size="sm" className="rounded-lg border-border/80 py-0 overflow-hidden text-xs">
+              <CardHeader className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex flex-row items-center justify-between space-y-0">
                 <span className="font-medium text-foreground">Assigned Sections</span>
                 <span className="font-semibold tabular-nums text-foreground">
                   {totalReadyAcrossSections}{" "}
                   {totalReadyAcrossSections === 1 ? "grade ready" : "grades ready"}
                 </span>
-              </div>
+              </CardHeader>
 
-              <div className="divide-y divide-border/40">
+              <CardContent className="p-0 divide-y divide-border/40">
                 {assignedSections.map((sec) => (
                   <div
                     key={sec.id}
@@ -291,8 +292,8 @@ export function GradebookBulkDialog({
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Zero Ready Alert (Actionable Recovery & Accessibility) */}
             {isZeroReadyTotal ? (

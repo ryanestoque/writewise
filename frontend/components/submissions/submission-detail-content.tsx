@@ -1327,31 +1327,31 @@ export function SubmissionDetailContent({
                     </TabsList>
 
                     {/* COMMENTS TAB PANEL (Worksheet remains pinned on left!) */}
-                    <TabsContent
-                      value="comments"
-                      id="submission-tabpanel-comments"
-                      className="rounded-xl border border-border/80 bg-card shadow-xs overflow-hidden flex flex-col min-h-80"
-                    >
-                      {open && (commentUserId ? (
-                        <SubmissionCommentThread
-                          key={`${commentUserId}:${submission.id}`}
-                          userId={commentUserId}
-                          target={{ submissionId: submission.id }}
-                          location={{
-                            submissionId: submission.id,
-                            activityId: submission.activity_id,
-                            studentId: submission.student_id,
-                          }}
-                          studentName={submission.student?.full_name}
-                          compactHeader
-                          open
-                        />
-                      ) : (
-                        <div className="p-4 flex flex-col gap-3" role="status" aria-label="Loading conversation">
-                          <Skeleton className="h-6 w-48 rounded-md" />
-                          <Skeleton className="h-16 w-full rounded-xl" />
-                        </div>
-                      ))}
+                    <TabsContent value="comments" id="submission-tabpanel-comments">
+                      <Card className="py-0 overflow-hidden flex flex-col min-h-80 shadow-xs">
+                        <CardContent className="p-0 flex flex-col flex-1 min-h-0">
+                          {open && (commentUserId ? (
+                            <SubmissionCommentThread
+                              key={`${commentUserId}:${submission.id}`}
+                              userId={commentUserId}
+                              target={{ submissionId: submission.id }}
+                              location={{
+                                submissionId: submission.id,
+                                activityId: submission.activity_id,
+                                studentId: submission.student_id,
+                              }}
+                              studentName={submission.student?.full_name}
+                              compactHeader
+                              open
+                            />
+                          ) : (
+                            <div className="p-4 flex flex-col gap-3" role="status" aria-label="Loading conversation">
+                              <Skeleton className="h-6 w-48 rounded-md" />
+                              <Skeleton className="h-16 w-full rounded-xl" />
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
                     </TabsContent>
 
                     {/* ASSESSMENT / RUBRIC PANEL */}

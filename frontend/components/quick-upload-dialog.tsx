@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
@@ -1461,8 +1462,9 @@ function UploadFlow({
                   </Alert>
                 )}
 
-                <div className="rounded-2xl border border-border bg-card p-4 flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
+                <Card size="sm" className="rounded-2xl py-4">
+                  <CardContent className="px-4 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <FileImageIcon className="size-5 text-primary shrink-0" />
                       <div className="truncate">
@@ -1540,7 +1542,8 @@ function UploadFlow({
                       />
                     </div>
                   )}
-                </div>
+                  </CardContent>
+                </Card>
               </>
             )}
 

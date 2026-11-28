@@ -411,29 +411,31 @@ export default function RosterPage() {
       <div className="flex flex-col gap-4">
         {/* Search and Section Filters Bar */}
         {students && students.length > 0 && (
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-card p-3 rounded-xl sm:rounded-2xl border border-border shadow-warm">
-            {/* Search Input */}
-            <SearchInput
-              ref={searchInputRef}
-              placeholder="Search student or section..."
-              aria-label="Search students by name, section, or parent email"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClear={() => setSearchQuery("")}
-              containerClassName="w-full lg:w-72 shrink-0"
-            />
+          <Card size="sm" className="py-3 shadow-warm">
+            <CardContent className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-3">
+              {/* Search Input */}
+              <SearchInput
+                ref={searchInputRef}
+                placeholder="Search student or section..."
+                aria-label="Search students by name, section, or parent email"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery("")}
+                containerClassName="w-full lg:w-72 shrink-0"
+              />
 
-            {/* Section Filter Pills */}
-            <FilterPills
-              items={sectionFilterItems}
-              value={selectedSection}
-              onChange={setSelectedSection}
-              label="Section:"
-              ariaLabel="Filter by class section"
-              className="lg:w-auto lg:max-w-full"
-              containerClassName="min-w-0 flex-1 lg:justify-end"
-            />
-          </div>
+              {/* Section Filter Pills */}
+              <FilterPills
+                items={sectionFilterItems}
+                value={selectedSection}
+                onChange={setSelectedSection}
+                label="Section:"
+                ariaLabel="Filter by class section"
+                className="lg:w-auto lg:max-w-full"
+                containerClassName="min-w-0 flex-1 lg:justify-end"
+              />
+            </CardContent>
+          </Card>
         )}
 
         {/* Filter results status indicator if active */}
@@ -458,69 +460,76 @@ export default function RosterPage() {
 
         {/* Loading state */}
         {isLoading ? (
-          <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-            <Spinner className="size-6 text-primary" />
-            <span className="text-sm font-medium">Loading class roster...</span>
-          </div>
+          <Card className="py-0">
+            <CardContent className="p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+              <Spinner className="size-6 text-primary" />
+              <span className="text-sm font-medium">Loading class roster...</span>
+            </CardContent>
+          </Card>
         ) : students?.length === 0 ? (
           /* Empty Roster State */
-          <div className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
-            <Empty className="py-14 border-0">
-              <EmptyMedia variant="icon" className="bg-secondary text-secondary-foreground">
-                <Users aria-hidden="true" />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-lg sm:text-xl">No students yet</EmptyTitle>
-                <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
-                  Add your first student or bulk-paste an entire class list to start creating handwriting activities.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 w-full sm:w-auto px-4 sm:px-0">
-                <Button
-                  onClick={handleOpenBulk}
-                  variant="outline"
-                  className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
-                >
-                  <UserPlus data-icon="inline-start" aria-hidden="true" />
-                  Bulk Add
-                </Button>
-                <Button
-                  onClick={handleOpenNew}
-                  className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
-                >
-                  <Plus data-icon="inline-start" aria-hidden="true" />
-                  Add Student
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </div>
+          <Card className="py-0 overflow-hidden">
+            <CardContent className="px-0">
+              <Empty className="py-14 border-0">
+                <EmptyMedia variant="icon" className="bg-secondary text-secondary-foreground">
+                  <Users aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg sm:text-xl">No students yet</EmptyTitle>
+                  <EmptyDescription className="text-xs sm:text-sm max-w-sm mx-auto">
+                    Add your first student or bulk-paste an entire class list to start creating handwriting activities.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 w-full sm:w-auto px-4 sm:px-0">
+                  <Button
+                    onClick={handleOpenBulk}
+                    variant="outline"
+                    className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
+                  >
+                    <UserPlus data-icon="inline-start" aria-hidden="true" />
+                    Bulk Add
+                  </Button>
+                  <Button
+                    onClick={handleOpenNew}
+                    className="h-10 sm:h-9 w-full sm:w-auto font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl"
+                  >
+                    <Plus data-icon="inline-start" aria-hidden="true" />
+                    Add Student
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            </CardContent>
+          </Card>
         ) : filteredStudents.length === 0 ? (
           /* Filter Empty State */
-          <div className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
-            <Empty className="py-12 border-0">
-              <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
-                <SearchX aria-hidden="true" />
-              </EmptyMedia>
-              <EmptyHeader>
-                <EmptyTitle className="text-lg sm:text-xl">No matching students</EmptyTitle>
-                <EmptyDescription className="text-xs sm:text-sm">
-                  We couldn&apos;t find any students matching &ldquo;{searchQuery}&rdquo;
-                  {selectedSection !== "all" ? ` in ${selectedSection}` : ""}.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button onClick={handleResetFilters} variant="outline" size="sm" className="min-h-10 sm:min-h-9 rounded-lg sm:rounded-xl">
-                  Clear filters
-                </Button>
-              </EmptyContent>
-            </Empty>
-          </div>
+          <Card className="py-0 overflow-hidden">
+            <CardContent className="px-0">
+              <Empty className="py-12 border-0">
+                <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
+                  <SearchX aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-lg sm:text-xl">No matching students</EmptyTitle>
+                  <EmptyDescription className="text-xs sm:text-sm">
+                    We couldn&apos;t find any students matching &ldquo;{searchQuery}&rdquo;
+                    {selectedSection !== "all" ? ` in ${selectedSection}` : ""}.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button onClick={handleResetFilters} variant="outline" size="sm" className="min-h-10 sm:min-h-9 rounded-lg sm:rounded-xl">
+                    Clear filters
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            </CardContent>
+          </Card>
         ) : (
           <>
             {/* Desktop & Tablet Table View (md and up) */}
-            <div className="hidden md:block bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
-              <div role="region" aria-label="Class roster table" className="overflow-x-auto">
-                <Table>
+            <Card className="hidden md:block py-0 overflow-hidden">
+              <CardContent className="p-0">
+                <div role="region" aria-label="Class roster table" className="overflow-x-auto">
+                  <Table>
                   <TableHeader className="bg-muted/40">
                     <TableRow className="border-b border-border hover:bg-transparent">
                       {/* Select All Checkbox Column */}
@@ -705,68 +714,71 @@ export default function RosterPage() {
                   </TableBody>
                 </Table>
               </div>
-            </div>
+              </CardContent>
+            </Card>
 
             {/* Mobile Card List View (< md) */}
             <div className="flex flex-col gap-2.5 md:hidden">
               {/* Mobile Select All & Sort Bar */}
-              <div className="flex items-center justify-between gap-2 px-3 py-2 bg-card border border-border rounded-xl text-xs">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={allFilteredSelected}
-                    indeterminate={someFilteredSelected}
-                    onCheckedChange={toggleSelectAll}
-                    aria-label="Select all students"
-                  />
-                  <span className="font-medium text-foreground">
-                    {selectedStudentIds.size > 0
-                      ? `${selectedStudentIds.size} of ${filteredStudents.length} Selected`
-                      : "Select All"}
-                  </span>
-                </div>
+              <Card size="sm" className="py-2 rounded-xl">
+                <CardContent className="flex items-center justify-between gap-2 px-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={allFilteredSelected}
+                      indeterminate={someFilteredSelected}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Select all students"
+                    />
+                    <span className="font-medium text-foreground">
+                      {selectedStudentIds.size > 0
+                        ? `${selectedStudentIds.size} of ${filteredStudents.length} Selected`
+                        : "Select All"}
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <ToggleGroup
-                    multiple={false}
-                    value={[sortField]}
-                    onValueChange={(vals) => {
-                      if (vals.length > 0) handleSort(vals[0] as SortField);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    spacing={0}
-                    aria-label="Sort students by"
-                  >
-                    <ToggleGroupItem
-                      value="full_name"
-                      className="min-h-11 px-3 text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <ToggleGroup
+                      multiple={false}
+                      value={[sortField]}
+                      onValueChange={(vals) => {
+                        if (vals.length > 0) handleSort(vals[0] as SortField);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      spacing={0}
+                      aria-label="Sort students by"
                     >
-                      Name
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                      value="section"
-                      className="min-h-11 px-3 text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                      <ToggleGroupItem
+                        value="full_name"
+                        className="min-h-11 px-3 text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                      >
+                        Name
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="section"
+                        className="min-h-11 px-3 text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                      >
+                        Section
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="size-11"
+                      onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+                      aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                      title={sortDirection === "asc" ? "Ascending" : "Descending"}
                     >
-                      Section
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="size-11"
-                    onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
-                    aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}`}
-                    title={sortDirection === "asc" ? "Ascending" : "Descending"}
-                  >
-                    {sortDirection === "asc" ? (
-                      <ArrowUp aria-hidden="true" />
-                    ) : (
-                      <ArrowDown aria-hidden="true" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+                      {sortDirection === "asc" ? (
+                        <ArrowUp aria-hidden="true" />
+                      ) : (
+                        <ArrowDown aria-hidden="true" />
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Mobile Student Cards */}
               <div className="flex flex-col gap-2">
