@@ -34,7 +34,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
 import { Loader2, LogOut, Settings, Users, BookOpen, PenTool, ChevronDown, Check } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import {
   Drawer,
@@ -97,7 +97,7 @@ export function ParentNav({
       console.error("Sign out error:", err);
       const message =
         "We couldn't sign you out. Please check your connection and try again.";
-      toast.error(message);
+      toast.add({ type: "error", title: message });
       setIsSigningOut(false);
     }
   }

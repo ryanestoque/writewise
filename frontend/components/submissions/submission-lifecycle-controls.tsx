@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table2, Send, RotateCcw, ExternalLink, CheckCircle2, ArrowRight } from "lucide-react";
@@ -104,7 +104,7 @@ function ReturnForm({ submission, onDone }: { submission: Submission; onDone: ()
           ...(due ? { resubmit_due_at: toActivityDueAt(due) } : {}),
         },
       });
-      toast.success("Worksheet returned. The previous attempt stays in history.");
+      toast.add({ type: "success", title: "Worksheet returned. The previous attempt stays in history." });
       onDone();
     } catch (error) {
       setError(workActionError(error));
@@ -219,9 +219,11 @@ export function SubmissionLifecycleControls({
           body: { pinned_submission_id: action === "pin" ? submission.id : null },
         });
       }
-      toast.success(
-        action === "release" ? "Result released to the parent." : "Counted attempt updated."
-      );
+      toast.add({
+        type: "success",
+        title:
+          action === "release" ? "Result released to the parent." : "Counted attempt updated.",
+      });
     } catch (error) {
       setError(workActionError(error));
     }
@@ -703,7 +705,7 @@ function WorkSettingsForm({
           ...(pinEdited ? { pinned_submission_id: pin || null } : {}),
         },
       });
-      toast.success("Student work updated.");
+      toast.add({ type: "success", title: "Student work updated." });
       onDone();
     } catch (error) {
       setError(workActionError(error));
@@ -1062,9 +1064,10 @@ export function ReleaseActivityButton({
     setError(null);
     try {
       const result = await mutation.mutateAsync(activityId);
-      toast.success(
-        `Released ${result.released_count} worksheet ${result.released_count === 1 ? "result" : "results"} and ${result.released_grade_count} point ${result.released_grade_count === 1 ? "grade" : "grades"}.`
-      );
+      toast.add({
+        type: "success",
+        title: `Released ${result.released_count} worksheet ${result.released_count === 1 ? "result" : "results"} and ${result.released_grade_count} point ${result.released_grade_count === 1 ? "grade" : "grades"}.`,
+      });
       setReceipt(
         `Shared ${result.released_count} worksheet results and ${result.released_grade_count} point grades with parents.`
       );

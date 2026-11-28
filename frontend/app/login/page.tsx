@@ -6,7 +6,7 @@ import type { TurnstileInstance } from "@marsidev/react-turnstile";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { AuthShell, AuthCardSkeleton } from "@/components/auth/auth-shell";
 import {
@@ -369,7 +369,7 @@ function LoginForm() {
   // Handle ?confirmed=true toast
   useEffect(() => {
     if (searchParams.get("confirmed") === "true") {
-      toast.success("Email confirmed — sign in to continue.");
+      toast.add({ type: "success", title: "Email confirmed — sign in to continue." });
       router.replace("/login");
     }
   }, [searchParams, router]);

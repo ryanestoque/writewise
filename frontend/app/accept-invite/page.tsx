@@ -31,7 +31,7 @@ import {
   CopyIcon,
   CheckIcon,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 import { HandwritingGuidelineBackground } from "@/components/auth/handwriting-guideline-background";
 
@@ -70,12 +70,14 @@ function AcceptInviteForm() {
         document.body.removeChild(textArea);
       }
       setCopiedTeacherNote(true);
-      toast.success("Request message copied to clipboard!", {
+      toast.add({
+        type: "success",
+        title: "Request message copied to clipboard!",
         description: "Paste it in an email or message to your child's teacher.",
       });
       setTimeout(() => setCopiedTeacherNote(false), 3000);
     } catch {
-      toast.error("Failed to copy. Please manually message your teacher.");
+      toast.add({ type: "error", title: "Failed to copy. Please manually message your teacher." });
     }
   };
 
@@ -171,7 +173,7 @@ function AcceptInviteForm() {
         return;
       }
 
-      toast.success("Account setup complete! Welcome to WriteWise.");
+      toast.add({ type: "success", title: "Account setup complete! Welcome to WriteWise." });
       router.push("/progress");
       router.refresh();
     } catch {

@@ -23,7 +23,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   NativeSelect,
   NativeSelectOption } from "@/components/ui/native-select";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import {
   Field,
   FieldContent,
@@ -401,12 +401,12 @@ function UploadFlow({
     setLastRetakeTip(null);
 
     if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
-      toast.error("Please select a JPEG or PNG image.");
+      toast.add({ type: "error", title: "Please select a JPEG or PNG image." });
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("Image file size must be less than 15MB.");
+      toast.add({ type: "error", title: "Image file size must be less than 15MB." });
       return;
     }
 
@@ -456,7 +456,7 @@ function UploadFlow({
           const file = items[i].getAsFile();
           if (file) {
             e.preventDefault();
-            toast.info("Image pasted from clipboard.");
+            toast.add({ type: "info", title: "Image pasted from clipboard." });
             handleFileChangeRef.current(file);
             break;
           }
@@ -471,7 +471,7 @@ function UploadFlow({
   // Start live webcam / document camera stream on desktop
   const handleStartDesktopCamera = async (deviceId?: string) => {
     if (!navigator?.mediaDevices?.getUserMedia) {
-      toast.error("Camera access is not supported by your browser.");
+      toast.add({ type: "error", title: "Camera access is not supported by your browser." });
       return;
     }
 
@@ -505,7 +505,7 @@ function UploadFlow({
         setSelectedDeviceId(videoDevs[0].deviceId);
       }
     } catch {
-      toast.error("Camera access denied or unavailable. Please check browser permissions.");
+      toast.add({ type: "error", title: "Camera access denied or unavailable. Please check browser permissions." });
       handleStopDesktopCamera();
     }
   };
@@ -525,14 +525,14 @@ function UploadFlow({
       canvas.height = video.videoHeight || 1080;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        toast.error("Could not capture frame from camera.");
+        toast.add({ type: "error", title: "Could not capture frame from camera." });
         return;
       }
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            toast.error("Failed to generate photo from camera frame.");
+            toast.add({ type: "error", title: "Failed to generate photo from camera frame." });
             return;
           }
           const file = new File(
@@ -547,7 +547,7 @@ function UploadFlow({
         0.92
       );
     } catch {
-      toast.error("Failed to capture image. Please try again.");
+      toast.add({ type: "error", title: "Failed to capture image. Please try again." });
     }
   };
 
@@ -570,7 +570,7 @@ function UploadFlow({
       setIsPortrait((prev) => !prev);
     } catch (err) {
       console.error("Failed to rotate photo:", err);
-      toast.error("Failed to rotate photo. Please try again.");
+      toast.add({ type: "error", title: "Failed to rotate photo. Please try again." });
     } finally {
       setIsRotating(false);
     }
@@ -604,7 +604,7 @@ function UploadFlow({
           );
           setLastSubmittedStudent(selectedStudent?.full_name ?? "Student");
           setLastSubmittedActivity(selectedActivity?.target_text ?? "Activity");
-          toast.success("Submission uploaded successfully.");
+          toast.add({ type: "success", title: "Submission uploaded successfully." });
           setStep(5);
         },
         onError: (err) => {

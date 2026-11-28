@@ -51,7 +51,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type SortField = "full_name" | "section" | "created_at";
 type SortDirection = "asc" | "desc";
@@ -89,7 +89,7 @@ export default function RosterPage() {
     setResendingStudentId(student.id);
     resendInvite(student.id, {
       onSuccess: () => {
-        toast.success(`Invitation resent to ${student.parent_email}.`);
+        toast.add({ type: "success", title: `Invitation resent to ${student.parent_email}.` });
         setResendingStudentId(null);
       },
       onError: (err: unknown) => {
@@ -97,7 +97,7 @@ export default function RosterPage() {
         if (message.toLowerCase().includes("rate limit")) {
           message = "Email rate limit reached. Please wait a few minutes before resending.";
         }
-        toast.error(message);
+        toast.add({ type: "error", title: message });
         setResendingStudentId(null);
       } });
   };
@@ -265,21 +265,27 @@ export default function RosterPage() {
   // CSV Export Handlers
   const handleExportRoster = () => {
     if (!students || students.length === 0) {
-      toast.error("No students to export.");
+      toast.add({ type: "error", title: "No students to export." });
       return;
     }
     const targetList = hasActiveFilters ? filteredStudents : students;
     const sectionTag = selectedSection !== "all" ? `-${selectedSection.replace(/[^a-zA-Z0-9_-]/g, "_")}` : "";
     const filename = `writewise-roster${sectionTag}-${new Date().toISOString().split("T")[0]}`;
     exportStudentsToCSV(targetList, filename);
-    toast.success(`Exported ${targetList.length} ${targetList.length === 1 ? "student" : "students"} to CSV.`);
+    toast.add({
+      type: "success",
+      title: `Exported ${targetList.length} ${targetList.length === 1 ? "student" : "students"} to CSV.`,
+    });
   };
 
   const handleExportSelected = () => {
     if (selectedStudentsList.length === 0) return;
     const filename = `writewise-selected-students-${new Date().toISOString().split("T")[0]}`;
     exportStudentsToCSV(selectedStudentsList, filename);
-    toast.success(`Exported ${selectedStudentsList.length} selected ${selectedStudentsList.length === 1 ? "student" : "students"} to CSV.`);
+    toast.add({
+      type: "success",
+      title: `Exported ${selectedStudentsList.length} selected ${selectedStudentsList.length === 1 ? "student" : "students"} to CSV.`,
+    });
   };
 
   const handleBatchRemoveConfirm = async () => {
@@ -291,7 +297,7 @@ export default function RosterPage() {
     const token = sessionData.session?.access_token;
 
     if (!token) {
-      toast.error("Authentication session expired. Please log in again.");
+      toast.add({ type: "error", title: "Authentication session expired. Please log in again." });
       setIsBatchRemoving(false);
       return;
     }
@@ -313,9 +319,15 @@ export default function RosterPage() {
     clearSelection();
 
     if (failedItems.length === 0) {
-      toast.success(`Removed ${successCount} ${successCount === 1 ? "student" : "students"} from roster.`);
+      toast.add({
+        type: "success",
+        title: `Removed ${successCount} ${successCount === 1 ? "student" : "students"} from roster.`,
+      });
     } else {
-      toast.warning(`Removed ${successCount} students. ${failedItems.length} could not be removed.`);
+      toast.add({
+        type: "warning",
+        title: `Removed ${successCount} students. ${failedItems.length} could not be removed.`,
+      });
     }
   };
 
@@ -955,11 +967,11 @@ function RowActions({ student, onEdit }: { student: Student; onEdit: () => void 
   const handleRemove = () => {
     removeStudent(student.id, {
       onSuccess: () => {
-        toast.success(`Removed ${student.full_name} from roster.`);
+        toast.add({ type: "success", title: `Removed ${student.full_name} from roster.` });
         setIsAlertOpen(false);
       },
       onError: (err: Error) => {
-        toast.error(err.message || "Failed to remove student");
+        toast.add({ type: "error", title: err.message || "Failed to remove student" });
       }
     });
   };

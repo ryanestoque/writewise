@@ -37,7 +37,7 @@ import {
   Section,
 } from "@/lib/hooks/use-sections";
 import { Plus, Trash2, Edit2, Check, X, AlertCircle, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface ManageSectionsDialogProps {
   open: boolean;
@@ -75,7 +75,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
       { name: trimmed },
       {
         onSuccess: () => {
-          toast.success(`Section "${trimmed}" created.`);
+          toast.add({ type: "success", title: `Section "${trimmed}" created.` });
           setNewSectionName("");
         },
         onError: (err: unknown) => {
@@ -85,7 +85,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
             setCreateError("A section with this name already exists.");
           } else {
             const msg = errObj?.error?.message || errObj?.message || "Failed to create section.";
-            toast.error(msg);
+            toast.add({ type: "error", title: msg });
           }
         },
       }
@@ -121,18 +121,18 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
       { id: sec.id, data: { name: trimmed } },
       {
         onSuccess: () => {
-          toast.success(`Section renamed to "${trimmed}".`);
+          toast.add({ type: "success", title: `Section renamed to "${trimmed}".` });
           cancelEdit();
         },
         onError: (err: unknown) => {
           const errObj = err as { code?: string; message?: string; error?: { code?: string; message?: string } };
           const code = errObj?.error?.code || errObj?.code;
           if (code === "SECTION_NAME_EXISTS") {
-            toast.error("Another section with this name already exists.");
+            toast.add({ type: "error", title: "Another section with this name already exists." });
             setEditError("A section with this name already exists.");
           } else {
             const msg = errObj?.error?.message || errObj?.message || "Failed to rename section.";
-            toast.error(msg);
+            toast.add({ type: "error", title: msg });
           }
         },
       }
@@ -144,17 +144,17 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
 
     deleteSection(sectionToDelete.id, {
       onSuccess: () => {
-        toast.success(`Section "${sectionToDelete.name}" deleted.`);
+        toast.add({ type: "success", title: `Section "${sectionToDelete.name}" deleted.` });
         setSectionToDelete(null);
       },
       onError: (err: unknown) => {
         const errObj = err as { code?: string; message?: string; error?: { code?: string; message?: string } };
         const code = errObj?.error?.code || errObj?.code;
         if (code === "SECTION_NOT_EMPTY") {
-          toast.error("Cannot delete section with assigned students. Please move students first.");
+          toast.add({ type: "error", title: "Cannot delete section with assigned students. Please move students first." });
         } else {
           const msg = errObj?.error?.message || errObj?.message || "Failed to delete section.";
-          toast.error(msg);
+          toast.add({ type: "error", title: msg });
         }
         setSectionToDelete(null);
       },

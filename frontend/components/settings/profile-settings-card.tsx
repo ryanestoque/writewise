@@ -20,7 +20,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Lock, Check } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface ProfileSettingsCardProps {
   initialFullName: string;
@@ -94,12 +94,12 @@ export function ProfileSettingsCard({
 
       if (dbUpdateError) throw dbUpdateError;
 
-      toast.success("Profile updated successfully.");
+      toast.add({ type: "success", title: "Profile updated successfully." });
       router.refresh();
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to update profile.";
-      toast.error(message);
+      toast.add({ type: "error", title: message });
     } finally {
       setIsSaving(false);
     }

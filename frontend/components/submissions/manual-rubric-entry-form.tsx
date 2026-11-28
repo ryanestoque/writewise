@@ -43,7 +43,7 @@ import {
   HelpCircle,
   CheckCheck,
   Send } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { ApiError } from "@/lib/utils/api-error";
 import { CV_BENCHMARK_RANGES, getBandFromScore } from "@/lib/utils/scoring";
 import { workActionError } from "./submission-lifecycle-controls";
@@ -586,18 +586,19 @@ export function ManualRubricEntryForm({
         onSuccess: () => {
           onSuccess?.();
           if (autoAdvance && canGoNext && onAdvanceNext) {
-            toast.success("Rubric recorded — advancing to next student", {
-              action: onNavigateBack
+            toast.add({
+              type: "success",
+              title: "Rubric recorded — advancing to next student",
+              actionProps: onNavigateBack
                 ? {
-                  label: "Undo",
-                  onClick: () => {
-                    onNavigateBack();
-                  } }
+                    children: "Undo",
+                    onClick: onNavigateBack,
+                  }
                 : undefined,
-              duration: 6000 });
+            });
             onAdvanceNext();
           } else {
-            toast.success("Rubric assessment recorded");
+            toast.add({ type: "success", title: "Rubric assessment recorded" });
           }
         },
         onError: (err: unknown) => {
@@ -698,19 +699,20 @@ export function ManualRubricEntryForm({
         ? `4 criteria set to ${bandMeta.label}; Spacing kept N/A.`
         : `All 5 criteria set to ${bandMeta.label}.`
     );
-    toast.success(
-      preserveSpacingNA
+    toast.add({
+      type: "success",
+      title: preserveSpacingNA
         ? `Preset applied: ${bandMeta.label} (Spacing N/A)`
         : `Preset applied: All ${bandMeta.label}`,
-      {
-        action: {
-          label: "Undo",
-          onClick: () => {
-            setRubricScores(previousScores);
-            setAccessibilityAnnouncement("Previous rubric ratings restored.");
-          } },
-        duration: 6000 }
-    );
+      timeout: 6000,
+      actionProps: {
+        children: "Undo",
+        onClick: () => {
+          setRubricScores(previousScores);
+          setAccessibilityAnnouncement("Previous rubric ratings restored.");
+        },
+      },
+    });
   }, [isSingleWordMeasurement]);
 
   const handleSelectCriterion = (index: number) => {

@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
 import { Check, Plus } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface BatchMoveDialogProps {
   open: boolean;
@@ -67,7 +67,7 @@ export function BatchMoveDialog({
     const trimmed = targetSection.trim();
     if (!trimmed) {
       setSectionError("Please enter or select a destination class section.");
-      toast.error("Please enter or select a destination class section.");
+      toast.add({ type: "error", title: "Please enter or select a destination class section." });
       return;
     }
     setSectionError(null);
@@ -82,7 +82,7 @@ export function BatchMoveDialog({
     const token = sessionData.session?.access_token;
 
     if (!token) {
-      toast.error("Authentication session expired. Please log in again.");
+      toast.add({ type: "error", title: "Authentication session expired. Please log in again." });
       setIsProcessing(false);
       return;
     }
@@ -109,15 +109,15 @@ export function BatchMoveDialog({
     setIsProcessing(false);
 
     if (failedItems.length === 0) {
-      toast.success(`Moved ${successCount} ${successCount === 1 ? "student" : "students"} to ${trimmed}.`);
+      toast.add({ type: "success", title: `Moved ${successCount} ${successCount === 1 ? "student" : "students"} to ${trimmed}.` });
       onComplete?.();
       handleOpenChange(false);
     } else if (successCount > 0) {
-      toast.warning(`Moved ${successCount} students. ${failedItems.length} failed to update.`);
+      toast.add({ type: "warning", title: `Moved ${successCount} students. ${failedItems.length} failed to update.` });
       onComplete?.();
       handleOpenChange(false);
     } else {
-      toast.error("Failed to move students. Please try again.");
+      toast.add({ type: "error", title: "Failed to move students. Please try again." });
     }
   };
 

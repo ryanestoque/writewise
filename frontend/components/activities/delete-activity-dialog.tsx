@@ -12,7 +12,7 @@ import {
   type Activity,
   useDeleteActivity } from "@/lib/hooks/use-activities";
 import { Trash2, AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface DeleteActivityDialogProps {
   activity: Activity | null;
@@ -34,11 +34,11 @@ export function DeleteActivityDialog({
   const handleDelete = () => {
     deleteActivity(activity.id, {
       onSuccess: () => {
-        toast.success("Activity deleted successfully.");
+        toast.add({ type: "success", title: "Activity deleted successfully." });
         onOpenChange(false);
       },
       onError: (error: Error) => {
-        toast.error(error.message || "Failed to delete activity.");
+        toast.add({ type: "error", title: error.message || "Failed to delete activity." });
       } });
   };
 

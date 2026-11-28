@@ -91,7 +91,7 @@ import {
   CheckCircle2,
   PenLine,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { getWordCount } from "@/lib/utils/formatters";
 import { getScoreBandLabel, resolveSubmissionScore } from "@/lib/utils/submission-status";
 import {
@@ -652,18 +652,17 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     if (!activity) return;
     toggleArchive(activity.id, {
       onSuccess: (result) => {
-        toast.success(
-          result.is_archived ? "Activity moved to archive." : "Activity restored from archive.",
-          {
-            action: {
-              label: "Undo",
-              onClick: () => toggleArchive(activity.id),
-            },
-          }
-        );
+        toast.add({
+          type: "success",
+          title: result.is_archived ? "Activity moved to archive." : "Activity restored from archive.",
+          actionProps: {
+            children: "Undo",
+            onClick: () => toggleArchive(activity.id),
+          },
+        });
       },
       onError: () => {
-        toast.error("Failed to update activity archive state.");
+        toast.add({ type: "error", title: "Failed to update activity archive state." });
       },
     });
   }, [activity, toggleArchive]);
@@ -671,18 +670,18 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   const handleCopyPrompt = useCallback(() => {
     if (!activity) return;
     if (!navigator.clipboard?.writeText) {
-      toast.error("Clipboard copy is not supported in this environment.");
+      toast.add({ type: "error", title: "Clipboard copy is not supported in this environment." });
       return;
     }
     navigator.clipboard
       .writeText(activity.target_text)
       .then(() => {
         setHasCopiedPrompt(true);
-        toast.success("Target prompt copied to clipboard.");
+        toast.add({ type: "success", title: "Target prompt copied to clipboard." });
         setTimeout(() => setHasCopiedPrompt(false), 2000);
       })
       .catch(() => {
-        toast.error("Failed to copy target prompt.");
+        toast.add({ type: "error", title: "Failed to copy target prompt." });
       });
   }, [activity]);
 
@@ -877,13 +876,17 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       const result = await batchDeleteMutation.mutateAsync(
         selectedSubmissions.map((sub) => sub.id)
       );
-      toast.success(
-        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"}.`
-      );
+      toast.add({
+        type: "success",
+        title: `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"}.`,
+      });
       clearSelection();
       setIsBatchDeleteDialogOpen(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete selected attempts.");
+      toast.add({
+        type: "error",
+        title: err instanceof Error ? err.message : "Failed to delete selected attempts.",
+      });
     }
   };
 
@@ -924,20 +927,25 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       }
 
       if (failedCount === 0) {
-        toast.success(
-          `Released ${succeededIds.length} ${succeededIds.length === 1 ? "worksheet" : "worksheets"} to parents.`
-        );
+        toast.add({
+          type: "success",
+          title: `Released ${succeededIds.length} ${succeededIds.length === 1 ? "worksheet" : "worksheets"} to parents.`,
+        });
         setIsBatchReleaseDialogOpen(false);
       } else if (succeededIds.length > 0) {
-        toast.warning(
-          `Released ${succeededIds.length} worksheets, but ${failedCount} failed to release. The remaining items remain selected for retry.`
-        );
+        toast.add({
+          type: "warning",
+          title: `Released ${succeededIds.length} worksheets, but ${failedCount} failed to release. The remaining items remain selected for retry.`,
+        });
         setIsBatchReleaseDialogOpen(false);
       } else {
-        toast.error("Failed to release selected worksheets. Please check your network and try again.");
+        toast.add({
+          type: "error",
+          title: "Failed to release selected worksheets. Please check your network and try again.",
+        });
       }
     } catch {
-      toast.error("An unexpected error occurred while releasing worksheets.");
+      toast.add({ type: "error", title: "An unexpected error occurred while releasing worksheets." });
     } finally {
       setIsBatchReleasing(false);
     }
@@ -982,39 +990,39 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
       if (failedCount === 0) {
         const excusedIds = Array.from(succeededStudentIds);
-        toast.success(
-          `Marked ${excusedIds.length} ${excusedIds.length === 1 ? "student" : "students"} as excused.`,
-          {
-            action: {
-              label: "Undo",
-              onClick: () => {
-                void batchUpdateWorkMutation
-                  .mutateAsync({
-                    activityId: id,
-                    studentIds: excusedIds,
-                    body: { excused: false },
-                  })
-                  .then(() => {
-                    toast.success("Excuse status reverted.");
-                  })
-                  .catch(() => {
-                    toast.error("Could not undo excuse status. Please update individually.");
-                  });
-              },
+        toast.add({
+          type: "success",
+          title: `Marked ${excusedIds.length} ${excusedIds.length === 1 ? "student" : "students"} as excused.`,
+          actionProps: {
+            children: "Undo",
+            onClick: () => {
+              void batchUpdateWorkMutation
+                .mutateAsync({
+                  activityId: id,
+                  studentIds: excusedIds,
+                  body: { excused: false },
+                })
+                .then(() => {
+                  toast.add({ type: "success", title: "Excuse status reverted." });
+                })
+                .catch(() => {
+                  toast.add({ type: "error", title: "Could not undo excuse status. Please update individually." });
+                });
             },
-          }
-        );
+          },
+        });
         setIsBatchExcuseDialogOpen(false);
       } else if (succeededStudentIds.size > 0) {
-        toast.warning(
-          `Excused ${succeededStudentIds.size} students, but ${failedCount} failed. The remaining items remain selected.`
-        );
+        toast.add({
+          type: "warning",
+          title: `Excused ${succeededStudentIds.size} students, but ${failedCount} failed. The remaining items remain selected.`,
+        });
         setIsBatchExcuseDialogOpen(false);
       } else {
-        toast.error("Failed to excuse selected students. Please try again.");
+        toast.add({ type: "error", title: "Failed to excuse selected students. Please try again." });
       }
     } catch {
-      toast.error("An unexpected error occurred while updating students.");
+      toast.add({ type: "error", title: "An unexpected error occurred while updating students." });
     } finally {
       setIsBatchExcusing(false);
     }
@@ -1039,7 +1047,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     const targetId = singleAttemptToDelete.id;
     try {
       await deleteSingleMutation.mutateAsync(targetId);
-      toast.success("Attempt deleted.");
+      toast.add({ type: "success", title: "Attempt deleted." });
       setSelectedSubmissionIds((prev) => {
         const next = new Set(prev);
         next.delete(targetId);
@@ -1047,7 +1055,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       });
       setSingleAttemptToDelete(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete attempt.");
+      toast.add({ type: "error", title: err instanceof Error ? err.message : "Failed to delete attempt." });
     }
   };
 
@@ -1057,9 +1065,10 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
     const sName = studentBatchToDelete.studentName;
     try {
       const result = await batchDeleteMutation.mutateAsync(ids);
-      toast.success(
-        `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"} for ${sName}.`
-      );
+      toast.add({
+        type: "success",
+        title: `Deleted ${result.deleted_count} ${result.deleted_count === 1 ? "attempt" : "attempts"} for ${sName}.`,
+      });
       setSelectedSubmissionIds((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
@@ -1067,7 +1076,10 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       });
       setStudentBatchToDelete(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete student attempts.");
+      toast.add({
+        type: "error",
+        title: err instanceof Error ? err.message : "Failed to delete student attempts.",
+      });
     }
   };
 

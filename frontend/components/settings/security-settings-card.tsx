@@ -31,7 +31,7 @@ import {
   X,
   ShieldCheck,
   CheckCircle2 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface SecuritySettingsCardProps {
   email: string;
@@ -81,7 +81,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
       }
 
       setIsSent(true);
-      toast.success("Password reset link sent to your email.");
+      toast.add({ type: "success", title: "Password reset link sent to your email." });
     } catch {
       setSendError("An unexpected error occurred. Please try again.");
     } finally {
@@ -269,7 +269,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
         throw updateError;
       }
 
-      toast.success("Password updated successfully.");
+      toast.add({ type: "success", title: "Password updated successfully." });
 
       // Reset form states
       setCurrentPassword("");
@@ -278,7 +278,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to update password.";
-      toast.error(message);
+      toast.add({ type: "error", title: message });
     } finally {
       setIsSubmitting(false);
     }

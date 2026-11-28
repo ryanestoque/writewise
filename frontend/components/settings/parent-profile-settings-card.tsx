@@ -12,7 +12,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Loader2, Check } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface ParentProfileSettingsCardProps {
   initialFullName: string;
@@ -76,12 +76,12 @@ export function ParentProfileSettingsCard({
 
       if (dbUpdateError) throw dbUpdateError;
 
-      toast.success("Profile updated successfully.");
+      toast.add({ type: "success", title: "Profile updated successfully." });
       router.refresh();
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to update profile.";
-      toast.error(message);
+      toast.add({ type: "error", title: message });
     } finally {
       setIsSaving(false);
     }

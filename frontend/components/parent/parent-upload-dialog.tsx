@@ -61,7 +61,7 @@ import {
   getParentActivityStatus,
 } from "@/lib/utils/parent-activity-status";
 import { ApiError } from "@/lib/utils/api-error";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -365,14 +365,14 @@ function ParentUploadFlow({
     if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
       const msg = "Please select a JPEG or PNG photo. If you are using an iPhone/iPad, photos in HEIC format should be exported as JPEG.";
       setDropError(msg);
-      toast.error(msg);
+      toast.add({ type: "error", title: msg });
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
       const msg = "Image file size must be less than 15MB.";
       setDropError(msg);
-      toast.error(msg);
+      toast.add({ type: "error", title: msg });
       return;
     }
 
@@ -412,7 +412,7 @@ function ParentUploadFlow({
       setIsPortrait((prev) => !prev);
     } catch (err) {
       console.error("Failed to rotate photo:", err);
-      toast.error("Failed to rotate photo. Please try again.");
+      toast.add({ type: "error", title: "Failed to rotate photo. Please try again." });
     } finally {
       setIsRotating(false);
     }
@@ -420,7 +420,7 @@ function ParentUploadFlow({
 
   const handleSubmit = (bypassTextCheck = false) => {
     if (!selectedFile || !selectedActivityId || !childId) return;
-    if (!selectedActivity) { toast.error("This worksheet is no longer open for uploads."); onClose(); return; }
+    if (!selectedActivity) { toast.add({ type: "error", title: "This worksheet is no longer open for uploads." }); onClose(); return; }
 
     setUploadStage(0);
     setStep(4);
@@ -435,7 +435,7 @@ function ParentUploadFlow({
       },
       {
         onSuccess: () => {
-          toast.success("Photo received — your teacher reviews every result before you see it.");
+          toast.add({ type: "success", title: "Photo received — your teacher reviews every result before you see it." });
           // Invalidate parent queries so progress page immediately updates
           queryClient.invalidateQueries({
             queryKey: ["parent-child-latest-scores"],
@@ -454,7 +454,7 @@ function ParentUploadFlow({
         onError: (err) => {
           if (err instanceof ApiError && (err.code === "ACTIVITY_NOT_ASSIGNED" || err.code === "SUBMISSIONS_CLOSED")) {
             queryClient.invalidateQueries({ queryKey: ["parent-take-home-activities", childId] });
-            toast.error(err.code === "SUBMISSIONS_CLOSED" ? "Uploads have closed for this worksheet." : "This worksheet is no longer assigned to your child.");
+            toast.add({ type: "error", title: err.code === "SUBMISSIONS_CLOSED" ? "Uploads have closed for this worksheet." : "This worksheet is no longer assigned to your child." });
             onClose();
             return;
           }

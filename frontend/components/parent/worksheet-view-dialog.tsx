@@ -62,7 +62,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { SubmissionCommentTabs } from "@/components/comments/submission-comment-tabs";
 
 interface WorksheetViewDialogProps {
@@ -146,11 +146,11 @@ export function WorksheetViewDialog({
     if (!submissionId) return;
     try {
       await deleteMutation.mutateAsync(submissionId);
-      toast.success("Photo removed. You can send a new photo anytime.");
+      toast.add({ type: "success", title: "Photo removed. You can send a new photo anytime." });
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
     } catch {
-      toast.error("We couldn't remove the photo. Please check your connection and try again.");
+      toast.add({ type: "error", title: "We couldn't remove the photo. Please check your connection and try again." });
     }
   };
 

@@ -40,7 +40,7 @@ import {
   type Activity,
   useUpdateActivity } from "@/lib/hooks/use-activities";
 import { Edit3, Home } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 function getWordCount(text: string): number {
   const trimmed = text.trim();
@@ -124,7 +124,7 @@ export function EditActivityDialog({
           confirm_remove_points: data.confirm_remove_points } },
       {
         onSuccess: () => {
-          toast.success("Activity updated successfully.");
+          toast.add({ type: "success", title: "Activity updated successfully." });
           onOpenChange(false);
         },
         onError: (error: Error) => {
@@ -140,7 +140,7 @@ export function EditActivityDialog({
             form.setError("assignments", {
               message: "Choose sections or students from your current roster." });
           }
-          toast.error(error.message || "Failed to update activity.");
+          toast.add({ type: "error", title: error.message || "Failed to update activity." });
         } }
     );
   };

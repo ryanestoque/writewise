@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
 import { AlertCircle, UserPlus } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 interface BulkStudentDialogProps {
   open: boolean;
@@ -85,7 +85,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
     if (!trimmedSection) {
       setSectionError("Please enter or select a class section.");
-      toast.error("Please enter or select a class section.");
+      toast.add({ type: "error", title: "Please enter or select a class section." });
       hasError = true;
     } else {
       setSectionError(null);
@@ -93,7 +93,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
     if (parsedNames.length === 0) {
       setNamesError("Please enter at least one student name.");
-      toast.error("Please enter at least one student name.");
+      toast.add({ type: "error", title: "Please enter at least one student name." });
       hasError = true;
     } else {
       setNamesError(null);
@@ -110,7 +110,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
     const token = sessionData.session?.access_token;
 
     if (!token) {
-      toast.error("Authentication session expired. Please log in again.");
+      toast.add({ type: "error", title: "Authentication session expired. Please log in again." });
       setIsProcessing(false);
       return;
     }
@@ -141,14 +141,14 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
     setIsProcessing(false);
 
     if (failedItems.length === 0) {
-      toast.success(`Successfully enrolled ${successCount} students into ${trimmedSection}!`);
+      toast.add({ type: "success", title: `Successfully enrolled ${successCount} students into ${trimmedSection}!` });
       handleOpenChange(false);
     } else if (successCount > 0) {
-      toast.warning(`Enrolled ${successCount} students. ${failedItems.length} names failed.`);
+      toast.add({ type: "warning", title: `Enrolled ${successCount} students. ${failedItems.length} names failed.` });
       setRawText(failedItems.join("\n")); // Leave failed names for retry
       setStatusMessage(`Completed with ${failedItems.length} errors. You can retry the remaining names.`);
     } else {
-      toast.error("Failed to enroll students. Please check your connection and try again.");
+      toast.add({ type: "error", title: "Failed to enroll students. Please check your connection and try again." });
       setStatusMessage("Enrollment failed. Please try again.");
     }
   };

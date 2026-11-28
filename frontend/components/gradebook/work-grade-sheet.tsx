@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown,
@@ -142,7 +142,7 @@ export function WorkGradeSheet({
     setError(undefined);
     try {
       await task();
-      toast.success(message);
+      toast.add({ type: "success", title: message });
       if (shouldClose) {
         onOpenChange(false);
       } else {
@@ -168,7 +168,7 @@ export function WorkGradeSheet({
   async function handleRefreshGrade() {
     setError(undefined);
     await client.invalidateQueries({ queryKey: ["gradebook", userId] });
-    toast.success("Grade data refreshed");
+    toast.add({ type: "success", title: "Grade data refreshed" });
   }
 
   async function handleReleaseGrade() {

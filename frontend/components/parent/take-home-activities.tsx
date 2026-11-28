@@ -80,7 +80,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { getRejectionSummary } from "@/lib/utils/submission-status";
 import {
   PARENT_CRITERIA_METADATA,
@@ -1088,11 +1088,11 @@ function PhotoPreviewDialog({
     if (!submissionId) return;
     try {
       await deleteMutation.mutateAsync(submissionId);
-      toast.success("Photo removed. You can send a new photo anytime.");
+      toast.add({ type: "success", title: "Photo removed. You can send a new photo anytime." });
       setIsDeleteDialogOpen(false);
       onOpenChange(false);
     } catch {
-      toast.error("We couldn't remove the photo. Please check your connection and try again.");
+      toast.add({ type: "error", title: "We couldn't remove the photo. Please check your connection and try again." });
     }
   };
 

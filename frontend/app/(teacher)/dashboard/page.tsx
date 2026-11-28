@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import {
   useDashboardScores,
   type StudentScoreSummary,
@@ -205,11 +205,12 @@ export default function DashboardPage() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
     const count = exportableStudents.length;
-    toast.success(
-      isTableFiltered
+    toast.add({
+      type: "success",
+      title: isTableFiltered
         ? `Exported ${count} filtered ${count === 1 ? "student" : "students"} to CSV`
-        : `Exported ${count} ${count === 1 ? "student" : "students"} to CSV`
-    );
+        : `Exported ${count} ${count === 1 ? "student" : "students"} to CSV`,
+    });
   };
 
   return (

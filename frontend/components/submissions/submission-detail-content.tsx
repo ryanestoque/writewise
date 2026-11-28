@@ -73,7 +73,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useDeleteSubmission } from "@/lib/hooks/use-submissions";
 import {
   ManualRubricEntryForm,
@@ -230,7 +230,7 @@ export function SubmissionDetailContent({
       await releaseMutation.mutateAsync(submission.id);
       setIsEditingRubric(false);
       setIsRubricDirty(false);
-      toast.success("Assessment recorded and released to parent.");
+      toast.add({ type: "success", title: "Assessment recorded and released to parent." });
     },
     [submission.id, submitManualScoreAsync, releaseMutation]
   );
@@ -468,7 +468,7 @@ export function SubmissionDetailContent({
   const handleDelete = async () => {
     try {
       await deleteMutation.mutateAsync(submission.id);
-      toast.success("Attempt deleted");
+      toast.add({ type: "success", title: "Attempt deleted" });
       setIsDeleteDialogOpen(false);
 
       if (submissions && submissions.length > 1 && onNavigate) {
@@ -486,12 +486,12 @@ export function SubmissionDetailContent({
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         if (err.code === "SUBMISSION_NOT_FOUND") {
-          toast.error("This submission is no longer available.");
+          toast.add({ type: "error", title: "This submission is no longer available." });
         } else {
-          toast.error(err.message || "Could not delete this attempt.");
+          toast.add({ type: "error", title: err.message || "Could not delete this attempt." });
         }
       } else {
-        toast.error("Could not delete this attempt. Please try again.");
+        toast.add({ type: "error", title: "Could not delete this attempt. Please try again." });
       }
     }
   };

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactElement } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { useDeleteSubmission, type Submission } from "@/lib/hooks/use-submissions";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -77,7 +77,7 @@ export function WorksheetHistory({
     const attemptNumber = attemptToDelete.attemptNumber;
     try {
       await deleteMutation.mutateAsync(targetId);
-      toast.success(`Attempt ${attemptNumber} deleted.`);
+      toast.add({ type: "success", title: `Attempt ${attemptNumber} deleted.` });
 
       const remaining = attempts.filter((s) => s.id !== targetId);
       if (remaining.length === 0) {
@@ -89,7 +89,7 @@ export function WorksheetHistory({
     } catch (err: unknown) {
       const errorMsg =
         err instanceof Error ? err.message : "Failed to delete attempt.";
-      toast.error(errorMsg);
+      toast.add({ type: "error", title: errorMsg });
     }
   };
 

@@ -27,7 +27,7 @@ import {
 import { useCreateStudent, useUpdateStudent, useStudents, Student } from "@/lib/hooks/use-students";
 import { useSections } from "@/lib/hooks/use-sections";
 import { Plus, Check } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 const studentSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required"),
@@ -138,16 +138,17 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
           onSuccess: (data: unknown) => {
             const res = data as { parent_invited?: boolean; parent_invite_error?: string | null };
             if (trimmedEmail && res?.parent_invited === false && res?.parent_invite_error) {
-              toast.warning(
-                `Updated ${trimmedName}, but parent invite could not be sent: ${res.parent_invite_error}`
-              );
+              toast.add({
+                type: "warning",
+                title: `Updated ${trimmedName}, but parent invite could not be sent: ${res.parent_invite_error}`,
+              });
             } else {
-              toast.success(`Updated ${trimmedName} successfully.`);
+              toast.add({ type: "success", title: `Updated ${trimmedName} successfully.` });
             }
             onOpenChange(false);
           },
           onError: (error: Error) => {
-            toast.error(error.message || "Failed to update student.");
+            toast.add({ type: "error", title: error.message || "Failed to update student." });
           } }
       );
     } else {
@@ -160,11 +161,12 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
         onSuccess: (data: unknown) => {
           const res = data as { parent_invited?: boolean; parent_invite_error?: string | null };
           if (trimmedEmail && res?.parent_invited === false && res?.parent_invite_error) {
-            toast.warning(
-              `Enrolled ${trimmedName}, but parent invite could not be sent: ${res.parent_invite_error}`
-            );
+            toast.add({
+              type: "warning",
+              title: `Enrolled ${trimmedName}, but parent invite could not be sent: ${res.parent_invite_error}`,
+            });
           } else {
-            toast.success(`Enrolled ${trimmedName} in ${trimmedSection}.`);
+            toast.add({ type: "success", title: `Enrolled ${trimmedName} in ${trimmedSection}.` });
           }
           if (addAnother) {
             // Keep section preserved, reset name & parent email
@@ -180,7 +182,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
           }
         },
         onError: (error: Error) => {
-          toast.error(error.message || "Failed to add student.");
+          toast.add({ type: "error", title: error.message || "Failed to add student." });
         } });
     }
   };

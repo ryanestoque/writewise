@@ -12,7 +12,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { Pencil, SlidersHorizontal, Check, X, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import type { GradebookCell } from "@/lib/hooks/use-gradebook";
 import { BandBadge } from "@/components/shared/band-badge";
 import { Badge } from "@/components/ui/badge";
@@ -186,11 +186,13 @@ export const GradebookCellButton = memo(function GradebookCellButton({
     try {
       await onSaveScore(trimmed);
       setIsEditing(false);
-      toast.success(
-        trimmed === ""
-          ? `Cleared score for ${label ?? "student"}`
-          : `Saved score (${trimmed} pts) for ${label ?? "student"}`
-      );
+      toast.add({
+        type: "success",
+        title:
+          trimmed === ""
+            ? `Cleared score for ${label ?? "student"}`
+            : `Saved score (${trimmed} pts) for ${label ?? "student"}`,
+      });
       if (typeof row === "number" && typeof column === "number" && onNavigateDown) {
         onNavigateDown(row, column);
       }

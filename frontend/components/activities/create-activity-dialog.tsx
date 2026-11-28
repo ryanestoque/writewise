@@ -33,7 +33,7 @@ import {
   Home,
   Lightbulb,
   Copy } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 function getWordCount(text: string): number {
   const trimmed = text.trim();
@@ -119,11 +119,12 @@ export function CreateActivityDialog({
       {
         onSuccess: () => {
           form.reset();
-          toast.success(
-            isDuplicate
+          toast.add({
+            type: "success",
+            title: isDuplicate
               ? "Activity duplicated successfully."
-              : "Activity created successfully."
-          );
+              : "Activity created successfully.",
+          });
           onOpenChange(false);
         },
         onError: (error: Error) => {
@@ -131,7 +132,7 @@ export function CreateActivityDialog({
             form.setError("assignments", {
               message: "Choose sections or students from your current roster." });
           }
-          toast.error(error.message || "Failed to create activity.");
+          toast.add({ type: "error", title: error.message || "Failed to create activity." });
         } }
     );
   };
@@ -148,14 +149,17 @@ export function CreateActivityDialog({
       shouldDirty: true });
 
     if (isCustomText) {
-      toast("Replaced custom prompt text", {
-        action: {
-          label: "Undo",
+      toast.add({
+        title: "Replaced custom prompt text",
+        actionProps: {
+          children: "Undo",
           onClick: () => {
             form.setValue("target_text", previous, {
               shouldValidate: true,
               shouldDirty: true });
-          } } });
+          },
+        },
+      });
     }
   };
 

@@ -21,7 +21,7 @@ import {
   ChevronDown,
   AlertCircle,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import {
   useSectionGradebook,
   useGradebookActions,
@@ -143,7 +143,7 @@ export function TeacherGradebook({
     setExportError("");
     try {
       await downloadGradebookCsv(userId, sectionId);
-      toast.success("Class record CSV downloaded");
+      toast.add({ type: "success", title: "Class record CSV downloaded" });
     } catch (failure) {
       if (!(failure instanceof Error && failure.name === "AbortError"))
         setExportError("CSV could not be downloaded. Try again.");
@@ -414,7 +414,7 @@ function SectionGrid({
         body: { points_override: points },
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update score");
+      toast.add({ type: "error", title: err instanceof Error ? err.message : "Failed to update score" });
       throw err;
     }
   }

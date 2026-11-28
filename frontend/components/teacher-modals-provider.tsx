@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
 import { QuickUploadDialog } from "@/components/quick-upload-dialog";
 import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
@@ -146,7 +146,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
       router.push("/login");
       router.refresh();
     } catch {
-      toast.error("We couldn't sign you out. Check your connection and try again.");
+      toast.add({ type: "error", title: "We couldn't sign you out. Check your connection and try again." });
       setIsSigningOut(false);
     }
   }

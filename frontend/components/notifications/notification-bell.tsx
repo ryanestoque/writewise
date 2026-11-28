@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -96,12 +96,14 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
 
   const feedback = useCallback((error: unknown) => {
     if (error instanceof Error && error.name === "AbortError") return;
-    toast.error(
-      error instanceof ApiError && error.code === "UNAUTHORIZED"
-        ? "Sign in again to update notifications."
-        : "Could not mark notifications read. Try again.",
-      { id: "notification-read-error" }
-    );
+    toast.add({
+      id: "notification-read-error",
+      type: "error",
+      title:
+        error instanceof ApiError && error.code === "UNAUTHORIZED"
+          ? "Sign in again to update notifications."
+          : "Could not mark notifications read. Try again.",
+    });
   }, []);
 
   const markRead = useCallback(
@@ -130,7 +132,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
   const handleMarkAllRead = useCallback(() => {
     readAll.mutate(undefined, {
       onSuccess: () => {
-        toast.success("All notifications marked as read");
+        toast.add({ type: "success", title: "All notifications marked as read" });
       },
       onError: feedback,
       onSettled: () => {

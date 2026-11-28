@@ -27,7 +27,7 @@ import {
   ArrowRightIcon,
   CheckCircle2Icon,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 import { AuthShell } from "@/components/auth/auth-shell";
 
@@ -299,7 +299,7 @@ function ResetPasswordForm() {
         return;
       }
 
-      toast.success("Password updated successfully! Welcome back.");
+      toast.add({ type: "success", title: "Password updated successfully! Welcome back." });
 
       // Route to respective portal based on role metadata
       const userRole = data.user?.user_metadata?.role as string | undefined;

@@ -51,7 +51,7 @@ import {
   Archive,
   ArchiveRestore,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 
 type FilterType = "all" | "in_class" | "take_home" | "archived";
 type SortOption =
@@ -227,22 +227,21 @@ export default function ActivitiesPage() {
         {
           onSuccess: (result) => {
             const count = result.updated.length;
-            toast.success(
-              archived
+            toast.add({
+              type: "success",
+              title: archived
                 ? `${count} ${count === 1 ? "activity" : "activities"} archived.`
                 : `${count} ${count === 1 ? "activity" : "activities"} restored.`,
-              {
-                action: {
-                  label: "Undo",
-                  onClick: () => bulkArchive({ ids, archived: !archived }),
-                },
-              }
-            );
+              actionProps: {
+                children: "Undo",
+                onClick: () => bulkArchive({ ids, archived: !archived }),
+              },
+            });
             setSelectedIds(new Set());
             setLastSelectedId(null);
           },
           onError: () => {
-            toast.error("Failed to update activities. Please try again.");
+            toast.add({ type: "error", title: "Failed to update activities. Please try again." });
           },
         }
       );
@@ -274,20 +273,19 @@ export default function ActivitiesPage() {
     (activityId: string) => {
       toggleArchive(activityId, {
         onSuccess: (result) => {
-          toast.success(
-            result.is_archived
+          toast.add({
+            type: "success",
+            title: result.is_archived
               ? "Activity moved to archive."
               : "Activity restored from archive.",
-            {
-              action: {
-                label: "Undo",
-                onClick: () => toggleArchive(activityId),
-              },
-            }
-          );
+            actionProps: {
+              children: "Undo",
+              onClick: () => toggleArchive(activityId),
+            },
+          });
         },
         onError: () => {
-          toast.error("Failed to update archive state.");
+          toast.add({ type: "error", title: "Failed to update archive state." });
         },
       });
     },
