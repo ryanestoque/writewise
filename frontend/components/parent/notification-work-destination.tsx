@@ -72,7 +72,6 @@ export function NotificationWorkDestination({
         item={item}
         childName={childName}
         onBack={onClose}
-        backLabel="Back to progress"
         onUploadActivity={onUploadActivity}
       />
     );

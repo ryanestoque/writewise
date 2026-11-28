@@ -333,7 +333,6 @@ export function PastWorksheetsSection({
             setSelectedItemForView(null);
             setInitialViewForDialog("details");
           }}
-          backLabel="Back to worksheets"
           onUploadActivity={onUploadActivity}
         />
       )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Camera, ArrowLeft } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   ResponsiveRichOverlay,
@@ -22,7 +22,6 @@ interface PendingWorksheetDialogProps {
   item: StudentScoreHistoryItem;
   childName: string;
   onBack: () => void;
-  backLabel?: string;
   initialView?: "details" | "comments";
   onUploadActivity?: (activityId: string) => void;
 }
@@ -31,7 +30,6 @@ export function PendingWorksheetDialog({
   item,
   childName,
   onBack,
-  backLabel = "Back to history",
   initialView = "details",
   onUploadActivity,
 }: PendingWorksheetDialogProps) {
@@ -63,16 +61,6 @@ export function PendingWorksheetDialog({
         <ResponsiveRichOverlayHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-center justify-between gap-3 pr-10">
             <div className="min-w-0 flex flex-col gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onBack}
-                className="h-auto min-h-10 sm:min-h-9 w-fit px-2 py-1 mb-0.5 text-xs font-medium text-primary hover:text-primary/80 cursor-pointer group touch-manipulation"
-              >
-                <ArrowLeft data-icon="inline-start" className="transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
-                <span>{backLabel}</span>
-              </Button>
               <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 Worksheet &amp; Review Status
               </ResponsiveRichOverlayTitle>
