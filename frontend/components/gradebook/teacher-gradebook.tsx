@@ -33,6 +33,7 @@ import { useUnreadCommentThreads } from "@/lib/hooks/use-comments";
 import { hasUnreadWorkComments } from "@/lib/comments/selection";
 import { gradebookRequest, downloadGradebookCsv } from "@/lib/gradebook/transport";
 import { GradebookCellButton, TouchDeviceContext, useIsTouchDevice } from "./gradebook-cell";
+import { MobileGradebookList } from "./mobile-gradebook-list";
 import { WorkGradeSheet } from "./work-grade-sheet";
 import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
 import { QueryRecovery } from "@/components/shared/query-recovery";
@@ -665,8 +666,36 @@ function SectionGrid({
         </Empty>
       ) : (
         <TouchDeviceContext.Provider value={isTouchDevice}>
-          <div
-            ref={tableRef}
+          <div className="block md:hidden print:hidden">
+            <MobileGradebookList
+              rows={rows}
+              activities={activities}
+              viewMode={viewMode}
+              selectedStudentIds={selected}
+              unreadThreads={unread.data}
+              search={search}
+              isSingleActivityFiltered={Boolean(activityId)}
+              onToggleStudent={toggle}
+              onToggleSelectAll={(checked) =>
+                setSelected((old) => {
+                  const next = new Set(old);
+                  rows.forEach((row) => {
+                    if (checked) next.add(row.student_id);
+                    else next.delete(row.student_id);
+                  });
+                  return next;
+                })
+              }
+              onOpenCell={(work) => setCell(work)}
+              onBeginBulk={beginBulk}
+              onViewActivity={(id) => router.push(`/activities/${id}`)}
+              onClearSearch={() => setSearch("")}
+            />
+          </div>
+
+          <div className="hidden md:block print:block">
+            <div
+              ref={tableRef}
             className={cn(
               "bg-card max-h-[70svh] overflow-auto rounded-xl sm:rounded-2xl border border-border shadow-warm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none print:shadow-none",
               selected.size > 0 && "pb-24 sm:pb-20"
@@ -928,6 +957,7 @@ function SectionGrid({
                 </EmptyContent>
               </Empty>
             )}
+            </div>
           </div>
         </TouchDeviceContext.Provider>
       )}
