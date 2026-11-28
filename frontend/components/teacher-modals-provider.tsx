@@ -207,7 +207,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
             >
               {isSigningOut ? (
                 <>
-                  <Spinner className="size-4" />
+                  <Spinner data-icon="inline-start" />
                   <span>Signing out...</span>
                 </>
               ) : (

@@ -57,7 +57,7 @@ export default async function TeacherLayout({
         />
         <SidebarInset>
           <TeacherHeader userId={user.id} />
-          <div className="flex-1 min-w-0 w-full px-4 sm:px-6 py-6 space-y-6 [&:has([data-page-studio])]:py-4 sm:[&:has([data-page-studio])]:py-5">
+          <div className="flex flex-1 flex-col gap-6 min-w-0 w-full px-4 sm:px-6 py-6 [&:has([data-page-studio])]:py-4 sm:[&:has([data-page-studio])]:py-5">
             {children}
           </div>
         </SidebarInset>

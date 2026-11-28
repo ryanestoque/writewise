@@ -12,6 +12,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -44,6 +45,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -172,7 +174,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                   />
                 }
               >
-                <FileUpIcon className="size-4 shrink-0" aria-hidden="true" />
+                <FileUpIcon data-icon="inline-start" aria-hidden="true" />
                 <span>Upload Worksheet</span>
               </TooltipTrigger>
               <TooltipContent side="right" align="center" className="flex items-center gap-1.5">
@@ -186,22 +188,27 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
 
           {/* Actionable Pending Grading Queue Entry Point */}
           {typeof pendingSubmissionsCount === "number" && pendingSubmissionsCount > 0 && (
-            <div className="px-2 group-data-[collapsible=icon]:hidden">
-              <Link
-                href="/activities"
-                id="queue-pending-review"
-                onClick={handleNavClick}
-                className="flex items-center justify-between w-full h-8 px-2.5 rounded-lg bg-brand-50 hover:bg-brand-100/90 dark:bg-brand-950/50 dark:hover:bg-brand-900/50 border border-brand-200/70 dark:border-brand-900/70 text-brand-900 dark:text-brand-200 text-xs font-medium transition-colors cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5 truncate">
-                  <span className="size-1.5 rounded-full bg-brand-600 dark:bg-brand-400 shrink-0" aria-hidden="true" />
-                  <span className="truncate">{pendingSubmissionsCount} pending review</span>
-                </span>
-                <span className="text-xs font-semibold text-brand-700 dark:text-brand-300 shrink-0 ml-1">
-                  Grade &rarr;
-                </span>
-              </Link>
-            </div>
+            <SidebarMenu className="px-2 group-data-[collapsible=icon]:hidden">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  id="queue-pending-review"
+                  size="sm"
+                  render={
+                    <Link
+                      href="/activities?status=needs_review"
+                      onClick={handleNavClick}
+                    />
+                  }
+                  className="h-10 md:h-8 bg-sidebar-accent/70 text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium pr-8"
+                >
+                  <ClipboardListIcon aria-hidden="true" />
+                  <span>Pending review</span>
+                </SidebarMenuButton>
+                <SidebarMenuBadge className="text-sidebar-accent-foreground font-semibold">
+                  {pendingSubmissionsCount}
+                </SidebarMenuBadge>
+              </SidebarMenuItem>
+            </SidebarMenu>
           )}
 
           <div className="hidden group-data-[collapsible=icon]:flex justify-center pt-1 pb-1 px-1">
@@ -223,7 +230,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                   />
                 }
               >
-                <FileUpIcon className="size-4" aria-hidden="true" />
+                <FileUpIcon aria-hidden="true" />
               </TooltipTrigger>
               <TooltipContent side="right" align="center" className="flex items-center gap-1.5">
                 <span>Upload Worksheet</span>
@@ -275,20 +282,20 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                         className={cn(
                           "h-11 md:h-10 text-sm font-medium transition-colors relative",
                           isActive &&
-                            "bg-brand-50 text-brand-900 font-semibold dark:bg-brand-950/60 dark:text-brand-100"
+                            "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                         )}
                       >
                         <div className="flex items-center justify-between w-full min-w-0">
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="relative flex items-center justify-center shrink-0">
-                              <item.icon className="size-4 shrink-0" aria-hidden="true" />
+                              <item.icon aria-hidden="true" />
                               {showBadge && (
-                                <span
-                                  className="hidden group-data-[collapsible=icon]:flex absolute -top-1.5 -right-2 min-w-4 h-4 px-1 items-center justify-center rounded-full bg-brand-600 text-white text-xs font-bold tabular-nums leading-none ring-2 ring-sidebar shadow-xs"
+                                <Badge
+                                  className="hidden group-data-[collapsible=icon]:flex absolute -top-1.5 -right-2 min-w-4 h-4 px-1 tabular-nums rounded-full ring-2 ring-sidebar"
                                   aria-hidden="true"
                                 >
                                   {displayCount}
-                                </span>
+                                </Badge>
                               )}
                             </div>
                             <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
@@ -296,7 +303,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                           {showBadge && (
                             <Badge
                               variant="secondary"
-                              className="ml-auto group-data-[collapsible=icon]:hidden min-w-5 px-1.5 rounded-full font-semibold tabular-nums bg-brand-100 text-brand-800 dark:bg-brand-950 dark:text-brand-300 border-brand-200/60 dark:border-brand-900/60"
+                              className="ml-auto group-data-[collapsible=icon]:hidden min-w-5 px-1.5 rounded-full font-semibold tabular-nums border-border/60"
                             >
                               <span aria-hidden="true">{displayCount}</span>
                               <span className="sr-only"> pending submissions</span>
@@ -409,12 +416,12 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     tooltip="Teacher Profile & Settings"
                     aria-label={`User account menu for ${user.fullName}`}
                     aria-haspopup="menu"
-                    className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0 h-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center cursor-pointer"
+                    className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:p-0 h-12 group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center cursor-pointer"
                   />
                 }
               >
-                <Avatar className="size-8 rounded-lg after:rounded-lg after:border-brand-200/60 dark:after:border-brand-900/60">
-                  <AvatarFallback className="rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs">
+                <Avatar className="size-8 rounded-lg after:rounded-lg after:border-border/60">
+                  <AvatarFallback className="rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs">
                     {getInitials(user.fullName)}
                   </AvatarFallback>
                 </Avatar>
@@ -435,36 +442,38 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                 sideOffset={8}
                 className="w-64 max-h-[calc(100dvh-80px)] overflow-y-auto rounded-xl p-1.5 shadow-xl border border-border/80 bg-popover"
               >
-                <div className="p-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Avatar className="size-9 rounded-lg after:rounded-lg after:border-brand-200/60 dark:after:border-brand-900/60">
-                      <AvatarFallback className="rounded-lg bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs">
-                        {getInitials(user.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="font-semibold text-xs text-foreground truncate">
-                        {user.fullName}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate" title={user.email}>
-                        {user.email}
-                      </span>
-                      {user.schoolName && (
-                        <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1.5 truncate">
-                          <GraduationCapIcon className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
-                          <span className="truncate">{user.schoolName}</span>
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="p-2 font-normal">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Avatar className="size-9 rounded-lg after:rounded-lg after:border-border/60">
+                        <AvatarFallback className="rounded-lg bg-secondary text-secondary-foreground font-semibold text-xs">
+                          {getInitials(user.fullName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="font-semibold text-xs text-foreground truncate">
+                          {user.fullName}
                         </span>
-                      )}
+                        <span className="text-xs text-muted-foreground truncate" title={user.email}>
+                          {user.email}
+                        </span>
+                        {user.schoolName && (
+                          <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1.5 truncate">
+                            <GraduationCapIcon className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
+                            <span className="truncate">{user.schoolName}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuItem
                     render={<Link href="/settings" onClick={handleNavClick} aria-current={isItemActive("/settings") ? "page" : undefined} />}
                     className="min-h-10 cursor-pointer gap-2 py-2 text-xs md:min-h-0"
                   >
-                    <SettingsIcon className="size-3.5 text-muted-foreground" />
+                    <SettingsIcon className="text-muted-foreground" aria-hidden="true" />
                     <span>Account Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -477,22 +486,24 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     aria-expanded={shortcutsOpen}
                     className="min-h-10 cursor-pointer gap-2 py-2 text-xs md:min-h-0"
                   >
-                    <KeyboardIcon className="size-3.5 text-muted-foreground" />
+                    <KeyboardIcon className="text-muted-foreground" aria-hidden="true" />
                     <span>Keyboard shortcuts</span>
                     <Kbd aria-hidden="true" className="ml-auto">?</Kbd>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (isMobile) setOpenMobile(false);
-                    openSignOut();
-                  }}
-                  className="min-h-10 cursor-pointer gap-2 py-2 text-xs text-muted-foreground hover:text-foreground focus:text-foreground md:min-h-0"
-                >
-                  <LogOutIcon className="size-3.5" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false);
+                      openSignOut();
+                    }}
+                    className="min-h-10 cursor-pointer gap-2 py-2 text-xs text-muted-foreground hover:text-foreground focus:text-foreground md:min-h-0"
+                  >
+                    <LogOutIcon aria-hidden="true" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
