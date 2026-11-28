@@ -549,26 +549,26 @@ function SectionGrid({
             <ToggleGroup
               value={[viewMode]}
               multiple={false}
-              spacing={0}
               onValueChange={(vals) => {
                 if (vals.length > 0) {
                   setViewMode(vals[0] as "points" | "diagnostic");
                 }
               }}
+              variant="outline"
+              size="sm"
+              spacing={0}
               aria-label="Gradebook view mode"
-              className="inline-flex items-center rounded-lg sm:rounded-xl border border-border bg-background p-0.5 text-xs font-medium shrink-0"
+              className="shrink-0"
             >
               <ToggleGroupItem
                 value="points"
-                size="sm"
-                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-10 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
+                className="min-h-11 sm:min-h-8 px-3 text-xs cursor-pointer whitespace-nowrap data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
               >
                 Points
               </ToggleGroupItem>
               <ToggleGroupItem
                 value="diagnostic"
-                size="sm"
-                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-10 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
+                className="min-h-11 sm:min-h-8 px-3 text-xs cursor-pointer whitespace-nowrap data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
               >
                 Diagnostic
               </ToggleGroupItem>

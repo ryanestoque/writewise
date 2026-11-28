@@ -151,7 +151,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="gap-2 px-1">
+      <SidebarContent className="gap-2 px-1 group-data-[collapsible=icon]:px-0">
         {/* Primary Educator CTA: Upload Worksheet (Quick action outside nav landmark) */}
         <div className="flex flex-col gap-1">
           <div className="px-2 pt-1 group-data-[collapsible=icon]:hidden">
@@ -316,7 +316,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     tooltip={{
                       children: (
                         <div className="flex items-center gap-1.5">
-                          <span>Cursive Guide · Reference</span>
+                          <span>Cursive Guide</span>
                           <Kbd aria-hidden="true" className="text-xs h-5 px-1 font-mono font-normal">{altKey}+C</Kbd>
                         </div>
                       ),
@@ -351,7 +351,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                     tooltip={{
                       children: (
                         <div className="flex items-center gap-1.5">
-                          <span>Scoring Rubric · Reference</span>
+                          <span>Scoring Rubric</span>
                           <Kbd aria-hidden="true" className="text-xs h-5 px-1 font-mono font-normal">{altKey}+R</Kbd>
                         </div>
                       ),
