@@ -54,6 +54,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { BandBadge } from "@/components/shared/band-badge";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/use-scrolled";
@@ -515,7 +516,7 @@ export function ProgressPageContent() {
         {/* Fixed Sub-Navbar directly below the main navbar (top-14) with 1px upward overlap to prevent subpixel seams */}
         <div
           data-scrolled={isScrolled}
-          className="fixed top-[calc(3.5rem-1px)] left-0 right-0 z-30 h-[calc(2.75rem+1px)] pt-px w-full border-b border-border/80 bg-background transition-[border-color,box-shadow] duration-200 ease-out data-[scrolled=true]:border-brand-200 dark:data-[scrolled=true]:border-border data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(20_80_73/0.08)] dark:data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(0_0_0/0.35)] print:hidden"
+          className="fixed top-[calc(3.5rem-1px)] left-0 right-0 z-30 h-[calc(2.75rem+1px)] pt-px w-full border-b border-border/80 bg-background transition-[border-color,box-shadow] duration-200 ease-out data-[scrolled=true]:border-border data-[scrolled=true]:shadow-warm print:hidden"
         >
           <div className="h-full w-full px-4 sm:px-6">
             <TabsList
@@ -559,10 +560,10 @@ export function ProgressPageContent() {
         <div aria-hidden="true" className="h-11 shrink-0 print:hidden" />
 
         {/* Main Content Area */}
-        <div className="w-full px-4 sm:px-6 py-6 space-y-6 pb-16">
+        <div className="w-full px-4 sm:px-6 py-6 flex flex-col gap-6 pb-16">
           {/* Page Header Bar (Matches Teacher Portal Dashboard Header) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5 min-w-0">
+            <div className="flex flex-col gap-0.5 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-heading font-semibold text-foreground tracking-tight">
                 {firstName}&apos;s handwriting
               </h1>
@@ -617,25 +618,25 @@ export function ProgressPageContent() {
               {hasPendingSubmission && latestScores && (
                 <Alert
                   role="status"
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-primary/25 bg-secondary/50"
+                  className="border-primary/25 bg-secondary/50 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:gap-y-0"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Clock className="size-4 text-primary shrink-0" aria-hidden="true" />
-                    <AlertTitle className="text-sm font-medium text-foreground min-w-0">
-                      New worksheet received · waiting for teacher review
-                    </AlertTitle>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTab("progress");
-                    }}
-                    className="h-11 sm:h-9 text-xs font-medium shrink-0 cursor-pointer bg-card"
-                  >
-                    View history
-                  </Button>
+                  <Clock className="text-primary" aria-hidden="true" />
+                  <AlertTitle className="text-sm font-medium text-foreground min-w-0">
+                    New worksheet received · waiting for teacher review
+                  </AlertTitle>
+                  <AlertDescription className="col-start-2 pt-2 sm:col-start-3 sm:row-span-2 sm:self-center sm:justify-self-end sm:pt-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTab("progress");
+                      }}
+                      className="h-11 sm:h-9 text-xs font-medium shrink-0 cursor-pointer bg-card"
+                    >
+                      View history
+                    </Button>
+                  </AlertDescription>
                 </Alert>
               )}
               <LatestSubmissionCard
@@ -701,11 +702,11 @@ export function ProgressPageContent() {
         </TabsContent>
 
         {/* Tab 3: Progress (Trend Chart & Past Worksheets Archive) */}
-        <TabsContent value="progress" className="space-y-6">
+        <TabsContent value="progress" className="flex flex-col gap-6">
           <section
             id="progress-trends-section"
             aria-labelledby="progress-trends-heading"
-            className="space-y-3 scroll-mt-28"
+            className="flex flex-col gap-3 scroll-mt-28"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2
@@ -731,9 +732,9 @@ export function ProgressPageContent() {
               </Card>
             ) : scoredCount === 1 && history?.[0] ? (
               <Card className="p-0 gap-0 shadow-none">
-                <CardContent className="p-5 sm:p-6 space-y-4">
+                <CardContent className="p-5 sm:p-6 flex flex-col gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-1">
+                    <div className="flex flex-col gap-1">
                       <h3 className="font-heading text-base font-semibold text-foreground">
                         1 of 2 worksheets checked
                       </h3>
@@ -752,7 +753,8 @@ export function ProgressPageContent() {
                   </div>
 
                   {/* Flat 5-Criteria Baseline Summary (no nested cards) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3 border-t border-border/70 pt-4">
+                  <Separator className="bg-border/70" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-3">
                     {PARENT_CRITERIA_LIST.map((criterion) => {
                       const criterionScore = history[0].scores[criterion.key];
                       const criterionBand = history[0].bands[criterion.key];
@@ -815,7 +817,7 @@ export function ProgressPageContent() {
         </TabsContent>
 
         {/* Tab 4: Grades (Coursework Point Ledger) */}
-        <TabsContent value="grades" className="space-y-6">
+        <TabsContent value="grades" className="flex flex-col gap-6">
           {activeTab === "grades" && selectedChildId && (
             <ParentGrades
               key={`${userId}:${selectedChildId}`}
