@@ -236,7 +236,7 @@ export function WorksheetViewDialog({
       <ResponsiveRichOverlayContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
         <ResponsiveRichOverlayHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
-          <div className="flex items-start justify-between gap-2 pr-11 sm:pr-10">
+          <div className="flex items-start justify-between gap-2 pr-12 md:pr-9">
             <div className="min-w-0 flex flex-col gap-1">
               <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 {childName ? `${childName}'s Worksheet` : "Worksheet Feedback"}
@@ -264,7 +264,7 @@ export function WorksheetViewDialog({
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      className="size-10 sm:size-8 rounded-lg border-border/70 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                      className="-mt-1 size-11 md:size-8 rounded-lg border-border/70 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
                       aria-label="Worksheet options"
                     />
                   }
@@ -484,7 +484,7 @@ export function WorksheetViewDialog({
                 onOpenChange(false);
                 onPracticeNow();
               }}
-              className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm"
+              className="w-full sm:w-auto h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm"
             >
               <PenLine data-icon="inline-start" aria-hidden="true" />
               <span>Practice together</span>
