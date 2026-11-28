@@ -20,17 +20,15 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   Empty,
   EmptyContent,
@@ -47,6 +45,7 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 type GradebookRow = SectionGradebook["rows"][number];
@@ -91,7 +90,7 @@ function MobileActivityRow({
     activity.points_possible ? `${activity.points_possible} pts` : "Bands only"
   }${activity.is_archived ? " · Archived" : ""}`;
 
-  if (!work) {
+  if (!work || !work.applicable) {
     return (
       <Item variant="muted" size="sm">
         <ItemContent>
@@ -105,8 +104,10 @@ function MobileActivityRow({
     );
   }
 
+  const isExcused = work.coursework_status === "Excused";
   const statusLabel = formatMobileStatus(work.coursework_status);
   const showDraft =
+    !isExcused &&
     work.publication !== "released" &&
     (work.final_points !== null ||
       (work.points_possible === null && work.coursework_status === "Draft"));
@@ -128,7 +129,7 @@ function MobileActivityRow({
         <ItemDescription>{subtitle}</ItemDescription>
       </ItemContent>
 
-      <ItemActions className="shrink-0 flex-wrap justify-end gap-1.5">
+      <ItemActions className="max-w-full shrink-0 flex-wrap justify-end gap-1.5">
         {viewMode === "diagnostic" ? (
           work.assessment_composite !== null ? (
             <div className="flex items-center gap-1.5">
@@ -140,6 +141,8 @@ function MobileActivityRow({
           ) : (
             <Badge variant="outline">{statusLabel}</Badge>
           )
+        ) : isExcused ? (
+          <Badge variant="outline">Excused</Badge>
         ) : work.final_points !== null ? (
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {work.final_points}
@@ -187,20 +190,28 @@ function MobileStudentGradeCard({
     ? activities.slice(0, INLINE_ACTIVITY_LIMIT)
     : activities;
   const overflowActivities = shouldCollapse ? activities.slice(INLINE_ACTIVITY_LIMIT) : [];
+  const checkboxId = `mobile-gradebook-select-${row.student_id}`;
 
   return (
     <Card size="sm">
       <CardHeader className="items-center">
         <div className="flex min-w-0 items-center gap-2.5">
           <Checkbox
-            id={`mobile-gradebook-select-${row.student_id}`}
+            id={checkboxId}
             checked={isSelected}
             onCheckedChange={(checked) => onToggleStudent(row.student_id, Boolean(checked))}
             aria-label={`Select ${row.student_name}`}
           />
-          <CardTitle className="truncate text-sm">{row.student_name}</CardTitle>
+          <CardTitle className="min-w-0 truncate text-sm">
+            <FieldLabel
+              htmlFor={checkboxId}
+              className="flex min-h-11 cursor-pointer items-center truncate text-sm font-medium"
+            >
+              <span className="truncate">{row.student_name}</span>
+            </FieldLabel>
+          </CardTitle>
         </div>
-        <CardAction className="flex items-center gap-1.5">
+        <CardAction className="flex items-center gap-1.5 self-center">
           <span className="text-xs font-semibold tabular-nums text-foreground">
             {row.totals.earned} / {row.totals.possible}
           </span>
@@ -305,6 +316,8 @@ export function MobileGradebookList({
   onViewActivity,
   onClearSearch,
 }: MobileGradebookListProps) {
+  const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
+
   if (!rows.length) {
     return (
       <Empty className="rounded-xl border border-border bg-card p-6">
@@ -324,36 +337,10 @@ export function MobileGradebookList({
   const allSelected = rows.length > 0 && rows.every((row) => selectedStudentIds.has(row.student_id));
   const selectedCount = selectedStudentIds.size;
 
-  const renderActivityActionItems = (act: GradebookActivity) => (
-    <>
-      <DropdownMenuGroup>
-        <DropdownMenuItem onClick={() => onBeginBulk(act.id, "release")}>
-          <Send data-icon="inline-start" aria-hidden="true" />
-          Release grades to parents
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => onBeginBulk(act.id, "zero")}
-          disabled={act.points_possible === null}
-        >
-          <FileX data-icon="inline-start" aria-hidden="true" />
-          {selectedCount
-            ? `Mark uncollected (0) for ${selectedCount}`
-            : "Mark uncollected (0 pts)"}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onBeginBulk(act.id, "excuse")}>
-          <CheckCircle2 data-icon="inline-start" aria-hidden="true" />
-          {selectedCount ? `Excuse ${selectedCount} selected` : "Excuse all in section"}
-        </DropdownMenuItem>
-      </DropdownMenuGroup>
-      <DropdownMenuSeparator />
-      <DropdownMenuGroup>
-        <DropdownMenuItem onClick={() => onViewActivity(act.id)}>
-          <ExternalLink data-icon="inline-start" aria-hidden="true" />
-          View activity details
-        </DropdownMenuItem>
-      </DropdownMenuGroup>
-    </>
-  );
+  const runActionAndClose = (fn: () => void) => {
+    setActionsDrawerOpen(false);
+    fn();
+  };
 
   return (
     <div className={cn("flex flex-col gap-3", selectedCount > 0 && "pb-24")}>
@@ -365,48 +352,111 @@ export function MobileGradebookList({
             onCheckedChange={(checked) => onToggleSelectAll(Boolean(checked))}
             aria-label="Select shown students"
           />
-          <FieldLabel htmlFor="mobile-gradebook-select-all" className="cursor-pointer text-xs">
+          <FieldLabel
+            htmlFor="mobile-gradebook-select-all"
+            className="flex min-h-11 cursor-pointer items-center text-xs"
+          >
             Select all ({rows.length})
           </FieldLabel>
         </Field>
 
         {activities.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
+          <Drawer
+            showSwipeHandle
+            open={actionsDrawerOpen}
+            onOpenChange={setActionsDrawerOpen}
+          >
+            <DrawerTrigger
               render={
                 <Button type="button" variant="outline" size="sm" className="min-h-11 shrink-0" />
               }
             >
               <span>Activity actions</span>
               <MoreHorizontal data-icon="inline-end" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-60">
-              {activities.length === 1 ? (
-                <>
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="truncate">
-                      {activities[0].title}
-                    </DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  {renderActivityActionItems(activities[0])}
-                </>
-              ) : (
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Choose an activity</DropdownMenuLabel>
+            </DrawerTrigger>
+            <DrawerContent>
+              <DrawerHeader className="text-left">
+                <DrawerTitle>Activity actions</DrawerTitle>
+                <DrawerDescription>
+                  Release grades, mark uncollected work, excuse students, or open activity details.
+                </DrawerDescription>
+              </DrawerHeader>
+              <ScrollArea className="max-h-[60dvh] px-4 pb-2">
+                <div className="flex flex-col gap-3 py-2">
                   {activities.map((act) => (
-                    <DropdownMenuSub key={act.id}>
-                      <DropdownMenuSubTrigger className="min-h-10">
-                        <span className="truncate">{act.title}</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-56">
-                        {renderActivityActionItems(act)}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
+                    <Card key={act.id} size="sm">
+                      <CardHeader>
+                        <CardTitle className="truncate text-sm">{act.title}</CardTitle>
+                        <CardAction>
+                          <Badge variant="outline">
+                            {act.points_possible ? `${act.points_possible} pts` : "Bands only"}
+                          </Badge>
+                        </CardAction>
+                      </CardHeader>
+                      <CardContent className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="min-h-11 w-full justify-start"
+                          onClick={() => runActionAndClose(() => onBeginBulk(act.id, "release"))}
+                        >
+                          <Send data-icon="inline-start" aria-hidden="true" />
+                          <span>Release grades to parents</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={act.points_possible === null}
+                          className="min-h-11 w-full justify-start"
+                          onClick={() => runActionAndClose(() => onBeginBulk(act.id, "zero"))}
+                        >
+                          <FileX data-icon="inline-start" aria-hidden="true" />
+                          <span>
+                            {selectedCount
+                              ? `Mark uncollected (0) for ${selectedCount}`
+                              : "Mark uncollected (0 pts)"}
+                          </span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="min-h-11 w-full justify-start"
+                          onClick={() => runActionAndClose(() => onBeginBulk(act.id, "excuse"))}
+                        >
+                          <CheckCircle2 data-icon="inline-start" aria-hidden="true" />
+                          <span>
+                            {selectedCount ? `Excuse ${selectedCount} selected` : "Excuse all in section"}
+                          </span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="min-h-11 w-full justify-start"
+                          onClick={() => runActionAndClose(() => onViewActivity(act.id))}
+                        >
+                          <ExternalLink data-icon="inline-start" aria-hidden="true" />
+                          <span>View activity details</span>
+                        </Button>
+                      </CardContent>
+                    </Card>
                   ))}
-                </DropdownMenuGroup>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </div>
+              </ScrollArea>
+              <DrawerFooter>
+                <DrawerClose
+                  render={
+                    <Button type="button" variant="outline" className="min-h-11">
+                      Close
+                    </Button>
+                  }
+                />
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
         )}
       </div>
 
