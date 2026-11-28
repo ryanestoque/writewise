@@ -739,13 +739,13 @@ export default function RosterPage() {
                   >
                     <ToggleGroupItem
                       value="full_name"
-                      className="text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                      className="min-h-11 px-3 text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
                     >
                       Name
                     </ToggleGroupItem>
                     <ToggleGroupItem
                       value="section"
-                      className="text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
+                      className="min-h-11 px-3 text-xs data-pressed:bg-secondary data-pressed:text-secondary-foreground data-pressed:font-semibold"
                     >
                       Section
                     </ToggleGroupItem>
@@ -753,7 +753,8 @@ export default function RosterPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon-sm"
+                    size="icon"
+                    className="size-11"
                     onClick={() => setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
                     aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}`}
                     title={sortDirection === "asc" ? "Ascending" : "Descending"}
