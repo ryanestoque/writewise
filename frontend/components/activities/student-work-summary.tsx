@@ -3,6 +3,7 @@
 import { ActivityWorkStatus } from "@/components/activities/activity-work-status";
 import { WorkCommentsButton } from "@/components/comments/submission-comment-picker-sheet";
 import { StudentWorkControls } from "@/components/submissions/submission-lifecycle-controls";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ActivityWorkState } from "@/lib/hooks/use-activity-work";
 import type { Submission } from "@/lib/hooks/use-submissions";
 
@@ -31,10 +32,10 @@ export function StudentWorkSummary({
     <div className={compact ? "flex items-center min-w-0" : "flex flex-col gap-3"}>
       {state ? (
         <ActivityWorkStatus state={state} isScored={isScored} hideDraftPending={hideDraftPending} />
+      ) : isLoading ? (
+        <Skeleton className="h-5 w-24" aria-label="Loading work status" />
       ) : (
-        <p className="text-muted-foreground text-xs" role="status">
-          {isLoading ? "Loading work status…" : "Work status unavailable"}
-        </p>
+        <ActivityWorkStatus state={null} unavailable />
       )}
       {!compact && (
         <div className="flex flex-wrap gap-2">

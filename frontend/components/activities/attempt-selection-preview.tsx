@@ -1,3 +1,8 @@
+import { Fragment } from "react";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import { statusConfig } from "@/lib/utils/submission-status";
 
@@ -37,36 +42,42 @@ export function AttemptSelectionPreview({
         </p>
       )}
       {unavailableCount > 0 && (
-        <p role="alert" className="text-destructive">
-          {unavailableCount} selected {unavailableCount === 1 ? "attempt is" : "attempts are"} no
-          longer available to review. Cancel, clear your selection, and select attempts again.
-        </p>
+        <Alert variant="destructive">
+          <AlertCircle aria-hidden="true" />
+          <AlertDescription>
+            {unavailableCount} selected {unavailableCount === 1 ? "attempt is" : "attempts are"} no
+            longer available to review. Cancel, clear your selection, and select attempts again.
+          </AlertDescription>
+        </Alert>
       )}
-      <div
-        tabIndex={0}
+      <ScrollArea
         role="region"
         aria-label="Review every selected attempt"
-        className="focus-visible:outline-ring max-h-60 overflow-y-auto rounded-lg border px-3 focus-visible:outline-2"
+        className="rounded-lg border"
+        viewportClassName="max-h-60 px-3"
       >
-        <ul className="divide-border divide-y">
-          {entries.map(({ attempt, hidden }) => (
-            <li key={attempt.id} className="flex flex-col gap-1 py-3">
-              <span className="font-medium break-words">
-                {attempt.student?.full_name ??
-                  studentNames.get(attempt.student_id) ??
-                  "Unknown student"}
-              </span>
-              <time className="text-muted-foreground" dateTime={attempt.created_at}>
-                {uploadedAt.format(new Date(attempt.created_at))}
-              </time>
-              <span className="text-muted-foreground">
-                {statusConfig[attempt.status].label}
-                {hidden ? " · Hidden in current view" : ""}
-              </span>
-            </li>
+        <ul className="flex flex-col">
+          {entries.map(({ attempt, hidden }, index) => (
+            <Fragment key={attempt.id}>
+              {index > 0 && <Separator />}
+              <li className="flex flex-col gap-1 py-3">
+                <span className="font-medium break-words">
+                  {attempt.student?.full_name ??
+                    studentNames.get(attempt.student_id) ??
+                    "Unknown student"}
+                </span>
+                <time className="text-muted-foreground" dateTime={attempt.created_at}>
+                  {uploadedAt.format(new Date(attempt.created_at))}
+                </time>
+                <span className="text-muted-foreground">
+                  {statusConfig[attempt.status].label}
+                  {hidden ? " · Hidden in current view" : ""}
+                </span>
+              </li>
+            </Fragment>
           ))}
         </ul>
-      </div>
+      </ScrollArea>
     </section>
   );
 }

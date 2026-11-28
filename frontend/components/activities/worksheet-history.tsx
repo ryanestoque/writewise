@@ -6,7 +6,11 @@ import { toast } from "@/components/ui/toast";
 import { useDeleteSubmission, type Submission } from "@/lib/hooks/use-submissions";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -98,8 +102,8 @@ export function WorksheetHistory({
       <SheetTrigger
         render={
           trigger ?? (
-            <Button variant="outline" className="min-h-11 sm:min-h-9 gap-1.5">
-              <History className="size-3.5" aria-hidden="true" />
+            <Button variant="outline" className="min-h-11 sm:min-h-9">
+              <History data-icon="inline-start" aria-hidden="true" />
               <span>Worksheet history ({attempts.length})</span>
               <span className="sr-only"> for {studentName}</span>
             </Button>
@@ -128,102 +132,112 @@ export function WorksheetHistory({
             const isOfficial = attempt.id === officialId;
 
             return (
-              <li
-                key={attempt.id}
-                className="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 shadow-2xs transition-colors hover:border-border/80"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-foreground">
-                      Attempt {attempts.length - index}
-                    </h3>
-                    {isOfficial && (
-                      <Badge variant="outline" className="border-band-4/30 bg-band-4/10 text-band-4-text text-[11px] font-medium">
-                        Official worksheet
-                      </Badge>
+              <li key={attempt.id}>
+                <Card size="sm" className="gap-2.5 p-4 shadow-2xs transition-colors hover:border-border/80">
+                  <CardHeader className="p-0 flex flex-row flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle as="h3" className="text-sm font-semibold text-foreground">
+                        Attempt {attempts.length - index}
+                      </CardTitle>
+                      {isOfficial && (
+                        <Badge variant="outline" className="border-band-4/30 bg-band-4/10 text-band-4-text text-[11px] font-medium">
+                          Official worksheet
+                        </Badge>
+                      )}
+                      {attempt.released_at && (
+                        <Badge variant="outline" className="text-[11px] border-border text-muted-foreground">
+                          Shared with parents
+                        </Badge>
+                      )}
+                    </div>
+                    <time className="text-xs text-muted-foreground tabular-nums" dateTime={attempt.created_at}>
+                      {uploadDate.format(new Date(attempt.created_at))}
+                    </time>
+                  </CardHeader>
+
+                  <CardContent className="p-0 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{status}</span>
+                      {score.compositeScore != null && (
+                        <Badge variant="outline" className={cn("text-xs font-semibold tabular-nums", score.scoreBand.className)}>
+                          {Math.round(score.compositeScore)}% · {score.scoreBand.band}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {attempt.status === "rejected" && (
+                      <Alert variant="destructive" className="px-3 py-2 text-xs">
+                        <AlertDescription className="text-xs">
+                          {getRejectionSummary(attempt.rejection_code).detail}
+                        </AlertDescription>
+                      </Alert>
                     )}
-                    {attempt.released_at && (
-                      <Badge variant="outline" className="text-[11px] border-border text-muted-foreground">
-                        Shared with parents
-                      </Badge>
+                    {attempt.status === "returned" && attempt.return_note && (
+                      <Alert className="bg-muted/40 px-3 py-2 text-xs">
+                        <AlertDescription className="whitespace-pre-wrap break-words text-xs">
+                          <strong className="text-foreground">Return note: </strong>
+                          {attempt.return_note}
+                        </AlertDescription>
+                      </Alert>
                     )}
-                  </div>
-                  <time className="text-xs text-muted-foreground tabular-nums" dateTime={attempt.created_at}>
-                    {uploadDate.format(new Date(attempt.created_at))}
-                  </time>
-                </div>
+                  </CardContent>
 
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{status}</span>
-                  {score.compositeScore != null && (
-                    <Badge variant="outline" className={`text-xs font-semibold tabular-nums ${score.scoreBand.className}`}>
-                      {Math.round(score.compositeScore)}% · {score.scoreBand.band}
-                    </Badge>
-                  )}
-                </div>
+                  <Separator />
 
-                {attempt.status === "rejected" && (
-                  <p className="text-xs text-destructive bg-destructive/5 rounded-md p-2 border border-destructive/20">
-                    {getRejectionSummary(attempt.rejection_code).detail}
-                  </p>
-                )}
-                {attempt.status === "returned" && attempt.return_note && (
-                  <p className="whitespace-pre-wrap break-words text-xs text-muted-foreground bg-muted/40 rounded-md p-2 border border-border/60">
-                    <strong className="text-foreground">Return note: </strong>
-                    {attempt.return_note}
-                  </p>
-                )}
+                  <CardFooter className="p-0 flex flex-wrap items-center gap-2">
+                    <Button
+                      nativeButton={false}
+                      size="sm"
+                      className="min-h-9 text-xs font-semibold"
+                      render={
+                        <Link
+                          href={`/activities/${activityId}/submissions/${attempt.id}${queueQuery}`}
+                          onClick={handleClose}
+                        />
+                      }
+                    >
+                      <span>Open worksheet</span>
+                      <ArrowUpRight data-icon="inline-end" aria-hidden="true" />
+                      <span className="sr-only"> · Attempt {attempts.length - index} for {studentName}</span>
+                    </Button>
 
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50">
-                  <Link
-                    className={buttonVariants({
-                      variant: "default",
-                      size: "sm",
-                      className: "min-h-9 gap-1 text-xs font-semibold" })}
-                    href={`/activities/${activityId}/submissions/${attempt.id}${queueQuery}`}
-                    onClick={handleClose}
-                  >
-                    <span>Open worksheet</span>
-                    <ArrowUpRight className="size-3" aria-hidden="true" />
-                    <span className="sr-only"> · Attempt {attempts.length - index} for {studentName}</span>
-                  </Link>
+                    {onSelectAttempt && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onSelectAttempt(attempt);
+                          handleClose();
+                        }}
+                        className="min-h-9 text-xs font-medium"
+                      >
+                        <Eye data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
+                        <span>Preview on card</span>
+                      </Button>
+                    )}
 
-                  {onSelectAttempt && (
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        onSelectAttempt(attempt);
-                        handleClose();
-                      }}
-                      className="min-h-9 gap-1 text-xs font-medium cursor-pointer"
+                      disabled={deleteMutation.isPending}
+                      onClick={() =>
+                        setAttemptToDelete({
+                          submission: attempt,
+                          attemptNumber: attempts.length - index })
+                      }
+                      className="ml-auto min-h-9 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
                     >
-                      <Eye className="size-3 text-muted-foreground" aria-hidden="true" />
-                      <span>Preview on card</span>
+                      <Trash2 data-icon="inline-start" aria-hidden="true" />
+                      <span>Delete</span>
+                      <span className="sr-only">
+                        {" "}
+                        · Attempt {attempts.length - index} for {studentName}
+                      </span>
                     </Button>
-                  )}
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={deleteMutation.isPending}
-                    onClick={() =>
-                      setAttemptToDelete({
-                        submission: attempt,
-                        attemptNumber: attempts.length - index })
-                    }
-                    className="ml-auto min-h-9 gap-1 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                  >
-                    <Trash2 className="size-3" aria-hidden="true" />
-                    <span>Delete</span>
-                    <span className="sr-only">
-                      {" "}
-                      · Attempt {attempts.length - index} for {studentName}
-                    </span>
-                  </Button>
-                </div>
+                  </CardFooter>
+                </Card>
               </li>
             );
           })}
@@ -261,7 +275,7 @@ export function WorksheetHistory({
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <Spinner className="mr-1.5 size-4" />
+                    <Spinner data-icon="inline-start" />
                     Deleting...
                   </>
                 ) : (

@@ -10,9 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Field, FieldDescription, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSections } from "@/lib/hooks/use-sections";
 import { useStudents } from "@/lib/hooks/use-students";
 import { toActivityDueAt } from "@/lib/utils/activity-deadlines";
@@ -123,39 +125,44 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
         </span>
       </FieldLegend>
       {(sectionsLoading || studentsLoading) && (
-        <p role="status" className="text-muted-foreground text-sm">
-          Loading your roster…
-        </p>
+        <div role="status" aria-label="Loading your roster">
+          <Skeleton className="h-9 w-full" />
+        </div>
       )}
       {(sectionsError || studentsError) && (
-        <Alert
-          variant="destructive"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
-        >
+        <Alert variant="destructive" className="rounded-lg py-2 text-xs">
           <AlertDescription className="text-xs">Could not load your roster.</AlertDescription>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              void refetchSections();
-              void refetchStudents();
-            }}
-            className="h-8 gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 cursor-pointer"
-          >
-            <RotateCcw className="size-3.5" aria-hidden="true" />
-            Retry
-          </Button>
+          <AlertAction className="top-1.5 right-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void refetchSections();
+                void refetchStudents();
+              }}
+              className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10"
+            >
+              <RotateCcw data-icon="inline-start" aria-hidden="true" />
+              Retry
+            </Button>
+          </AlertAction>
         </Alert>
       )}
       {!sectionsLoading && !studentsLoading && !sectionsError && !studentsError && !sections?.length && !students?.length && (
-        <p className="text-muted-foreground text-sm">
+        <FieldDescription>
           Add students or sections in{" "}
-          <Link className="underline" href="/roster">
+          <Button
+            nativeButton={false}
+            variant="link"
+            size="xs"
+            className="h-auto p-0 align-baseline"
+            render={<Link href="/roster" />}
+          >
             your roster
-          </Link>{" "}
+          </Button>{" "}
           before assigning work.
-        </p>
+        </FieldDescription>
       )}
       <div className="flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
         {sections?.map((section) => (
@@ -174,10 +181,16 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
       {!!students?.length && (
         <Collapsible>
           <CollapsibleTrigger
-            type="button"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-1 rounded-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&[data-panel-open]>svg]:rotate-180"
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="justify-start px-2 text-muted-foreground hover:text-foreground [&[data-panel-open]>svg]:rotate-180"
+              />
+            }
           >
-            <ChevronDown className="size-4 transition-transform duration-200" aria-hidden="true" />
+            <ChevronDown data-icon="inline-start" className="transition-transform duration-200" aria-hidden="true" />
             <span>Individual students (optional)</span>
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
@@ -269,8 +282,13 @@ export function ActivityOptionalSettings({
       className="rounded-xl border border-border/80 bg-muted/20"
     >
       <CollapsibleTrigger
-        type="button"
-        className="flex w-full min-h-11 items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-foreground hover:bg-muted/40 rounded-xl transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex h-auto min-h-11 w-full items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-foreground whitespace-normal hover:bg-muted/40"
+          />
+        }
       >
         <div className="min-w-0">
           <span>More options</span>
@@ -281,14 +299,16 @@ export function ActivityOptionalSettings({
           </span>
         </div>
         <ChevronDown
+          data-icon="inline-end"
           className={cn(
-            "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+            "text-muted-foreground transition-transform duration-200",
             isOpen && "rotate-180"
           )}
           aria-hidden="true"
         />
       </CollapsibleTrigger>
-      <CollapsibleContent className="px-3.5 pb-3.5 pt-2 space-y-4 border-t border-border/60">
+      <CollapsibleContent className="flex flex-col gap-4 px-3.5 pb-3.5">
+        <Separator />
         <Field>
           <FieldLabel htmlFor={`${id}-instructions`}>Instructions (optional)</FieldLabel>
           <Textarea
@@ -298,7 +318,7 @@ export function ActivityOptionalSettings({
             className="min-h-20 rounded-lg sm:rounded-xl"
           />
         </Field>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <PointsField
             value={points ?? ""}
             onChange={(value) => {

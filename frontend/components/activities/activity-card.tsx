@@ -6,8 +6,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Activity } from "@/lib/hooks/use-activities";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import {
@@ -19,6 +28,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -150,142 +160,155 @@ export const ActivityCard = memo(function ActivityCard({
   }, [activity.submissions, assignedStudentIds, totalStudents]);
 
   return (
-    <div
+    <Card
       onClick={
         isSelectMode
           ? (e) => onToggleSelect(activity.id, e.shiftKey)
           : undefined
       }
       className={cn(
-        "group relative flex flex-col justify-between bg-surface dark:bg-card border rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-warm hover:shadow-md transition-all duration-200",
+        "group relative justify-between gap-3 p-4 sm:p-5 sm:rounded-2xl transition-all duration-200 hover:shadow-md",
         isSelectMode && "cursor-pointer select-none",
-        isSelected && "ring-2 ring-primary border-primary/60 bg-brand-50/20 dark:bg-brand-950/20",
+        isSelected && "ring-2 ring-primary border-primary/60 bg-primary/5",
         isArchived
           ? "border-dashed border-border/80 opacity-80 hover:opacity-100"
-          : "border-border hover:border-brand-300 dark:hover:border-brand-800"
+          : "hover:border-primary/40"
       )}
     >
-      <div>
-        {/* Card Header: Checkbox, Badges & Actions Menu */}
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-            {/* Selection Checkbox with Touch-Friendly Hit Target */}
-            <div
-              className="w-8 shrink-0 flex items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={() => {
-                  onToggleSelect(activity.id);
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (e.shiftKey) {
-                    e.preventDefault();
-                    onToggleSelect(activity.id, true);
-                  }
-                }}
-                aria-label={`Select activity: ${displayTargetText.slice(0, 40)}`}
-                className="cursor-pointer"
-              />
-            </div>
-
-            {isArchived ? (
-              <Badge
-                variant="outline"
-                className="text-xs font-semibold px-2 py-0.5 bg-muted/60 text-muted-foreground border-border/80"
-              >
-                <Archive className="w-3.5 h-3.5 mr-1" />
-                Archived
-              </Badge>
-            ) : (
-              <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                {activity.is_take_home ? (
-                  <span className="inline-flex items-center gap-1 text-brand-700 dark:text-brand-300">
-                    <Home className="size-3.5 text-brand-600 dark:text-brand-400" />
-                    Take-home
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-foreground/80">
-                    <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400" />
-                    In-Class
-                  </span>
-                )}
-                <span className="text-muted-foreground/40">•</span>
-                <span className="tabular-nums">
-                  {wordCount} {wordCount === 1 ? "word" : "words"}
-                </span>
-              </div>
-            )}
+      <CardHeader className="p-0 flex flex-row items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {/* Selection Checkbox with Touch-Friendly Hit Target */}
+          <div
+            className="flex w-8 shrink-0 items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => {
+                onToggleSelect(activity.id);
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.shiftKey) {
+                  e.preventDefault();
+                  onToggleSelect(activity.id, true);
+                }
+              }}
+              aria-label={`Select activity: ${displayTargetText.slice(0, 40)}`}
+              className="cursor-pointer"
+            />
           </div>
 
-          {/* Overflow Actions Menu with 40px Touch Hit Target on Mobile */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="flex size-10 sm:size-8 min-h-[40px] sm:min-h-[32px] items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Actions for activity: ${displayTargetText.slice(0, 40)}`}
-              onClick={(e) => e.stopPropagation()}
+          {isArchived ? (
+            <Badge
+              variant="outline"
+              className="bg-muted/60 text-muted-foreground border-border/80"
             >
-              <MoreVertical className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem
-                onClick={() => onUpload(activity.id)}
-                className="cursor-pointer gap-2 text-xs min-h-[36px]"
-              >
-                <Upload className="size-3.5" />
-                <span>Upload Worksheet</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDuplicate(activity)}
-                className="cursor-pointer gap-2 text-xs min-h-[36px]"
-              >
-                <Copy className="size-3.5" />
-                <span>Duplicate Activity</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onEdit(activity)}
-                className="cursor-pointer gap-2 text-xs min-h-[36px]"
-              >
-                <Edit3 className="size-3.5" />
-                <span>Edit Activity</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => router.push(`/activities/${activity.id}`)}
-                className="cursor-pointer gap-2 text-xs min-h-[36px]"
-              >
-                <Inbox className="size-3.5" />
-                <span>View Submissions</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onToggleArchive(activity.id)}
-                className="cursor-pointer gap-2 text-xs min-h-[36px]"
-              >
-                {isArchived ? (
-                  <>
-                    <ArchiveRestore className="size-3.5" />
-                    <span>Unarchive Activity</span>
-                  </>
-                ) : (
-                  <>
-                    <Archive className="size-3.5" />
-                    <span>Archive Activity</span>
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDelete(activity)}
-                className="cursor-pointer gap-2 text-xs text-destructive focus:text-destructive min-h-[36px]"
-              >
-                <Trash2 className="size-3.5" />
-                <span>Delete Activity</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Archive data-icon="inline-start" aria-hidden="true" />
+              Archived
+            </Badge>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              {activity.is_take_home ? (
+                <span className="inline-flex items-center gap-1 text-primary">
+                  <Home className="size-3.5 text-primary" aria-hidden="true" />
+                  Take-home
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-foreground/80">
+                  <BookOpen className="size-3.5 text-primary" aria-hidden="true" />
+                  In-Class
+                </span>
+              )}
+              <span className="text-muted-foreground/40">•</span>
+              <span className="tabular-nums">
+                {wordCount} {wordCount === 1 ? "word" : "words"}
+              </span>
+            </div>
+          )}
         </div>
 
+        {/* Overflow Actions Menu with 40px Touch Hit Target on Mobile */}
+        <CardAction>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="size-10 sm:size-8 min-h-10 sm:min-h-8 text-muted-foreground hover:text-foreground"
+                  aria-label={`Actions for activity: ${displayTargetText.slice(0, 40)}`}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+            >
+              <MoreVertical aria-hidden="true" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => onUpload(activity.id)}
+                  className="min-h-9 cursor-pointer text-xs"
+                >
+                  <Upload aria-hidden="true" />
+                  <span>Upload Worksheet</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onDuplicate(activity)}
+                  className="min-h-9 cursor-pointer text-xs"
+                >
+                  <Copy aria-hidden="true" />
+                  <span>Duplicate Activity</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => onEdit(activity)}
+                  className="min-h-9 cursor-pointer text-xs"
+                >
+                  <Edit3 aria-hidden="true" />
+                  <span>Edit Activity</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => router.push(`/activities/${activity.id}`)}
+                  className="min-h-9 cursor-pointer text-xs"
+                >
+                  <Inbox aria-hidden="true" />
+                  <span>View Submissions</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onClick={() => onToggleArchive(activity.id)}
+                  className="min-h-9 cursor-pointer text-xs"
+                >
+                  {isArchived ? (
+                    <>
+                      <ArchiveRestore aria-hidden="true" />
+                      <span>Unarchive Activity</span>
+                    </>
+                  ) : (
+                    <>
+                      <Archive aria-hidden="true" />
+                      <span>Archive Activity</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => onDelete(activity)}
+                  className="min-h-9 cursor-pointer text-xs"
+                >
+                  <Trash2 aria-hidden="true" />
+                  <span>Delete Activity</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </CardAction>
+      </CardHeader>
+
+      <CardContent className="p-0 flex-1">
         {/* Target Text Preview with Cursive Worksheet Accent & 3-line Ruling */}
         <Link
           href={`/activities/${activity.id}`}
@@ -298,23 +321,27 @@ export const ActivityCard = memo(function ActivityCard({
               onToggleSelect(activity.id, e.shiftKey);
             }
           }}
-          className="block group-hover:opacity-95 transition-opacity focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
+          className="block rounded-xl transition-opacity group-hover:opacity-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <h3 className="mb-1 font-heading text-base font-semibold">{activity.title}</h3>
+          <CardTitle as="h3" className="mb-1 text-base font-semibold">
+            {activity.title}
+          </CardTitle>
           <p className="mb-3 text-xs text-muted-foreground">
             {activity.due_at ? `Due ${formatActivityDueAt(activity.due_at)}` : "No due date"}
           </p>
           <WorksheetPrompt text={activity.target_text} preview />
         </Link>
-      </div>
+      </CardContent>
+
+      <Separator />
 
       {/* Card Footer: Submission Progress Gauge & Direct Actions */}
-      <div className="space-y-2.5 pt-2.5 border-t border-border/60">
+      <CardFooter className="p-0 flex-col items-stretch gap-2.5">
         {/* Status header with count and timestamp */}
         <div className="flex items-center justify-between gap-1.5 text-xs">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="font-semibold text-foreground text-xs flex items-center gap-1.5 truncate">
-              <Inbox className="size-3.5 text-muted-foreground shrink-0" />
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="flex items-center gap-1.5 truncate text-xs font-semibold text-foreground">
+              <Inbox className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
               {totalStudents > 0 ? (
                 <span className="truncate tabular-nums">
                   {collectedStudents} of {totalStudents}{" "}
@@ -329,15 +356,18 @@ export const ActivityCard = memo(function ActivityCard({
             </span>
 
             {isFullyCollected && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-md border border-brand-200/80 dark:border-brand-900 shrink-0">
-                <CheckCircle2 className="size-3" />
+              <Badge
+                variant="outline"
+                className="shrink-0 border-band-4/30 bg-band-4/15 text-band-4-text"
+              >
+                <CheckCircle2 data-icon="inline-start" aria-hidden="true" />
                 Complete
-              </span>
+              </Badge>
             )}
           </div>
 
-          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0 tabular-nums">
-            <CalendarDays className="size-3.5" />
+          <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground tabular-nums">
+            <CalendarDays className="size-3.5" aria-hidden="true" />
             {relativeTime}
           </span>
         </div>
@@ -356,12 +386,12 @@ export const ActivityCard = memo(function ActivityCard({
                   aria-valuetext={`${completedCount} completed, ${processingCount} processing, ${rejectedCount} needing re-scan out of ${totalStudents} assigned students`}
                   aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} needing re-scan out of ${totalStudents} assigned students`}
                   onClick={(e) => e.stopPropagation()}
-                  className="group/progress w-full py-2 -my-1.5 cursor-help focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-full touch-manipulation"
+                  className="group/progress -my-1.5 w-full cursor-help rounded-full py-2 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <div className="w-full bg-muted/60 dark:bg-muted/40 h-2 rounded-full overflow-hidden flex shadow-warm-sm group-hover/progress:brightness-95 transition-all">
+                  <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted/60 shadow-warm-sm transition-all group-hover/progress:brightness-95">
                     {completedCount > 0 && (
                       <div
-                        className="bg-brand-500 transition-all duration-300 motion-reduce:transition-none"
+                        className="bg-primary transition-all duration-300 motion-reduce:transition-none"
                         style={{
                           width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
                         }}
@@ -391,50 +421,54 @@ export const ActivityCard = memo(function ActivityCard({
               side="top"
               sideOffset={6}
               arrowClassName="bg-popover fill-popover border-b border-r border-border"
-              className="flex flex-col items-stretch bg-popover text-popover-foreground border border-border shadow-warm-md text-xs p-3 space-y-2 min-w-[220px] rounded-xl"
+              className="flex min-w-[220px] flex-col items-stretch gap-2 rounded-xl border border-border bg-popover p-3 text-xs text-popover-foreground shadow-warm-md"
             >
-              <div className="font-semibold text-foreground pb-2 border-b border-border flex items-center justify-between">
-                <span className="text-xs font-heading font-medium">Assigned Students</span>
-                <span className="tabular-nums text-muted-foreground font-medium text-xs bg-muted/60 dark:bg-muted/40 px-1.5 py-0.5 rounded-md">
+              <div className="flex items-center justify-between font-semibold text-foreground">
+                <span className="font-heading text-xs font-medium">Assigned Students</span>
+                <Badge variant="secondary" className="tabular-nums">
                   {collectedStudents}/{totalStudents}
-                </span>
+                </Badge>
               </div>
-              <div className="space-y-1.5 text-xs">
+              <Separator />
+              <div className="flex flex-col gap-1.5 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-foreground/90 font-medium">
-                    <span className="size-2 rounded-full bg-brand-500 inline-block shrink-0 shadow-warm-sm" />
+                  <span className="flex items-center gap-1.5 font-medium text-foreground/90">
+                    <span className="inline-block size-2 shrink-0 rounded-full bg-primary shadow-warm-sm" />
                     Completed
                   </span>
                   <span className="font-semibold tabular-nums text-foreground">{completedCount}</span>
                 </div>
                 {processingCount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-warning-foreground dark:text-warning font-medium">
-                      <span className="size-2 rounded-full bg-warning inline-block shrink-0 animate-pulse motion-reduce:animate-none" />
+                    <span className="flex items-center gap-1.5 font-medium text-band-2-text">
+                      <span className="inline-block size-2 shrink-0 rounded-full bg-warning" />
                       Processing
                     </span>
-                    <span className="font-semibold tabular-nums text-warning-foreground dark:text-warning">{processingCount}</span>
+                    <span className="font-semibold tabular-nums text-band-2-text">{processingCount}</span>
                   </div>
                 )}
                 {rejectedCount > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-destructive font-medium">
-                      <span className="size-2 rounded-full bg-destructive inline-block shrink-0" />
+                    <span className="flex items-center gap-1.5 font-medium text-destructive">
+                      <span className="inline-block size-2 shrink-0 rounded-full bg-destructive" />
                       Needs Re-scan
                     </span>
                     <span className="font-semibold tabular-nums text-destructive">{rejectedCount}</span>
                   </div>
                 )}
                 {Math.max(0, totalStudents - collectedStudents) > 0 && (
-                  <div className="flex items-center justify-between text-muted-foreground pt-1.5 border-t border-border/50">
-                    <span className="flex items-center gap-1.5">
-                      <span className="size-2 rounded-full bg-muted-foreground/30 inline-block shrink-0" />
-                      Not submitted
-                    </span>
-                    <span className="font-medium tabular-nums">
-                      {Math.max(0, totalStudents - collectedStudents)}
-                    </span>
-                  </div>
+                  <>
+                    <Separator className="my-0.5" />
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block size-2 shrink-0 rounded-full bg-muted-foreground/30" />
+                        Not submitted
+                      </span>
+                      <span className="font-medium tabular-nums">
+                        {Math.max(0, totalStudents - collectedStudents)}
+                      </span>
+                    </div>
+                  </>
                 )}
               </div>
             </TooltipContent>
@@ -442,32 +476,32 @@ export const ActivityCard = memo(function ActivityCard({
         )}
 
         {/* Triage-First Assessment Status Subtext */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
+        <div className="flex items-center justify-between pt-0.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5 truncate">
             <span
               className={cn(
-                "size-1.5 rounded-full shrink-0",
+                "size-1.5 shrink-0 rounded-full",
                 rejectedCount > 0
                   ? "bg-destructive"
                   : processingCount > 0
-                  ? "bg-warning motion-safe:animate-pulse motion-reduce:animate-none"
-                  : completedCount > 0
-                  ? "bg-brand-500"
-                  : "bg-muted-foreground/50"
+                    ? "bg-warning"
+                    : completedCount > 0
+                      ? "bg-primary"
+                      : "bg-muted-foreground/50"
               )}
             />
             <span className="truncate tabular-nums">
               {rejectedCount > 0 && completedCount > 0
                 ? `${rejectedCount} ${rejectedCount === 1 ? "needs" : "need"} re-scan · ${completedCount} ready to review`
                 : rejectedCount > 0
-                ? `${rejectedCount} ${rejectedCount === 1 ? "worksheet needs" : "worksheets need"} re-scan`
-                : processingCount > 0
-                ? `${processingCount} ${processingCount === 1 ? "worksheet" : "worksheets"} analyzing`
-                : completedCount > 0
-                ? `${completedCount} ${completedCount === 1 ? "worksheet" : "worksheets"} ready to review`
-                : collectedStudents > 0
-                ? `${collectedStudents} collected · Ready to review`
-                : "Awaiting worksheet uploads"}
+                  ? `${rejectedCount} ${rejectedCount === 1 ? "worksheet needs" : "worksheets need"} re-scan`
+                  : processingCount > 0
+                    ? `${processingCount} ${processingCount === 1 ? "worksheet" : "worksheets"} analyzing`
+                    : completedCount > 0
+                      ? `${completedCount} ${completedCount === 1 ? "worksheet" : "worksheets"} ready to review`
+                      : collectedStudents > 0
+                        ? `${collectedStudents} collected · Ready to review`
+                        : "Awaiting worksheet uploads"}
             </span>
           </span>
         </div>
@@ -481,7 +515,7 @@ export const ActivityCard = memo(function ActivityCard({
               e.stopPropagation();
               onUpload(activity.id);
             }}
-            className="h-10 sm:h-8 min-h-[40px] sm:min-h-[36px] px-2 text-xs font-medium border-border/80 hover:bg-brand-50 hover:text-brand-700 dark:hover:bg-brand-950/60 dark:hover:text-brand-300 rounded-lg cursor-pointer transition-colors w-full justify-center"
+            className="h-10 sm:h-9 min-h-10 sm:min-h-9 w-full justify-center px-2 text-xs font-medium"
             title={isFullyCollected ? "Upload additional worksheet scans" : "Upload student worksheet scans"}
             aria-label={
               isFullyCollected
@@ -489,24 +523,25 @@ export const ActivityCard = memo(function ActivityCard({
                 : `Upload worksheet for ${displayTargetText}`
             }
           >
-            <Upload className="size-3.5 mr-1.5 text-primary shrink-0" />
+            <Upload data-icon="inline-start" className="text-primary" aria-hidden="true" />
             <span className="truncate">{isFullyCollected ? "Upload More" : "Upload"}</span>
           </Button>
 
-          <Link
-            href={`/activities/${activity.id}`}
-            onClick={(e) => {
-              if (isSelectMode) {
-                e.stopPropagation();
-              }
-            }}
-            className={cn(
-              buttonVariants({
-                variant: isFullyCollected ? "default" : "secondary",
-                size: "sm",
-              }),
-              "h-10 sm:h-8 min-h-[40px] sm:min-h-[36px] px-2 text-xs font-semibold rounded-lg shadow-warm-sm cursor-pointer group/btn w-full justify-center"
-            )}
+          <Button
+            nativeButton={false}
+            variant={isFullyCollected ? "default" : "secondary"}
+            size="sm"
+            render={
+              <Link
+                href={`/activities/${activity.id}`}
+                onClick={(e) => {
+                  if (isSelectMode) {
+                    e.stopPropagation();
+                  }
+                }}
+              />
+            }
+            className="group/btn h-10 sm:h-9 min-h-10 sm:min-h-9 w-full justify-center px-2 text-xs font-semibold shadow-warm-sm"
             title={isFullyCollected ? "Review completed submissions" : "View submissions for this activity"}
             aria-label={
               isFullyCollected
@@ -514,15 +549,15 @@ export const ActivityCard = memo(function ActivityCard({
                 : `View submissions for ${displayTargetText}`
             }
           >
-            <Inbox className="size-3.5 mr-1.5 shrink-0" />
+            <Inbox data-icon="inline-start" aria-hidden="true" />
             <span className="truncate">{isFullyCollected ? "Review" : "Submissions"}</span>
-            <span className="ml-1 text-xs transition-transform group-hover/btn:translate-x-0.5 motion-reduce:transform-none shrink-0">
+            <span className="ml-1 shrink-0 text-xs transition-transform group-hover/btn:translate-x-0.5 motion-reduce:transform-none">
               &rarr;
             </span>
-          </Link>
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 });
 

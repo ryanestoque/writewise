@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -8,6 +9,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { HelpCircle, BookOpen } from "lucide-react";
 
 /**
@@ -17,14 +19,23 @@ import { HelpCircle, BookOpen } from "lucide-react";
 export function ScoringGuidePopover() {
   return (
     <Popover>
-      <PopoverTrigger className="inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] text-xs font-medium rounded-lg border border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring shrink-0">
-        <BookOpen className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 sm:min-h-9 shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+          />
+        }
+      >
+        <BookOpen data-icon="inline-start" className="text-primary" aria-hidden="true" />
         <span>Rubric Guide</span>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 sm:w-96 p-4 z-50">
-        <PopoverHeader className="pb-2">
+      <PopoverContent align="end" className="w-80 sm:w-96 gap-3 p-4">
+        <PopoverHeader>
           <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-lg bg-brand-50 dark:bg-brand-950 flex items-center justify-center text-brand-600 dark:text-brand-400 shrink-0 border border-brand-200/50 dark:border-brand-900/50">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
               <HelpCircle className="size-4" aria-hidden="true" />
             </div>
             <div>
@@ -38,9 +49,11 @@ export function ScoringGuidePopover() {
           </div>
         </PopoverHeader>
 
-        <div className="space-y-3 text-xs pt-2.5 border-t border-border/60">
+        <Separator />
+
+        <div className="flex flex-col gap-3 text-xs">
           <div className="flex items-start gap-2.5">
-            <div className="size-2 rounded-full bg-brand-500 mt-1 shrink-0" aria-hidden="true" />
+            <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             <div>
               <strong className="font-semibold text-foreground">
                 1. Letter Formation:
@@ -51,7 +64,7 @@ export function ScoringGuidePopover() {
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <div className="size-2 rounded-full bg-brand-500 mt-1 shrink-0" aria-hidden="true" />
+            <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             <div>
               <strong className="font-semibold text-foreground">
                 2. Size Consistency:
@@ -62,7 +75,7 @@ export function ScoringGuidePopover() {
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <div className="size-2 rounded-full bg-brand-500 mt-1 shrink-0" aria-hidden="true" />
+            <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             <div>
               <strong className="font-semibold text-foreground">
                 3. Spacing:
@@ -73,7 +86,7 @@ export function ScoringGuidePopover() {
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <div className="size-2 rounded-full bg-brand-500 mt-1 shrink-0" aria-hidden="true" />
+            <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             <div>
               <strong className="font-semibold text-foreground">
                 4. Slant Angle:
@@ -84,7 +97,7 @@ export function ScoringGuidePopover() {
             </div>
           </div>
           <div className="flex items-start gap-2.5">
-            <div className="size-2 rounded-full bg-brand-500 mt-1 shrink-0" aria-hidden="true" />
+            <div className="mt-1 size-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />
             <div>
               <strong className="font-semibold text-foreground">
                 5. Baseline Alignment:
@@ -96,7 +109,9 @@ export function ScoringGuidePopover() {
           </div>
         </div>
 
-        <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+        <Separator />
+
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
           <span>Non-punitive 4-band scoring</span>
           <span className="font-medium text-foreground">Needs Improvement → Excellent</span>
         </div>

@@ -5,11 +5,14 @@ import { memo, useState } from "react";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertAction, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Kbd } from "@/components/ui/kbd";
 import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
@@ -25,6 +28,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -156,13 +160,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
       {/* Group 1: Activity Mode & Word Count */}
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
         {activity.is_take_home ? (
-          <span className="inline-flex items-center gap-1 font-medium text-brand-700 dark:text-brand-300">
-            <Home className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1 font-medium text-primary">
+            <Home className="size-3 text-primary" aria-hidden="true" />
             <span>Take-home</span>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 font-medium text-foreground/80">
-            <BookOpen className="size-3 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <BookOpen className="size-3 text-primary" aria-hidden="true" />
             <span>In-class</span>
           </span>
         )}
@@ -196,13 +200,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         size="sm"
         onClick={onUpload}
         className={cn(
-          "h-9 font-semibold text-xs gap-1.5 shadow-2xs cursor-pointer",
+          "h-9 text-xs font-semibold shadow-2xs",
           compact ? "px-2.5" : "px-3"
         )}
         title={`Upload worksheets (${altKey}+U)`}
         aria-keyshortcuts="Alt+U"
       >
-        <Upload className="size-3.5" data-icon="inline-start" aria-hidden="true" />
+        <Upload data-icon="inline-start" aria-hidden="true" />
         <span className={compact ? "inline" : "sm:hidden"}>Upload</span>
         {!compact && (
           <>
@@ -218,75 +222,88 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="border-border bg-background hover:bg-muted/60 text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-11 min-h-[44px] min-w-[44px] sm:size-9 sm:min-h-0 sm:min-w-0 cursor-pointer items-center justify-center rounded-lg border transition-all focus-visible:ring-2 focus-visible:outline-hidden"
-          aria-label="More activity options"
+          render={
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-11 sm:size-9 text-muted-foreground hover:text-foreground"
+              aria-label="More activity options"
+            />
+          }
         >
-          <MoreVertical className="size-4" aria-hidden="true" />
+          <MoreVertical aria-hidden="true" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-50 w-48">
-          <DropdownMenuItem
-            onClick={onDuplicate}
-            className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
-          >
-            <Copy className="text-muted-foreground mr-2 h-3.5 w-3.5" />
-            <span>Duplicate Activity</span>
-          </DropdownMenuItem>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={onDuplicate}
+              className="min-h-11 md:min-h-9 cursor-pointer text-xs"
+            >
+              <Copy className="text-muted-foreground" aria-hidden="true" />
+              <span>Duplicate Activity</span>
+            </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={onEdit}
-            className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
-          >
-            <Edit3 className="text-muted-foreground mr-2 h-3.5 w-3.5" />
-            <span>Edit Activity</span>
-          </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={onEdit}
+              className="min-h-11 md:min-h-9 cursor-pointer text-xs"
+            >
+              <Edit3 className="text-muted-foreground" aria-hidden="true" />
+              <span>Edit Activity</span>
+            </DropdownMenuItem>
 
-          <DropdownMenuItem
-            onClick={onToggleArchive}
-            className="flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
-          >
-            {isArchived ? (
-              <>
-                <ArchiveRestore className="text-muted-foreground mr-2 h-3.5 w-3.5" />
-                <span>Unarchive Activity</span>
-              </>
-            ) : (
-              <>
-                <Archive className="text-muted-foreground mr-2 h-3.5 w-3.5" />
-                <span>Archive Activity</span>
-              </>
-            )}
-          </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={onToggleArchive}
+              className="min-h-11 md:min-h-9 cursor-pointer text-xs"
+            >
+              {isArchived ? (
+                <>
+                  <ArchiveRestore className="text-muted-foreground" aria-hidden="true" />
+                  <span>Unarchive Activity</span>
+                </>
+              ) : (
+                <>
+                  <Archive className="text-muted-foreground" aria-hidden="true" />
+                  <span>Archive Activity</span>
+                </>
+              )}
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={onDelete}
-            className="text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10 flex min-h-[44px] cursor-pointer items-center text-xs md:min-h-[36px]"
-          >
-            <Trash2 className="mr-2 h-3.5 w-3.5" />
-            <span>Delete Activity</span>
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={onDelete}
+              className="min-h-11 md:min-h-9 cursor-pointer text-xs"
+            >
+              <Trash2 aria-hidden="true" />
+              <span>Delete Activity</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
   );
 
   return (
-    <section
+    <Card
       aria-labelledby="activity-prompt-heading"
-      className="bg-surface dark:bg-card rounded-xl border px-4 py-3 sm:p-5"
+      className="gap-0 px-4 py-3 sm:p-5"
     >
       {/* Unified Responsive Title & Metadata */}
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <CardHeader className="p-0 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3 min-w-0 sm:block">
-            <h1
+          <div className="flex min-w-0 items-center justify-between gap-3 sm:block">
+            <CardTitle
+              as="h1"
               id="activity-prompt-heading"
-              className="font-heading text-lg font-semibold break-words leading-snug sm:text-xl"
+              className="text-lg font-semibold break-words leading-snug sm:text-xl"
             >
               {activity.title || "Untitled Activity"}
-            </h1>
-            <div className="sm:hidden shrink-0">
+            </CardTitle>
+            <div className="shrink-0 sm:hidden">
               {renderActions(true)}
             </div>
           </div>
@@ -297,80 +314,95 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         <div className="hidden sm:flex sm:shrink-0">
           {renderActions(false)}
         </div>
-      </div>
-      {isArchived && (
-        <p role="status" className="text-muted-foreground mt-3 text-sm">
-          <Archive className="mr-1 inline size-4" aria-hidden="true" />
-          Archived and hidden from student assignment pickers.
-        </p>
-      )}
-      <section aria-label="Worksheet prompt" className="mt-3.5 flex flex-col gap-2">
-        {/* Standard print / non-cursive ground truth text with Copy aligned at the bottom end */}
-        <div className="flex flex-wrap items-end justify-between gap-2 sm:gap-3">
-          <p className="min-w-0 flex-1 text-sm font-medium text-foreground tracking-tight leading-relaxed break-words select-all">
-            {targetText || (
-              <span className="text-muted-foreground/70 italic text-sm font-normal">
-                No text specified
-              </span>
-            )}
-          </p>
-          <div className="flex items-center gap-1 shrink-0 self-end ml-auto">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onCopyPrompt}
-              aria-label={hasCopiedPrompt ? "Target text copied" : "Copy target text"}
-              className="h-10 min-h-[44px] sm:h-7 sm:min-h-[28px] px-2.5 sm:px-2 text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 cursor-pointer rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-              title="Copy target text"
-            >
-              {hasCopiedPrompt ? (
-                <Check className="text-primary size-3.5" data-icon="inline-start" aria-hidden="true" />
-              ) : (
-                <Copy className="size-3.5" data-icon="inline-start" aria-hidden="true" />
+      </CardHeader>
+
+      <CardContent className="p-0">
+        {isArchived && (
+          <Alert role="status" className="mt-3">
+            <Archive aria-hidden="true" />
+            <AlertDescription>
+              Archived and hidden from student assignment pickers.
+            </AlertDescription>
+          </Alert>
+        )}
+        <Collapsible
+          open={isPromptExpanded}
+          onOpenChange={setIsPromptExpanded}
+          render={<section aria-label="Worksheet prompt" className="mt-3.5 flex flex-col gap-2" />}
+        >
+          {/* Standard print / non-cursive ground truth text with Copy aligned at the bottom end */}
+          <div className="flex flex-wrap items-end justify-between gap-2 sm:gap-3">
+            <p className="min-w-0 flex-1 text-sm font-medium text-foreground tracking-tight leading-relaxed break-words select-all">
+              {targetText || (
+                <span className="text-muted-foreground/70 italic text-sm font-normal">
+                  No text specified
+                </span>
               )}
-              <span className="text-[11px] font-medium">
-                {hasCopiedPrompt ? "Copied" : "Copy target text"}
-              </span>
-            </Button>
-            {isLongPrompt && (
+            </p>
+            <div className="ml-auto flex shrink-0 items-center gap-1 self-end">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsPromptExpanded(!isPromptExpanded)}
-                aria-expanded={isPromptExpanded}
-                className="h-10 min-h-[44px] sm:h-7 sm:min-h-[28px] px-2 text-xs font-medium text-muted-foreground hover:text-foreground inline-flex items-center gap-1 cursor-pointer rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-                title={isPromptExpanded ? "Collapse cursive preview" : "Expand cursive preview"}
+                onClick={onCopyPrompt}
+                aria-label={hasCopiedPrompt ? "Target text copied" : "Copy target text"}
+                className="min-h-11 sm:min-h-7 sm:h-7 px-2.5 sm:px-2 text-xs text-muted-foreground hover:text-foreground"
+                title="Copy target text"
               >
-                <ChevronDown
-                  className={cn(
-                    "size-3.5 transition-transform duration-200 motion-reduce:transition-none motion-reduce:transform-none",
-                    isPromptExpanded && "rotate-180"
-                  )}
-                  aria-hidden="true"
-                />
-                <span className="text-[11px]">{isPromptExpanded ? "Collapse" : "Expand"}</span>
+                {hasCopiedPrompt ? (
+                  <Check data-icon="inline-start" className="text-primary" aria-hidden="true" />
+                ) : (
+                  <Copy data-icon="inline-start" aria-hidden="true" />
+                )}
+                <span className="text-[11px] font-medium">
+                  {hasCopiedPrompt ? "Copied" : "Copy target text"}
+                </span>
               </Button>
-            )}
+              {isLongPrompt && (
+                <CollapsibleTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-11 sm:min-h-7 sm:h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      title={isPromptExpanded ? "Collapse cursive preview" : "Expand cursive preview"}
+                    />
+                  }
+                >
+                  <ChevronDown
+                    data-icon="inline-start"
+                    className={cn(
+                      "transition-transform duration-200 motion-reduce:transition-none motion-reduce:transform-none",
+                      isPromptExpanded && "rotate-180"
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="text-[11px]">{isPromptExpanded ? "Collapse" : "Expand"}</span>
+                </CollapsibleTrigger>
+              )}
+            </div>
           </div>
-        </div>
 
-        {activity.instructions && (
-          <p className="max-w-prose text-xs text-muted-foreground break-words whitespace-pre-wrap">
-            {activity.instructions}
-          </p>
-        )}
+          {activity.instructions && (
+            <p className="max-w-prose text-xs text-muted-foreground break-words whitespace-pre-wrap">
+              {activity.instructions}
+            </p>
+          )}
 
-        <WorksheetPrompt
-          text={activity.target_text}
-          preview={isLongPrompt && !isPromptExpanded}
-        />
-      </section>
-      <div className="flex flex-col gap-3.5 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:gap-6">
-        <div className="min-w-0 flex-1 space-y-1.5">
+          <WorksheetPrompt
+            text={activity.target_text}
+            preview={isLongPrompt && !isPromptExpanded}
+          />
+        </Collapsible>
+      </CardContent>
+
+      <Separator className="my-3.5" />
+
+      <CardFooter className="p-0 flex-col items-stretch gap-3.5 sm:flex-row sm:items-center sm:gap-6">
+        <div className="min-w-0 flex-1 flex flex-col gap-1.5">
           {summaryState === "loading" && totalStudents === 0 ? (
-            <div className="space-y-1.5" role="status" aria-label="Loading student submission progress">
+            <div className="flex flex-col gap-1.5" role="status" aria-label="Loading student submission progress">
               <div className="flex items-center justify-between text-xs">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-8" />
@@ -412,7 +444,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   indicatorClassName="bg-primary rounded-full duration-300 motion-reduce:transition-none"
                 />
               ) : (
-                <Button variant="link" onClick={onEdit} className="min-h-9 px-0 text-xs">
+                <Button variant="link" onClick={onEdit} className="min-h-9 self-start px-0 text-xs">
                   Edit assignments
                   <ArrowRight data-icon="inline-end" aria-hidden="true" />
                 </Button>
@@ -421,13 +453,15 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           )}
         </div>
 
+        <Separator className="sm:hidden" />
+
         {summaryState === "loading" ? (
           <div
-            className="flex min-w-0 flex-1 items-center justify-between gap-3 border-t border-border/40 pt-3 sm:border-t-0 sm:pt-0"
+            className="flex min-w-0 flex-1 items-center justify-between gap-3"
             role="status"
             aria-label="Loading diagnostic insights"
           >
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <Skeleton className="h-3.5 w-24" />
               <div className="flex items-center gap-1.5">
                 <Skeleton className="h-5 w-20 rounded-md" />
@@ -437,28 +471,28 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
         ) : summaryState === "error" ? (
-          <Alert
-            variant="destructive"
-            className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border-t border-border/40 bg-transparent px-0 pt-3 pb-0 text-xs text-muted-foreground sm:border-t-0 sm:pt-0 border-0"
-          >
-            <AlertDescription className="truncate text-xs text-muted-foreground">
+          <Alert variant="destructive" className="min-w-0 flex-1 py-2.5 text-xs">
+            <AlertDescription className="truncate text-xs">
               Class insights unavailable.
             </AlertDescription>
             {onRetrySummary && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRetrySummary}
-                className="h-8 shrink-0 text-xs font-medium text-foreground hover:bg-muted cursor-pointer"
-              >
-                <RefreshCw className="mr-1 size-3" aria-hidden="true" />
-                Retry
-              </Button>
+              <AlertAction className="top-1.5 right-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onRetrySummary}
+                  className="h-8 text-xs font-medium"
+                >
+                  <RefreshCw data-icon="inline-start" aria-hidden="true" />
+                  Retry
+                </Button>
+              </AlertAction>
             )}
           </Alert>
         ) : classDiagnostics ? (
-          <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2.5 border-t border-border/40 pt-3 sm:border-t-0 sm:pt-0 sm:flex-row sm:items-center">
-            <div className="min-w-0 space-y-1">
+          <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2.5 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-col gap-1">
               <p className="text-muted-foreground text-xs flex items-center gap-1.5 flex-wrap">
                 <span>Class average</span>
                 <span aria-hidden="true" className="text-muted-foreground/40 select-none">·</span>
@@ -486,18 +520,22 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             </div>
             <Popover>
               <PopoverTrigger
-                className="border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted/60 focus-visible:ring-ring inline-flex min-h-[44px] sm:min-h-[36px] shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-hidden"
-                aria-label="View class criteria breakdown"
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-11 sm:min-h-9 shrink-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    aria-label="View class criteria breakdown"
+                  />
+                }
               >
-                <BarChart3
-                  className="text-brand-600 dark:text-brand-400 size-3.5"
-                  aria-hidden="true"
-                />
+                <BarChart3 data-icon="inline-start" className="text-primary" aria-hidden="true" />
                 <span>Breakdown</span>
-                <ChevronDown className="size-3 opacity-60" aria-hidden="true" />
+                <ChevronDown data-icon="inline-end" className="opacity-60" aria-hidden="true" />
               </PopoverTrigger>
-              <PopoverContent align="end" className="z-50 w-[min(calc(100vw-2rem),21rem)] gap-2.5 p-3.5 text-xs">
-                <PopoverHeader className="space-y-1">
+              <PopoverContent align="end" className="w-[min(calc(100vw-2rem),21rem)] gap-2.5 p-3.5 text-xs">
+                <PopoverHeader className="flex flex-col gap-1">
                   <PopoverTitle className="text-foreground flex items-center justify-between text-xs font-semibold">
                     <span>5-Criterion Class Average</span>
                     <span className="text-primary font-bold tabular-nums">
@@ -519,7 +557,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   </PopoverDescription>
                 </PopoverHeader>
 
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   {CRITERIA_METRICS.map(({ key, label }) => {
                     const score = classDiagnostics.criteriaAverages[key];
                     const { band, barClass, textClass } = getCriterionBandStyle(score);
@@ -541,7 +579,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                           value={Math.max(0, Math.min(100, score))}
                           max={100}
                           aria-label={`${label} class average: ${score}% (${band})`}
-                          trackClassName="h-1.5 bg-muted/80 dark:bg-muted dark:ring-1 dark:ring-border/60"
+                          trackClassName="h-1.5 bg-muted"
                           indicatorClassName={cn(
                             "rounded-full duration-300 ease-out motion-reduce:transition-none",
                             barClass
@@ -553,67 +591,70 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 </div>
 
                 {classDiagnostics.strongestCriterion && (
-                  <div className="border-border/60 text-muted-foreground space-y-1.5 border-t pt-2 text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className={cn(
-                            "size-1.5 shrink-0 rounded-full",
-                            getCriterionBandStyle(classDiagnostics.strongestCriterion.score).dotClass
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span
-                          className={cn(
-                            getCriterionBandStyle(classDiagnostics.strongestCriterion.score).textClass,
-                            "font-semibold shrink-0"
-                          )}
-                        >
-                          Strength:
-                        </span>
-                        <span className="truncate">{classDiagnostics.strongestCriterion.name}</span>
-                      </div>
-                      <span className="text-foreground font-medium tabular-nums shrink-0">
-                        {classDiagnostics.strongestCriterion.score}%
-                      </span>
-                    </div>
-                    {classDiagnostics.focusCriterion && (
+                  <>
+                    <Separator />
+                    <div className="text-muted-foreground flex flex-col gap-1.5 text-xs">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span
                             className={cn(
                               "size-1.5 shrink-0 rounded-full",
-                              getCriterionBandStyle(classDiagnostics.focusCriterion.score).dotClass
+                              getCriterionBandStyle(classDiagnostics.strongestCriterion.score).dotClass
                             )}
                             aria-hidden="true"
                           />
                           <span
                             className={cn(
-                              getCriterionBandStyle(classDiagnostics.focusCriterion.score).textClass,
+                              getCriterionBandStyle(classDiagnostics.strongestCriterion.score).textClass,
                               "font-semibold shrink-0"
                             )}
                           >
-                            Practice Focus:
+                            Strength:
                           </span>
-                          <span className="truncate">{classDiagnostics.focusCriterion.name}</span>
+                          <span className="truncate">{classDiagnostics.strongestCriterion.name}</span>
                         </div>
                         <span className="text-foreground font-medium tabular-nums shrink-0">
-                          {classDiagnostics.focusCriterion.score}%
+                          {classDiagnostics.strongestCriterion.score}%
                         </span>
                       </div>
-                    )}
-                  </div>
+                      {classDiagnostics.focusCriterion && (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={cn(
+                                "size-1.5 shrink-0 rounded-full",
+                                getCriterionBandStyle(classDiagnostics.focusCriterion.score).dotClass
+                              )}
+                              aria-hidden="true"
+                            />
+                            <span
+                              className={cn(
+                                getCriterionBandStyle(classDiagnostics.focusCriterion.score).textClass,
+                                "font-semibold shrink-0"
+                              )}
+                            >
+                              Practice Focus:
+                            </span>
+                            <span className="truncate">{classDiagnostics.focusCriterion.name}</span>
+                          </div>
+                          <span className="text-foreground font-medium tabular-nums shrink-0">
+                            {classDiagnostics.focusCriterion.score}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
               </PopoverContent>
             </Popover>
           </div>
         ) : (
-          <div className="flex min-w-0 flex-1 items-center gap-1.5 border-t border-border/40 pt-3 text-xs text-muted-foreground sm:border-t-0 sm:pt-0">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
             <span>Class insights appear as worksheets are scored.</span>
           </div>
         )}
-      </div>
-    </section>
+      </CardFooter>
+    </Card>
   );
 });

@@ -2,6 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import type { ActivityWorkState } from "@/lib/hooks/use-activity-work";
 import { teacherWorkStatusLabel } from "@/lib/utils/activity-work";
 
@@ -79,7 +81,7 @@ export function ActivityWorkStatus({
   hideDraftPending?: boolean;
 }) {
   if (!state && unavailable) return <span className="text-sm text-muted-foreground">Work status unavailable</span>;
-  if (!state) return <span className="text-sm text-muted-foreground">Loading work status…</span>;
+  if (!state) return <Skeleton className="h-5 w-24" aria-label="Loading work status" />;
   const work = { status: state.work_status, late: state.late };
   const showStatusBadge = !(hideDraftPending && work.status === "Draft" && !isScored);
 
@@ -88,17 +90,15 @@ export function ActivityWorkStatus({
       {showStatusBadge && (
         <Badge
           variant={work.status === "Missing" || work.status === "Released" ? "outline" : "secondary"}
-          className={
-            work.status === "Missing"
-              ? "border-band-1/30 bg-band-1/10 text-band-1 dark:border-band-1/40 dark:bg-band-1/20 font-medium"
-              : work.status === "Released"
-                ? "border-band-4/30 bg-band-4/10 text-band-4-text dark:border-band-4/40 dark:bg-band-4/20 font-medium"
-                : work.status === "Draft"
-                  ? isScored
-                    ? "border-primary/25 text-primary bg-primary/10 font-medium"
-                    : "border-primary/20 text-primary/90 bg-primary/5 dark:bg-primary/10 font-medium"
-                  : undefined
-          }
+          className={cn(
+            "font-medium",
+            work.status === "Missing" && "border-band-1/30 bg-band-1/10 text-band-1-text",
+            work.status === "Released" && "border-band-4/30 bg-band-4/10 text-band-4-text",
+            work.status === "Draft" &&
+              (isScored
+                ? "border-primary/25 bg-primary/10 text-primary"
+                : "border-primary/20 bg-primary/5 text-primary/90")
+          )}
         >
           {work.status === "Draft"
             ? isScored

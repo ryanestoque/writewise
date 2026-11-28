@@ -2,6 +2,7 @@
 
 import { memo, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -102,7 +103,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
   const isSearchActive = Boolean(searchQuery.trim());
 
   return (
-    <div className="bg-surface dark:bg-card border-border shadow-warm overflow-hidden rounded-xl border sm:rounded-2xl">
+    <Card className="gap-0 p-0">
       {!isSearchActive &&
       (statusFilter === "needs_scoring" || statusFilter === "needs_action") ? (
         hasSubmissions ? (
@@ -126,7 +127,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
               <Button
                 variant="outline"
                 onClick={() => onSetStatusFilter("all")}
-                className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
               >
                 {viewAllLabel}
               </Button>
@@ -134,7 +135,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
                 <Button
                   variant="ghost"
                   onClick={() => onSetStatusFilter("missing")}
-                  className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground sm:text-sm"
                 >
                   View missing ({studentsWithoutUploadsCount})
                 </Button>
@@ -142,7 +143,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
               <Button
                 variant="outline"
                 onClick={() => onSetStatusFilter("released")}
-                className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
               >
                 View released results
               </Button>
@@ -169,7 +170,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
               <Button
                 variant="outline"
                 onClick={() => onSetStatusFilter("all")}
-                className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
               >
                 {viewAllLabel}
               </Button>
@@ -177,16 +178,16 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
                 <Button
                   variant="ghost"
                   onClick={() => onSetStatusFilter("missing")}
-                  className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground sm:text-sm"
                 >
                   View missing ({studentsWithoutUploadsCount})
                 </Button>
               )}
               <Button
-                className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
                 onClick={onOpenUpload}
               >
-                <Upload className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                <Upload data-icon="inline-start" aria-hidden="true" />
                 <span>Upload worksheet</span>
               </Button>
             </EmptyContent>
@@ -215,7 +216,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
             <Button
               variant="outline"
               onClick={() => onSetStatusFilter("all")}
-              className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+              className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
             >
               {viewAllLabel}
             </Button>
@@ -242,7 +243,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
             <Button
               variant="outline"
               onClick={onClearSearch}
-              className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+              className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
             >
               Clear search
             </Button>
@@ -250,7 +251,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
               <Button
                 variant="ghost"
                 onClick={() => onSetStatusFilter("all")}
-                className="text-muted-foreground hover:text-foreground h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium text-muted-foreground hover:text-foreground sm:text-sm"
               >
                 {viewAllLabel}
               </Button>
@@ -287,7 +288,7 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
                 <Button
                   variant="outline"
                   onClick={() => onSetStatusFilter("all")}
-                  className="h-10 min-h-[44px] cursor-pointer rounded-lg px-3.5 text-xs font-medium sm:rounded-xl sm:text-sm md:h-9 md:min-h-[36px]"
+                  className="min-h-11 md:min-h-9 px-3.5 text-xs font-medium sm:text-sm"
                 >
                   {viewAllLabel}
                 </Button>
@@ -296,6 +297,6 @@ export const ActivityReviewEmptyStates = memo(function ActivityReviewEmptyStates
           );
         })()
       )}
-    </div>
+    </Card>
   );
 });

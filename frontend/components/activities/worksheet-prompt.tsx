@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 export function WorksheetPrompt({
@@ -14,7 +15,7 @@ export function WorksheetPrompt({
 
   return (
     <div
-      className="from-brand-50/20 via-surface to-brand-50/10 dark:from-card dark:to-card/80 border-brand-200/50 dark:border-border/60 shadow-warm-sm relative overflow-hidden rounded-xl border bg-linear-to-b"
+      className="from-primary/5 via-card to-primary/5 border-border/80 shadow-warm-sm relative overflow-hidden rounded-xl border bg-linear-to-b"
     >
       <div className="p-3.5 pb-5 sm:p-4 sm:pb-6">
         <div className={cn("relative", preview && "max-h-[148px] overflow-hidden sm:max-h-[156px]")}>
@@ -36,16 +37,19 @@ export function WorksheetPrompt({
           </p>
           {preview && (
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-surface via-surface/70 to-transparent dark:from-card dark:via-card/70"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-card via-card/70 to-transparent"
               aria-hidden="true"
             />
           )}
         </div>
       </div>
       {footer && (
-        <div className="border-t border-border/50 bg-muted/30 px-3 py-1">
-          {footer}
-        </div>
+        <>
+          <Separator />
+          <div className="bg-muted/30 px-3 py-1">
+            {footer}
+          </div>
+        </>
       )}
     </div>
   );
