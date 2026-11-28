@@ -1,35 +1,41 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, useSyncExternalStore } from "react";
 import { PlayIcon, PauseIcon, RotateCcwIcon, GaugeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { getLetterStrokes, StrokePath } from "./cursive-strokes-data";
+import { getLetterStrokes, PAIRED_LETTER_OFFSETS, type StrokeStep } from "./cursive-strokes-data";
 
 export type AnimationCaseMode = "lower" | "upper" | "both";
 export type AnimationSpeed = 0.5 | 1 | 1.5;
 
 interface CursiveStrokeCanvasProps {
   letterId: string;
-  onActiveStepChange?: (mode: "upper" | "lower", stepIndex: number) => void;
+  onActiveStepChange?: (mode: "upper" | "lower", stepIndex: number | null) => void;
   className?: string;
 }
 
 interface ActiveSequenceItem {
-  stroke: StrokePath;
+  stroke: StrokeStep;
   mode: "upper" | "lower";
   modeIndex: number;
   offsetX: number;
-  /** Short strokes (dots, tiny ticks) animate faster. */
-  isShort: boolean;
+  liftBefore: boolean;
 }
 
-const BASE_STROKE_MS = 1200;
-const SHORT_STROKE_FACTOR = 0.45;
+const MS_PER_PATH_UNIT = 12;
+const PEN_LIFT_MS = 200;
 const MAX_FRAME_DELTA_MS = 100;
 const SPEEDS: AnimationSpeed[] = [0.5, 1, 1.5];
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeToReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
 
 const offsetTransform = (offsetX: number) => (offsetX ? `translate(${offsetX}, 0)` : undefined);
 
@@ -76,12 +82,12 @@ const RULING_GUIDES = (
       strokeOpacity="0.9"
     />
 
-    {/* Descender Line y=90 */}
+    {/* Descender line y=100 */}
     <line
       x1="10"
-      y1="90"
+      y1="100"
       x2="390"
-      y2="90"
+      y2="100"
       stroke="currentColor"
       className="text-muted-foreground/40"
       strokeWidth="0.8"
@@ -110,29 +116,19 @@ export function CursiveStrokeCanvas({
 }: CursiveStrokeCanvasProps) {
   const [caseMode, setCaseMode] = useState<AnimationCaseMode>("lower");
   const [speed, setSpeed] = useState<AnimationSpeed>(1);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    }
-    return false;
-  });
-  const [isPlaying, setIsPlaying] = useState<boolean>(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return false;
-    }
-    return true;
-  });
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeToReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  );
+  const [isPlaying, setIsPlaying] = useState(true);
   const [activeSeqIndex, setActiveSeqIndex] = useState<number>(0);
-  const [isCompleted, setIsCompleted] = useState<boolean>(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return true;
-    }
-    return false;
-  });
+  const [isCompleted, setIsCompleted] = useState(false);
+  const showFullLetter = prefersReducedMotion || isCompleted;
 
   // Per-frame values live in refs and are painted imperatively — no React
   // re-render per animation frame.
-  const progressRef = useRef(prefersReducedMotion ? 1 : 0); // 0..1 for current stroke
+  const elapsedRef = useRef(0);
   const speedRef = useRef<AnimationSpeed>(1);
   const pathLengthRef = useRef(0);
   const activePathRef = useRef<SVGPathElement | null>(null);
@@ -140,70 +136,62 @@ export function CursiveStrokeCanvas({
 
   const strokesData = useMemo(() => getLetterStrokes(letterId), [letterId]);
 
-  // In "both" mode, uppercase sits on the left (offsetX: -45) and lowercase on the right (offsetX: 35)
+  // In "both" mode, play uppercase on the left, then lowercase on the right.
   const sequence = useMemo<ActiveSequenceItem[]>(() => {
     const seq: ActiveSequenceItem[] = [];
-    const push = (strokes: StrokePath[], mode: "upper" | "lower", offsetX: number) => {
-      for (const s of strokes) {
+    const push = (strokes: StrokeStep[], mode: "upper" | "lower", offsetX: number) => {
+      const followsOtherCase = seq.length > 0;
+      for (const [modeIndex, stroke] of strokes.entries()) {
         seq.push({
-          stroke: s,
+          stroke,
           mode,
-          modeIndex: s.stepIndex,
+          modeIndex,
           offsetX,
-          isShort: s.d.includes("A 1.5") || s.d.length < 25,
+          liftBefore: Boolean(stroke.liftBefore) || (followsOtherCase && modeIndex === 0),
         });
       }
     };
     if (caseMode === "upper" || caseMode === "both") {
-      push(strokesData.upper, "upper", caseMode === "both" ? -45 : 0);
+      push(strokesData.upper, "upper", caseMode === "both" ? PAIRED_LETTER_OFFSETS.upper : 0);
     }
     if (caseMode === "lower" || caseMode === "both") {
-      push(strokesData.lower, "lower", caseMode === "both" ? 35 : 0);
+      push(strokesData.lower, "lower", caseMode === "both" ? PAIRED_LETTER_OFFSETS.lower : 0);
     }
     return seq;
   }, [strokesData, caseMode]);
 
   const activeItem = sequence[activeSeqIndex];
 
-  // Motion preference listener: pause and complete strokes immediately if user prefers reduced motion
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-      if (e.matches) {
-        setIsPlaying(false);
-        setIsCompleted(true);
-        progressRef.current = 1;
-      }
-    };
-    mql.addEventListener("change", handleChange);
-    return () => mql.removeEventListener("change", handleChange);
-  }, []);
-
-  /** Apply progress to the DOM: stroke reveal + pen-tip position. */
-  const paint = useCallback((p: number) => {
+  const paint = useCallback((elapsed: number, liftBefore: boolean) => {
     const path = activePathRef.current;
     const len = pathLengthRef.current;
-    if (!path || len <= 0) return;
-    path.style.strokeDashoffset = String(Math.max(0, len * (1 - p)));
+    if (!path || len <= 0) return true;
+
+    const liftTime = liftBefore ? PEN_LIFT_MS : 0;
+    const duration = Math.max(140, Math.min(2400, len * MS_PER_PATH_UNIT));
+    const progress = Math.min(1, Math.max(0, (elapsed - liftTime) / duration));
+    path.style.visibility = progress === 0 ? "hidden" : "";
+    path.style.strokeDashoffset = String(len * (1 - progress));
+
     const pen = penRef.current;
     if (pen) {
-      const pt = path.getPointAtLength(p * len);
-      pen.setAttribute("transform", `translate(${pt.x}, ${pt.y})`);
+      pen.style.visibility = elapsed < liftTime ? "hidden" : "";
+      const point = path.getPointAtLength(progress * len);
+      pen.setAttribute("transform", `translate(${point.x}, ${point.y})`);
     }
+    return progress === 1;
   }, []);
 
-  const resetAnimation = useCallback(() => {
-    progressRef.current = 0;
+  const resetAnimation = (mode = caseMode) => {
+    elapsedRef.current = 0;
+    paint(0, false);
+    if (mode === caseMode && activeSeqIndex === 0 && activeItem && !showFullLetter) {
+      onActiveStepChange?.(activeItem.mode, 0);
+    }
+    setCaseMode(mode);
     setActiveSeqIndex(0);
     setIsCompleted(false);
-    setIsPlaying(!prefersReducedMotion);
-  }, [prefersReducedMotion]);
-
-  const handleCaseModeChange = (mode: AnimationCaseMode) => {
-    setCaseMode(mode);
-    resetAnimation();
+    setIsPlaying(true);
   };
 
   const handleSpeedChange = (sp: AnimationSpeed) => {
@@ -214,14 +202,14 @@ export function CursiveStrokeCanvas({
   // Optional notification to parent
   useEffect(() => {
     if (activeItem && onActiveStepChange) {
-      onActiveStepChange(activeItem.mode, activeItem.modeIndex);
+      onActiveStepChange(activeItem.mode, showFullLetter ? null : activeItem.modeIndex);
     }
-  }, [activeItem, onActiveStepChange]);
+  }, [activeItem, onActiveStepChange, showFullLetter]);
 
   // Measure once per stroke (not per frame) using isomorphic layout effect to avoid SSR warnings
   useIsomorphicLayoutEffect(() => {
     const path = activePathRef.current;
-    if (!path) return;
+    if (!path || !activeItem) return;
     let len = 0;
     try {
       len = path.getTotalLength();
@@ -231,31 +219,27 @@ export function CursiveStrokeCanvas({
     pathLengthRef.current = len;
     if (len > 0) {
       path.style.strokeDasharray = String(len);
-      paint(prefersReducedMotion ? 1 : progressRef.current);
+      paint(elapsedRef.current, activeItem.liftBefore);
     }
-  }, [activeItem, paint, prefersReducedMotion]);
+  }, [activeItem, paint, showFullLetter]);
 
   // Animation loop. Pure: no side effects inside state updaters.
   useEffect(() => {
-    if (!isPlaying || !activeItem || prefersReducedMotion) return;
+    if (!isPlaying || !activeItem || showFullLetter) return;
 
     const isLast = activeSeqIndex >= sequence.length - 1;
-    const factor = activeItem.isShort ? SHORT_STROKE_FACTOR : 1;
     let last: number | null = null;
     let raf = 0;
 
     const tick = (now: number) => {
       const delta = last === null ? 0 : Math.min(now - last, MAX_FRAME_DELTA_MS);
       last = now;
-      const duration = (BASE_STROKE_MS * factor) / speedRef.current;
-      const p = Math.min(1, progressRef.current + delta / duration);
-      progressRef.current = p;
-      paint(p);
+      elapsedRef.current += delta * speedRef.current;
 
-      if (p < 1) {
+      if (!paint(elapsedRef.current, activeItem.liftBefore)) {
         raf = requestAnimationFrame(tick);
       } else if (!isLast) {
-        progressRef.current = 0;
+        elapsedRef.current = 0;
         setActiveSeqIndex((idx) => idx + 1);
       } else {
         setIsPlaying(false);
@@ -265,7 +249,7 @@ export function CursiveStrokeCanvas({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [isPlaying, activeItem, activeSeqIndex, sequence.length, paint, prefersReducedMotion]);
+  }, [isPlaying, activeItem, activeSeqIndex, sequence.length, paint, showFullLetter]);
 
   const togglePlay = () => {
     if (isCompleted) {
@@ -284,20 +268,20 @@ export function CursiveStrokeCanvas({
           value={[caseMode]}
           multiple={false}
           onValueChange={(vals) => {
-            if (vals.length > 0) handleCaseModeChange(vals[0] as AnimationCaseMode);
+            if (vals.length > 0) resetAnimation(vals[0] as AnimationCaseMode);
           }}
           aria-label="Cursive letter case mode"
           variant="outline"
           size="sm"
         >
           <ToggleGroupItem value="lower" className="min-h-10 sm:min-h-8">
-            Lower ({strokesData.lower[0] ? letterId.toLowerCase() : ""})
+            Lower ({letterId.toLowerCase()})
           </ToggleGroupItem>
           <ToggleGroupItem value="upper" className="min-h-10 sm:min-h-8">
-            Upper ({letterId?.toUpperCase()})
+            Upper ({letterId.toUpperCase()})
           </ToggleGroupItem>
           <ToggleGroupItem value="both" className="min-h-10 sm:min-h-8">
-            Both (Aa)
+            Both ({letterId.toUpperCase()}{letterId.toLowerCase()})
           </ToggleGroupItem>
         </ToggleGroup>
 
@@ -308,11 +292,12 @@ export function CursiveStrokeCanvas({
             variant="outline"
             size="sm"
             onClick={togglePlay}
+            disabled={prefersReducedMotion}
             className="min-h-10 sm:min-h-8"
-            title={isPlaying ? "Pause animation" : isCompleted ? "Replay animation" : "Play animation"}
-            aria-label={isPlaying ? "Pause animation" : isCompleted ? "Replay animation" : "Play animation"}
+            title={showFullLetter ? "Replay animation" : isPlaying ? "Pause animation" : "Play animation"}
+            aria-label={showFullLetter ? "Replay animation" : isPlaying ? "Pause animation" : "Play animation"}
           >
-            {isPlaying ? (
+            {isPlaying && !showFullLetter ? (
               <>
                 <PauseIcon data-icon="inline-start" className="fill-current" aria-hidden="true" />
                 <span>Pause</span>
@@ -320,7 +305,7 @@ export function CursiveStrokeCanvas({
             ) : (
               <>
                 <PlayIcon data-icon="inline-start" className="fill-current" aria-hidden="true" />
-                <span>{isCompleted ? "Replay" : "Play"}</span>
+                <span>{showFullLetter ? "Replay" : "Play"}</span>
               </>
             )}
           </Button>
@@ -329,7 +314,8 @@ export function CursiveStrokeCanvas({
             type="button"
             variant="outline"
             size="icon-sm"
-            onClick={resetAnimation}
+            onClick={() => resetAnimation()}
+            disabled={prefersReducedMotion}
             className="size-10 sm:size-8"
             title="Replay from start"
             aria-label="Replay from start"
@@ -369,7 +355,7 @@ export function CursiveStrokeCanvas({
       {/* SVG Penmanship Ruling Canvas */}
       <div className="relative flex h-36 w-full select-none items-center justify-center overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs sm:h-40">
         <svg
-          viewBox="0 0 400 100"
+          viewBox="0 0 400 115"
           className="w-full h-full"
           role="img"
           aria-label={`Animated cursive stroke guide for letter ${letterId}`}
@@ -394,7 +380,7 @@ export function CursiveStrokeCanvas({
             ))}
 
             {/* LAYER 2: Completed Past Strokes */}
-            {sequence.slice(0, activeSeqIndex).map((item, idx) => (
+            {(showFullLetter ? sequence : sequence.slice(0, activeSeqIndex)).map((item, idx) => (
               <path
                 key={`done-${idx}`}
                 transform={offsetTransform(item.offsetX)}
@@ -410,7 +396,7 @@ export function CursiveStrokeCanvas({
 
             {/* LAYER 3 + 4: Active stroke and pen tip share the offset group,
                 so pen coordinates come straight from getPointAtLength. */}
-            {activeItem ? (
+            {activeItem && !showFullLetter ? (
               <g transform={offsetTransform(activeItem.offsetX)}>
                 {/* dasharray/dashoffset are set imperatively by paint() */}
                 <path
@@ -424,23 +410,8 @@ export function CursiveStrokeCanvas({
                   className="text-primary"
                 />
                 <g ref={penRef}>
-                  {isCompleted ? (
-                    <circle
-                      r="2.5"
-                      className="fill-primary stroke-background stroke-[1.2]"
-                    />
-                  ) : (
-                    <>
-                      {isPlaying && !prefersReducedMotion ? (
-                        <circle
-                          r="5"
-                          className="fill-primary/25 animate-ping opacity-75 motion-reduce:hidden"
-                        />
-                      ) : null}
-                      <circle r="3.5" className="fill-primary/40 stroke-primary stroke-[1.2]" />
-                      <circle r="2" className="fill-primary-foreground" />
-                    </>
-                  )}
+                  <circle r="3.5" className="fill-primary/40 stroke-primary stroke-[1.2]" />
+                  <circle r="2" className="fill-primary-foreground" />
                 </g>
               </g>
             ) : null}

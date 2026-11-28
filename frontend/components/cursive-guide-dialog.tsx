@@ -836,7 +836,7 @@ export function CursiveGuideDialog({
                             <svg
                               aria-hidden="true"
                               viewBox={caseFilter === "pairs" ? "105 18 180 87" : "150 18 94 87"}
-                              className="h-full max-w-full text-foreground print:text-black"
+                              className="size-full text-foreground print:text-black"
                               fill="none"
                               stroke="currentColor"
                               strokeWidth="3"
