@@ -24,6 +24,7 @@ import { ApiError } from "@/lib/utils/api-error";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { formatDate, getRelativeTime, normalizeActivityPrompt } from "@/lib/utils/formatters";
 import { cn } from "@/lib/utils";
 import { CommentComposer } from "./comment-composer";
@@ -469,13 +470,16 @@ export function SubmissionCommentThread({
           }}
         />
       ) : (
-        <div className="bg-muted/35 shrink-0 border-t px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3">
-          <Alert role="status">
-            <AlertDescription className="text-xs sm:text-sm">
-              {thread.read_only_reasons.map((reason) => READ_ONLY[reason]).join(" ")}
-            </AlertDescription>
-          </Alert>
-        </div>
+        <>
+          <Separator />
+          <div className="bg-muted/35 shrink-0 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-3">
+            <Alert role="status">
+              <AlertDescription className="text-xs sm:text-sm">
+                {thread.read_only_reasons.map((reason) => READ_ONLY[reason]).join(" ")}
+              </AlertDescription>
+            </Alert>
+          </div>
+        </>
       )}
     </section>
   );

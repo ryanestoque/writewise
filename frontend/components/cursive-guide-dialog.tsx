@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ResponsiveRichOverlay,
   ResponsiveRichOverlayContent,
@@ -349,10 +350,11 @@ export function CursiveGuideDialog({
         />
 
         {/* Step-by-Step Formation Cues */}
-        <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-muted/20 p-3.5">
-          <span className="text-xs font-semibold text-foreground">
-            Step-by-Step Formation
-          </span>
+        <Card size="sm" className="bg-muted/20 py-0">
+          <CardContent className="flex flex-col gap-3 p-3.5">
+            <span className="text-xs font-semibold text-foreground">
+              Step-by-Step Formation
+            </span>
 
           {stepModes.map((mode) => (
             <div key={mode} className="flex flex-col gap-1.5">
@@ -390,7 +392,8 @@ export function CursiveGuideDialog({
               </ol>
             </div>
           ))}
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Practice Vocabulary Words */}
         <div className="flex flex-wrap items-center gap-2 pt-2 text-xs">

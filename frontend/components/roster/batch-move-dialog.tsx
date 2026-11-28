@@ -13,6 +13,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   Combobox,
@@ -213,31 +214,35 @@ export function BatchMoveDialog({
             </FieldGroup>
 
             {/* Student Names Summary Preview */}
-            <div className="p-3 bg-muted/30 rounded-xl border border-border/70 max-h-36 overflow-y-auto text-xs flex flex-col gap-1.5">
-              <span className="font-semibold text-foreground block">
-                Selected Students ({selectedStudents.length}):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedStudents.map((s) => (
-                  <Badge key={s.id} variant="outline" className="bg-background font-medium">
-                    {s.full_name} <span className="text-[10px] text-muted-foreground font-normal">({s.section})</span>
-                  </Badge>
-                ))}
-              </div>
-            </div>
+            <Card size="sm" className="bg-muted/30 py-0">
+              <CardContent className="p-3 max-h-36 overflow-y-auto text-xs flex flex-col gap-1.5">
+                <span className="font-semibold text-foreground block">
+                  Selected Students ({selectedStudents.length}):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedStudents.map((s) => (
+                    <Badge key={s.id} variant="outline" className="bg-background font-medium">
+                      {s.full_name} <span className="text-[10px] text-muted-foreground font-normal">({s.section})</span>
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Progress Indicator */}
             {isProcessing && (
-              <div className="flex flex-col gap-2 p-3 bg-muted/40 rounded-xl border border-border">
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="flex items-center gap-1.5 text-foreground">
-                    <Spinner className="size-3.5 text-primary" />
-                    Moving students to {targetSection}...
-                  </span>
-                  <span className="text-muted-foreground">{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
+              <Card size="sm" className="bg-muted/40 py-0">
+                <CardContent className="flex flex-col gap-2 p-3">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="flex items-center gap-1.5 text-foreground">
+                      <Spinner className="size-3.5 text-primary" />
+                      Moving students to {targetSection}...
+                    </span>
+                    <span className="text-muted-foreground">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </CardContent>
+              </Card>
             )}
           </ResponsiveModalBody>
 

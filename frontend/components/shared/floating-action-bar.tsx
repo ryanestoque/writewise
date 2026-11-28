@@ -3,6 +3,7 @@
 import { memo, ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Kbd } from "@/components/ui/kbd";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -69,11 +70,12 @@ export const FloatingActionBar = memo(function FloatingActionBar({
       </span>
       {selectedCount > 0 && (
         <TooltipProvider delay={200}>
-          <aside
+          <Card
+            size="sm"
             role="region"
             aria-label={regionLabel}
             className={cn(
-              "fixed inset-x-0 bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:pb-2.5 z-40 w-full md:w-auto md:max-w-2xl bg-popover text-popover-foreground border-t border-x-0 border-b-0 md:border border-border shadow-lg rounded-none md:rounded-full px-3 pt-2 sm:px-4 md:px-3.5 md:pt-2.5 flex items-center justify-between gap-1.5 sm:gap-2.5 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none motion-reduce:transition-none duration-200 select-none",
+              "fixed inset-x-0 bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:inset-x-auto md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:pb-2.5 z-40 w-full md:w-auto md:max-w-2xl bg-popover text-popover-foreground border-t border-x-0 border-b-0 md:border border-border shadow-lg rounded-none md:rounded-full px-3 pt-2 sm:px-4 md:px-3.5 md:pt-2.5 flex-row items-center justify-between gap-1.5 sm:gap-2.5 animate-in fade-in slide-in-from-bottom-4 motion-reduce:animate-none motion-reduce:transition-none duration-200 select-none",
               className
             )}
           >
@@ -153,7 +155,7 @@ export const FloatingActionBar = memo(function FloatingActionBar({
                 </TooltipContent>
               </Tooltip>
             </div>
-          </aside>
+          </Card>
         </TooltipProvider>
       )}
     </>

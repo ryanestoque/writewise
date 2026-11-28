@@ -57,6 +57,7 @@ const AttemptDeletionDialogs = dynamic(
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Item, ItemActions, ItemContent, ItemDescription } from "@/components/ui/item";
 import { cn } from "@/lib/utils";
 import { FloatingActionBar } from "@/components/shared/floating-action-bar";
 import { Separator } from "@/components/ui/separator";
@@ -1432,24 +1433,28 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         )}
 
         {submissions && (searchQuery.trim() || statusFilter !== "all") && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            <span>
-              Showing <strong className="text-foreground">{currentListLength}</strong> of <strong className="text-foreground">{totalStudents}</strong> {resultUnit}s
-              {statusFilter !== "all" ? ` (${reviewFilterLabels[statusFilter]})` : ""}
-              {searchQuery ? ` matching "${searchQuery}"` : ""}.
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                handleClearSearch();
-                setStatusFilter("all");
-              }}
-              className="min-h-[44px] sm:min-h-[28px] px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
-            >
-              Reset filters
-            </Button>
-          </div>
+          <Item variant="muted" size="sm" className="px-3 py-2">
+            <ItemContent>
+              <ItemDescription className="text-xs">
+                Showing <strong className="text-foreground">{currentListLength}</strong> of <strong className="text-foreground">{totalStudents}</strong> {resultUnit}s
+                {statusFilter !== "all" ? ` (${reviewFilterLabels[statusFilter]})` : ""}
+                {searchQuery ? ` matching "${searchQuery}"` : ""}.
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  handleClearSearch();
+                  setStatusFilter("all");
+                }}
+                className="min-h-[44px] sm:min-h-[28px] px-2.5 text-xs text-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+              >
+                Reset filters
+              </Button>
+            </ItemActions>
+          </Item>
         )}
 
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">

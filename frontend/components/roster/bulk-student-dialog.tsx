@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -295,16 +296,18 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
 
             {/* Progress / Status feedback */}
             {isProcessing && (
-              <div className="flex flex-col gap-2 p-3 bg-muted/40 rounded-xl border border-border">
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="flex items-center gap-1.5 text-foreground">
-                    <Spinner className="size-3.5 text-primary" />
-                    {statusMessage}
-                  </span>
-                  <span className="text-muted-foreground">{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
+              <Card size="sm" className="bg-muted/40 py-0">
+                <CardContent className="flex flex-col gap-2 p-3">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="flex items-center gap-1.5 text-foreground">
+                      <Spinner className="size-3.5 text-primary" />
+                      {statusMessage}
+                    </span>
+                    <span className="text-muted-foreground">{progress}%</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </CardContent>
+              </Card>
             )}
 
             {!isProcessing && statusMessage && (

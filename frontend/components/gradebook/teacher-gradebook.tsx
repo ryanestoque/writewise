@@ -47,7 +47,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SearchInput } from "@/components/shared/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { FieldLabel } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -210,11 +210,13 @@ export function TeacherGradebook({
             <Skeleton className="h-10 w-56 rounded-xl" />
             <Skeleton className="h-10 w-40 rounded-xl" />
           </div>
-          <div className="flex flex-col gap-3 rounded-xl sm:rounded-2xl border border-border p-6 shadow-warm">
-            <Skeleton className="h-8 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-          </div>
+          <Card className="py-0 shadow-warm">
+            <CardContent className="flex flex-col gap-3 p-6">
+              <Skeleton className="h-8 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
+            </CardContent>
+          </Card>
         </div>
       ) : !sections.data.length ? (
         <Empty className="rounded-xl sm:rounded-2xl border border-border bg-card p-8 shadow-warm">
@@ -340,12 +342,14 @@ function SectionGrid({
           <Skeleton className="h-10 w-40 rounded-md" />
           <Skeleton className="h-10 w-44 rounded-md" />
         </div>
-        <div className="flex flex-col gap-3 rounded-md border p-6">
-          <Skeleton className="h-8 w-full rounded-md" />
-          <Skeleton className="h-12 w-full rounded-md" />
-          <Skeleton className="h-12 w-full rounded-md" />
-          <Skeleton className="h-12 w-full rounded-md" />
-        </div>
+        <Card className="py-0 shadow-none">
+          <CardContent className="flex flex-col gap-3 p-6">
+            <Skeleton className="h-8 w-full rounded-md" />
+            <Skeleton className="h-12 w-full rounded-md" />
+            <Skeleton className="h-12 w-full rounded-md" />
+            <Skeleton className="h-12 w-full rounded-md" />
+          </CardContent>
+        </Card>
       </div>
     );
 
@@ -723,7 +727,7 @@ function SectionGrid({
                     aria-colindex={1}
                     className="bg-card sticky left-0 z-30 h-auto min-w-32 max-w-36 sm:min-w-48 border-r p-3 [&:has([role=checkbox])]:pr-3 text-left whitespace-normal print:static"
                   >
-                    <Label className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
+                    <FieldLabel className="flex items-center gap-2.5 sm:gap-3 font-medium text-foreground cursor-pointer select-none">
                       <Checkbox
                         aria-label="Select shown students"
                         className="print:hidden"
@@ -740,7 +744,7 @@ function SectionGrid({
                         }
                       />
                       <span>Student</span>
-                    </Label>
+                    </FieldLabel>
                   </TableHead>
                   {activities.map((act, actIndex) => (
                     <TableHead
@@ -850,7 +854,7 @@ function SectionGrid({
                       aria-colindex={1}
                       className="bg-card sticky left-0 z-10 h-auto border-r p-3 [&:has([role=checkbox])]:pr-3 text-left font-medium whitespace-normal print:static group-hover/row:bg-muted/30 transition-colors"
                     >
-                      <Label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none leading-snug">
+                      <FieldLabel className="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none leading-snug">
                         <Checkbox
                           checked={selected.has(row.student_id)}
                           onCheckedChange={(checked) => toggle(row.student_id, !!checked)}
@@ -858,7 +862,7 @@ function SectionGrid({
                           className="print:hidden"
                         />
                         <span className="break-words text-foreground line-clamp-2">{row.student_name}</span>
-                      </Label>
+                      </FieldLabel>
                     </TableHead>
                     {activities.map((act, column) => {
                       const work = row.cells.find((entry) => entry.activity_id === act.id);

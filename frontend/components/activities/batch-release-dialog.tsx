@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
@@ -94,24 +95,26 @@ export const BatchReleaseDialog = memo(function BatchReleaseDialog({
         </AlertDialogHeader>
 
         {/* Impact Metric Chips */}
-        <div className="my-3 grid grid-cols-2 gap-2.5 rounded-lg border border-border/80 bg-muted/40 p-3">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Students Impacted
-            </span>
-            <span className="font-heading text-lg font-bold text-foreground tabular-nums">
-              {uniqueStudentCount} {uniqueStudentCount === 1 ? "Student" : "Students"}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Worksheets Releasing
-            </span>
-            <span className="font-heading text-lg font-bold text-primary tabular-nums">
-              {releasableSubmissions.length} {releasableSubmissions.length === 1 ? "Worksheet" : "Worksheets"}
-            </span>
-          </div>
-        </div>
+        <Card size="sm" className="my-3 bg-muted/40 py-0">
+          <CardContent className="grid grid-cols-2 gap-2.5 p-3">
+            <div className="flex flex-col">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                Students Impacted
+              </span>
+              <span className="font-heading text-lg font-bold text-foreground tabular-nums">
+                {uniqueStudentCount} {uniqueStudentCount === 1 ? "Student" : "Students"}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                Worksheets Releasing
+              </span>
+              <span className="font-heading text-lg font-bold text-primary tabular-nums">
+                {releasableSubmissions.length} {releasableSubmissions.length === 1 ? "Worksheet" : "Worksheets"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Grade Distribution Overview */}
         <div className="flex flex-col gap-1.5">

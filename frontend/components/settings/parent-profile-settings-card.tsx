@@ -5,13 +5,20 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   Card,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Loader2, Check } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { Check } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
 interface ParentProfileSettingsCardProps {
@@ -100,71 +107,68 @@ export function ParentProfileSettingsCard({
       <div>
         <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
           <form onSubmit={handleSave} noValidate aria-busy={isSaving}>
-            <CardContent className="flex flex-col gap-5 pt-6 pb-6">
-              {/* Full Name */}
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="parent-full-name"
-                  className="text-sm font-medium text-foreground"
+            <CardContent className="pt-6 pb-6">
+              <FieldGroup className="gap-5">
+                {/* Full Name */}
+                <Field
+                  data-invalid={nameError ? true : undefined}
+                  data-disabled={isSaving || undefined}
                 >
-                  Full name
-                </Label>
-                <Input
-                  id="parent-full-name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  aria-required="true"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    if (nameError && e.target.value.trim()) {
-                      setNameError(null);
-                    }
-                  }}
-                  placeholder="e.g. Maria Santos"
-                  className={`h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors ${
-                    nameError
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }`}
-                  aria-invalid={nameError ? true : false}
-                  aria-describedby={nameError ? "parent-name-error" : undefined}
-                />
-                {nameError ? (
-                  <p
-                    id="parent-name-error"
-                    role="alert"
-                    aria-live="polite"
-                    className="text-xs text-destructive font-medium mt-1"
+                  <FieldLabel
+                    htmlFor="parent-full-name"
+                    className="text-sm font-medium text-foreground"
                   >
-                    {nameError}
-                  </p>
-                ) : null}
-              </div>
+                    Full name
+                  </FieldLabel>
+                  <Input
+                    id="parent-full-name"
+                    type="text"
+                    autoComplete="name"
+                    required
+                    aria-required="true"
+                    disabled={isSaving}
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (nameError && e.target.value.trim()) {
+                        setNameError(null);
+                      }
+                    }}
+                    placeholder="e.g. Maria Santos"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors"
+                    aria-invalid={nameError ? true : false}
+                    aria-describedby={nameError ? "parent-name-error" : undefined}
+                  />
+                  {nameError ? (
+                    <FieldError id="parent-name-error" aria-live="polite" className="text-xs font-medium">
+                      {nameError}
+                    </FieldError>
+                  ) : null}
+                </Field>
 
-              {/* Email (Read-only) */}
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="parent-email-display"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Email address
-                </Label>
-                <Input
-                  id="parent-email-display"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  readOnly
-                  aria-readonly="true"
-                  className="h-10 sm:h-9 text-base sm:text-sm rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
-                  aria-describedby="parent-email-hint"
-                />
-                <p id="parent-email-hint" className="text-xs text-muted-foreground mt-1">
-                  Your email is your login identifier and cannot be changed here.
-                </p>
-              </div>
+                {/* Email (Read-only) */}
+                <Field data-disabled={isSaving || undefined}>
+                  <FieldLabel
+                    htmlFor="parent-email-display"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email address
+                  </FieldLabel>
+                  <Input
+                    id="parent-email-display"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    readOnly
+                    aria-readonly="true"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
+                    aria-describedby="parent-email-hint"
+                  />
+                  <FieldDescription id="parent-email-hint" className="text-xs">
+                    Your email is your login identifier and cannot be changed here.
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
             </CardContent>
 
             <CardFooter className="flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3.5">
@@ -186,12 +190,12 @@ export function ParentProfileSettingsCard({
               >
                 {isSaving ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    <Spinner data-icon="inline-start" aria-hidden="true" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Check data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
+                    <Check data-icon="inline-start" aria-hidden="true" />
                     Save changes
                   </>
                 )}

@@ -125,7 +125,7 @@ export function ParentGrades({
       <section
         id="coursework-section"
         aria-labelledby="coursework-heading"
-        className="space-y-3"
+        className="flex flex-col gap-3"
       >
         <h2
           id="coursework-heading"
@@ -133,13 +133,9 @@ export function ParentGrades({
         >
           Coursework
         </h2>
-        <Card className="p-0 gap-0 shadow-none">
-          <CardContent className="p-6">
-            <p role="status" className="text-muted-foreground text-sm">
-              Sign in again to view grades.
-            </p>
-          </CardContent>
-        </Card>
+        <Alert role="status">
+          <AlertDescription>Sign in again to view grades.</AlertDescription>
+        </Alert>
       </section>
     );
   }
@@ -149,7 +145,7 @@ export function ParentGrades({
       <section
         id="coursework-section"
         aria-labelledby="coursework-heading"
-        className="space-y-3"
+        className="flex flex-col gap-3"
       >
         <h2
           id="coursework-heading"
@@ -196,7 +192,7 @@ export function ParentGrades({
       <section
         id="coursework-section"
         aria-labelledby="coursework-heading"
-        className="space-y-3"
+        className="flex flex-col gap-3"
       >
         <h2
           id="coursework-heading"
@@ -223,7 +219,7 @@ export function ParentGrades({
     <section
       id="coursework-section"
       aria-labelledby="coursework-heading"
-      className="space-y-3"
+      className="flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2
@@ -245,7 +241,7 @@ export function ParentGrades({
         )}
       </div>
       {missingHighlightBanner}
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         {applicableGroups.map((group) => {
           const totals = group.row.totals;
           const hasPointTotals = totals.percentage !== null;
@@ -333,7 +329,7 @@ export function ParentGrades({
                               aria-describedby={`parent-grade-meta-${activity.id}`}
                               className="group h-auto flex w-full sm:w-auto items-center justify-between gap-3 min-h-11 sm:min-h-0 text-left font-normal whitespace-normal rounded-md py-1.5 sm:py-1 -mx-1.5 px-1.5 hover:bg-muted/50 sm:hover:bg-transparent cursor-pointer touch-manipulation sm:after:absolute sm:after:inset-0 sm:after:content-['']"
                             >
-                              <div className="min-w-0 space-y-0.5">
+                              <div className="min-w-0 flex flex-col gap-0.5">
                                 <h4 className="font-sans text-sm font-medium text-foreground group-hover/row:text-primary transition-colors break-words">
                                   {activity.title}
                                 </h4>
@@ -352,7 +348,7 @@ export function ParentGrades({
                               />
                             </Button>
                           ) : (
-                            <div className="space-y-0.5 py-1.5 sm:py-1">
+                            <div className="flex flex-col gap-0.5 py-1.5 sm:py-1">
                               <h4 className="font-sans text-sm font-medium text-foreground break-words">
                                 {activity.title}
                               </h4>

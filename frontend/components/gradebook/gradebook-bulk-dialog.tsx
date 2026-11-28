@@ -19,7 +19,7 @@ import {
   ResponsiveModalTitle,
 } from "@/components/shared/responsive-modal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
@@ -247,8 +247,10 @@ export function GradebookBulkDialog({
           <div className="flex flex-col gap-3.5">
             {/* Section Publication Overview */}
             <Card size="sm" className="rounded-lg border-border/80 py-0 overflow-hidden text-xs">
-              <CardHeader className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex flex-row items-center justify-between space-y-0">
-                <span className="font-medium text-foreground">Assigned Sections</span>
+              <CardHeader className="bg-muted/40 px-3.5 py-2.5 border-b border-border/60 flex flex-row items-center justify-between gap-2">
+                <CardTitle className="text-xs font-medium text-foreground">
+                  Assigned Sections
+                </CardTitle>
                 <span className="font-semibold tabular-nums text-foreground">
                   {totalReadyAcrossSections}{" "}
                   {totalReadyAcrossSections === 1 ? "grade ready" : "grades ready"}
@@ -326,20 +328,22 @@ export function GradebookBulkDialog({
             ) : null}
 
             {/* What Happens Upon Release Checklist */}
-            <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-muted/20 p-3 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground block">What parents receive</span>
-              <ul className="flex flex-col gap-1 pl-4 list-disc text-muted-foreground text-xs leading-relaxed">
-                <li>
-                  Criterion feedback across letter formation, slant, spacing, baseline, and size consistency.
-                </li>
-                <li>
-                  Unscored submissions and excused work remain private drafts in your teacher portal.
-                </li>
-                <li>
-                  Results synchronize immediately to student parent portals across assigned sections.
-                </li>
-              </ul>
-            </div>
+            <Card size="sm" className="border-border/60 bg-muted/20 py-0">
+              <CardContent className="flex flex-col gap-1.5 p-3 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground block">What parents receive</span>
+                <ul className="flex flex-col gap-1 pl-4 list-disc text-muted-foreground text-xs leading-relaxed">
+                  <li>
+                    Criterion feedback across letter formation, slant, spacing, baseline, and size consistency.
+                  </li>
+                  <li>
+                    Unscored submissions and excused work remain private drafts in your teacher portal.
+                  </li>
+                  <li>
+                    Results synchronize immediately to student parent portals across assigned sections.
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
 
             {/* High-Contrast Acknowledgment Checkbox */}
             {isMultiSectionRelease && totalReadyAcrossSections > 0 && (

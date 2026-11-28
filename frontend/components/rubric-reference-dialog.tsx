@@ -207,7 +207,8 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
         </span>
       </div>
 
-      <div className="w-full flex items-center justify-center rounded-md border border-border/50 py-1.5 px-3 bg-muted/20">
+      <Card size="sm" className="bg-muted/20 py-0">
+        <CardContent className="w-full flex items-center justify-center py-1.5 px-3">
         {criterionId === "formation" && (
           <svg
             viewBox="0 0 240 50"
@@ -366,7 +367,8 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
             </text>
           </svg>
         )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 });
@@ -471,20 +473,22 @@ export function RubricReferenceDialog({
                       <AccordionContent className="pt-3.5 pb-4 border-t border-border/50 flex flex-col gap-3 [&_p:not(:last-child)]:mb-0">
                         <CriterionVisualGuide criterionId={item.id} isParent={isParent} />
 
-                        <div className="text-sm text-muted-foreground leading-relaxed flex flex-col gap-1.5 bg-muted/30 p-3 rounded-lg border border-border/40">
-                          <p>
-                            <span className="font-semibold text-foreground">
-                              {isParent ? "What we check: " : "Technical: "}
-                            </span>
-                            {isParent ? item.parentDescription : item.description}
-                          </p>
-                          <p>
-                            <span className="font-semibold text-foreground">
-                              {isParent ? "Common things to practice: " : "Detects: "}
-                            </span>
-                            {isParent ? item.parentFocus : item.diagnosticFocus}
-                          </p>
-                        </div>
+                        <Card size="sm" className="bg-muted/30 py-0">
+                          <CardContent className="text-sm text-muted-foreground leading-relaxed flex flex-col gap-1.5 p-3">
+                            <p>
+                              <span className="font-semibold text-foreground">
+                                {isParent ? "What we check: " : "Technical: "}
+                              </span>
+                              {isParent ? item.parentDescription : item.description}
+                            </p>
+                            <p>
+                              <span className="font-semibold text-foreground">
+                                {isParent ? "Common things to practice: " : "Detects: "}
+                              </span>
+                              {isParent ? item.parentFocus : item.diagnosticFocus}
+                            </p>
+                          </CardContent>
+                        </Card>
                       </AccordionContent>
                     </AccordionItem>
                   );

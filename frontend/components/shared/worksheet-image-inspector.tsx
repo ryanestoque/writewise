@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Kbd } from "@/components/ui/kbd";
@@ -777,21 +778,24 @@ export function WorksheetImageInspector({
             </CollapsibleContent>
           </Collapsible>
         ) : (
-          <div
+          <Card
+            size="sm"
             className={cn(
-              "w-full rounded-xl border border-border/70 bg-muted/35 overflow-hidden shrink-0 flex flex-col",
-              !flatFrame && "shadow-2xs",
+              "w-full rounded-xl border-border/70 bg-muted/35 py-0 overflow-hidden shrink-0",
+              !flatFrame ? "shadow-2xs" : "shadow-none",
               showImageTools && "divide-y divide-border/60"
             )}
           >
             {diagnosticDeckBody}
-          </div>
+          </Card>
         )
       ) : showImageTools ? (
         /* Standalone Inspector Action Controls */
-        <div className="w-full flex items-center justify-between gap-1 bg-muted/50 p-1 rounded-xl border border-border/80 text-xs shadow-2xs shrink-0">
-          {imageToolsControls}
-        </div>
+        <Card size="sm" className="w-full rounded-xl border-border/80 bg-muted/50 py-0 shadow-2xs shrink-0">
+          <CardContent className="w-full flex items-center justify-between gap-1 p-1 text-xs">
+            {imageToolsControls}
+          </CardContent>
+        </Card>
       ) : null}
 
       {/* Interactive Image Container */}
