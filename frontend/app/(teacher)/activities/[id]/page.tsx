@@ -61,7 +61,10 @@ import { Item, ItemActions, ItemContent, ItemDescription } from "@/components/ui
 import { cn } from "@/lib/utils";
 import { FloatingActionBar } from "@/components/shared/floating-action-bar";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ActivityDetailPageSkeleton,
+  ActivitySubmissionsSkeleton,
+} from "@/components/teacher/teacher-portal-skeletons";
 import { Spinner } from "@/components/ui/spinner";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -682,11 +685,11 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
       .writeText(activity.target_text)
       .then(() => {
         setHasCopiedPrompt(true);
-        toast.add({ type: "success", title: "Target prompt copied to clipboard." });
+        toast.add({ type: "success", title: "Target text copied to clipboard." });
         setTimeout(() => setHasCopiedPrompt(false), 2000);
       })
       .catch(() => {
-        toast.add({ type: "error", title: "Failed to copy target prompt." });
+        toast.add({ type: "error", title: "Failed to copy target text." });
       });
   }, [activity]);
 
@@ -1128,40 +1131,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
   }
 
   if (isLoading) {
-    return (
-      <div className="flex w-full flex-col gap-5 px-1 pb-28 sm:gap-6 sm:px-0 sm:pb-24">
-        <Skeleton className="h-4 w-40" />
-        <Card>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-7 w-1/3 rounded-lg" />
-              <Skeleton className="h-9 w-28 rounded-lg" />
-            </div>
-            <Skeleton className="h-20 w-full rounded-xl" />
-            <div className="flex gap-2 pt-2">
-              <Skeleton className="h-5 w-24 rounded-full" />
-              <Skeleton className="h-5 w-16 rounded-full" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-6 w-36" />
-              <Skeleton className="h-8 w-44 rounded-lg" />
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex flex-col gap-2">
-                  <Skeleton className="aspect-4/3 w-full rounded-xl" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <ActivityDetailPageSkeleton compact={compact} />;
   }
 
   if (!activity) {
@@ -1465,17 +1435,7 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
 
         {/* Submissions Content Grid */}
         {submissionsLoading || (viewMode === "grouped" && studentsLoading) ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} size="sm" className="gap-0 pt-0 pb-3.5">
-                <Skeleton className="aspect-4/3 w-full rounded-none" />
-                <CardContent className="flex flex-col gap-2 pt-3.5">
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-4 w-1/3" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ActivitySubmissionsSkeleton compact={compact} />
         ) : submissionsError ? (
           <Alert variant="destructive">
             <AlertCircle aria-hidden="true" />

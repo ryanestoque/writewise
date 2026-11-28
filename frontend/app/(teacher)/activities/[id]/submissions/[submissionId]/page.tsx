@@ -17,8 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SubmissionDetailPageSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import { parseTeacherCommentTarget } from "@/lib/comments/targets";
 import { SubmissionCommentDestination } from "@/components/comments/submission-comment-destination";
 import { buildReviewRows, getReviewQueueRows, getReviewNavigation, readReviewQueue, reviewQueueQuery, getAttemptReviewNavigation } from "@/lib/utils/activity-review";
@@ -185,40 +184,7 @@ export default function SubmissionDetailPage({
   }
 
   if (isLoading) {
-    return (
-      <div className="flex w-full flex-col gap-4" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
-        {/* Top Back Navigation Trail Skeleton */}
-        <div className="py-2 -ml-1 sm:-ml-2">
-          <Skeleton className="h-4 w-28 rounded-md" />
-        </div>
-
-        {/* Header Skeleton matching rendered responsive layout */}
-        <div className="flex flex-col gap-2 pb-2.5 sm:pb-3">
-          {/* Main identity row */}
-          <div className="flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <Skeleton className="h-6 sm:h-7 w-40 sm:w-52 rounded-md" />
-              <Skeleton className="h-3.5 w-44 sm:w-56 rounded-md" />
-            </div>
-            <Skeleton className="h-9 w-32 rounded-lg shrink-0" />
-          </div>
-          <Separator className="mt-1" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 lg:items-start py-2.5 sm:py-3.5">
-          <div className="lg:col-span-6 flex flex-col gap-2.5">
-            <Skeleton className="h-9 w-full rounded-xl" />
-            <Skeleton className="aspect-3/4 w-full rounded-2xl min-h-[300px] sm:min-h-[340px] lg:min-h-[460px]" />
-            <Skeleton className="h-9 w-full rounded-xl" />
-          </div>
-          <div className="lg:col-span-6 flex flex-col gap-3">
-            <Skeleton className="h-14 w-full rounded-xl" />
-            <Skeleton className="h-44 w-full rounded-xl" />
-            <Skeleton className="h-32 w-full rounded-xl" />
-          </div>
-        </div>
-      </div>
-    );
+    return <SubmissionDetailPageSkeleton />;
   }
 
   const isQueryError = activityError || submissionsError;

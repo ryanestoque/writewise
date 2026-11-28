@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ClassTableSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import { SearchInput } from "@/components/shared/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import {
@@ -294,7 +294,11 @@ export function ClassTable({
     );
   };
 
-  if (!isLoading && students.length === 0) {
+  if (isLoading) {
+    return <ClassTableSkeleton className={className} />;
+  }
+
+  if (students.length === 0) {
     return (
       <Card>
         <CardContent className="p-8">
@@ -423,13 +427,7 @@ export function ClassTable({
           </div>
         </Field>
 
-        {isLoading ? (
-          <div className="flex flex-col gap-2.5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-full rounded-xl" />
-            ))}
-          </div>
-        ) : filteredStudents.length === 0 ? (
+        {filteredStudents.length === 0 ? (
           <Card size="sm">
             <CardContent className="p-0">
               <Empty className="py-10 px-4 gap-3">
@@ -587,15 +585,7 @@ export function ClassTable({
               </TableHeader>
 
               <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i} className="border-b border-border/50">
-                      <TableCell colSpan={9} className="py-4 px-4">
-                        <Skeleton className="h-6 w-full rounded-md" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : filteredStudents.length === 0 ? (
+                {filteredStudents.length === 0 ? (
                   <TableRow className="hover:bg-transparent">
                     <TableCell colSpan={9} className="p-0">
                       <Empty className="py-12 px-4 gap-3">

@@ -271,7 +271,7 @@ export function EditActivityDialog({
                   <Alert className="mt-1.5 border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
                     <AlertTriangle aria-hidden="true" />
                     <AlertDescription className="text-xs">
-                      Short prompt ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
+                      Short target text ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -280,7 +280,7 @@ export function EditActivityDialog({
                   <Alert className="mt-1.5 border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
                     <AlertTriangle aria-hidden="true" />
                     <AlertDescription className="text-xs">
-                      Long prompt ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
+                      Long target text ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
                     </AlertDescription>
                   </Alert>
                 )}

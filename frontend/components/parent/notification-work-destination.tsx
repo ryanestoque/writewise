@@ -139,7 +139,7 @@ export function NotificationWorkDestination({
             <div className="flex flex-col gap-3">
               <Card size="sm" className="bg-muted/30 border-border/80 py-0 shadow-none">
                 <CardContent className="flex flex-col gap-1 p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Worksheet prompt</p>
+                  <p className="text-xs font-medium text-muted-foreground">Target text</p>
                   <p className="text-sm font-medium text-foreground">{work.activity.target_text}</p>
                 </CardContent>
               </Card>

@@ -83,9 +83,18 @@ export function WorkGradeDetails({
     );
   if (!query.data)
     return (
-      <div className="flex flex-col gap-3 pt-2" role="status" aria-label="Loading work settings">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-4 w-full" />
+      <div
+        className="flex flex-col gap-3 pt-1"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading work settings"
+      >
+        <span className="sr-only">Loading work settings</span>
+        <Separator aria-hidden="true" className="bg-border/40" />
+        <div aria-hidden="true" className="flex flex-col gap-2.5">
+          <Skeleton className="h-10 sm:h-9 w-full rounded-lg" />
+          <Skeleton className="h-4 w-5/6 rounded-md" />
+        </div>
       </div>
     );
   const source = query.data.attempts.find(

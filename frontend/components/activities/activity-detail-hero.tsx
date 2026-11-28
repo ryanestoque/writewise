@@ -323,7 +323,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         <Collapsible
           open={isPromptExpanded}
           onOpenChange={setIsPromptExpanded}
-          render={<section aria-label="Worksheet prompt" className="mt-3.5 flex flex-col gap-2" />}
+          render={<section aria-label="Target text" className="mt-3.5 flex flex-col gap-2" />}
         >
           {/* Standard print / non-cursive ground truth text with Copy aligned at the bottom end */}
           <div className="flex flex-wrap items-end justify-between gap-2 sm:gap-3">

@@ -249,7 +249,7 @@ export function WorksheetViewDialog({
                   <>
                     <span>&middot;</span>
                     <span className="truncate max-w-xs sm:max-w-md" title={displayTargetText}>
-                      Prompt: &ldquo;{displayTargetText}&rdquo;
+                      Target text: &ldquo;{displayTargetText}&rdquo;
                     </span>
                   </>
                 )}

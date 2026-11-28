@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ActivityThreadsSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { MessageSquare, AlertCircle } from "lucide-react";
@@ -42,10 +42,7 @@ export function ActivityThreads({
             </Button>
           </div>
         ) : !query.data ? (
-          <div className="flex flex-col gap-3 py-2" role="status" aria-label="Loading conversations">
-            <Skeleton className="h-12 w-full rounded-lg" />
-            <Skeleton className="h-12 w-full rounded-lg" />
-          </div>
+          <ActivityThreadsSkeleton />
         ) : !query.data.rows.length ? (
           <Empty className="py-8">
             <EmptyMedia variant="icon">

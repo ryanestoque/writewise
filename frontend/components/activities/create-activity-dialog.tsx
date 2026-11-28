@@ -158,7 +158,7 @@ export function CreateActivityDialog({
 
     if (isCustomText) {
       toast.add({
-        title: "Replaced custom prompt text",
+        title: "Replaced custom target text",
         actionProps: {
           children: "Undo",
           onClick: () => {
@@ -184,7 +184,7 @@ export function CreateActivityDialog({
           </ResponsiveModalTitle>
           <ResponsiveModalDescription className="sr-only">
             {isDuplicate
-              ? "Create a new handwriting activity using this prompt as a template."
+              ? "Create a new handwriting activity using this target text as a template."
               : "Define the target text students will copy in cursive on ruled paper."}
           </ResponsiveModalDescription>
         </ResponsiveModalHeader>
@@ -237,10 +237,10 @@ export function CreateActivityDialog({
                   />
                 </FieldContent>
 
-                {/* Suggestions / Prompt starters */}
+                {/* Suggestions / Target text starters */}
                 <div className="mt-2 flex flex-col gap-1.5">
                   <div className="text-xs font-medium text-muted-foreground">
-                    <span>Quick prompt suggestions:</span>
+                    <span>Quick target text suggestions:</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {PROMPT_SUGGESTIONS.map((sug) => (
@@ -291,7 +291,7 @@ export function CreateActivityDialog({
                   <Alert className="mt-1.5 border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
                     <AlertTriangle aria-hidden="true" />
                     <AlertDescription className="text-xs">
-                      Short prompt ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
+                      Short target text ({wordCount} {wordCount === 1 ? "word" : "words"}): At least 3 words recommended for reliable spacing and slant assessment.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -300,7 +300,7 @@ export function CreateActivityDialog({
                   <Alert className="mt-1.5 border-band-2/40 bg-band-2/15 text-band-2-text *:data-[slot=alert-description]:text-band-2-text">
                     <AlertTriangle aria-hidden="true" />
                     <AlertDescription className="text-xs">
-                      Long prompt ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
+                      Long target text ({wordCount} words) may exceed standard single-page 3-line ruled worksheets.
                     </AlertDescription>
                   </Alert>
                 )}

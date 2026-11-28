@@ -441,7 +441,7 @@ async def create_submission(
                     )
                     if is_case_diff:
                         casing_note = (
-                            f"Prompt expects '{expected_word_text}', "
+                            f"Target text expects '{expected_word_text}', "
                             f"but recognized '{transcribed}'."
                         )
                         word["casing_note"] = casing_note

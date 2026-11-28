@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
+import { SectionsListSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -229,10 +230,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
           {/* Section List */}
           <ResponsiveModalBody className="flex flex-col gap-2 max-h-[min(50dvh,340px)] px-5 pb-4 md:px-0 md:pr-1 md:pb-0">
             {isLoading ? (
-              <div className="py-8 text-center text-muted-foreground flex flex-col items-center gap-2">
-                <Spinner className="size-5 text-primary" />
-                <span className="text-xs">Loading sections...</span>
-              </div>
+              <SectionsListSkeleton />
             ) : error ? (
               <Alert variant="destructive" className="p-4">
                 <AlertDescription className="flex flex-col items-center text-center gap-2 text-xs">

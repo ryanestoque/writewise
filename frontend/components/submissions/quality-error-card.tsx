@@ -354,12 +354,12 @@ function resolveErrorPresentation(
         badgeLabel: "Sentence Check",
         title: isParent
           ? "Handwriting Doesn't Match This Practice Sentence"
-          : "Worksheet Text Doesn't Match Activity Prompt",
+          : "Worksheet Text Doesn't Match Target Text",
         description: isParent
           ? "The handwriting in this photo doesn't seem to match the practice sentence assigned for this worksheet."
           : detected && expected
-            ? `The continuous cursive strokes were transcribed, but the content differs from the assigned prompt.`
-            : "The transcribed handwriting on the page couldn't be matched to the assigned sentence prompt.",
+            ? "The continuous cursive strokes were transcribed, but the content differs from the assigned target text."
+            : "The transcribed handwriting on the page couldn't be matched to the assigned target text.",
         tips: [
           "Check that your child wrote the exact practice sentence shown below.",
           "Make sure the photo is sharp and bright so every word is easy to read.",
@@ -977,7 +977,7 @@ export function QualityErrorCard({
                           : "bg-destructive/10 text-destructive border-destructive/30"
                       )}
                     >
-                      {Math.round(error.details.similarity * 100)}% Prompt Match
+                      {Math.round(error.details.similarity * 100)}% Target Text Match
                     </Badge>
                   </CardAction>
                 )}
@@ -997,7 +997,7 @@ export function QualityErrorCard({
                 {typeof error.details?.expected_text === "string" && (
                   <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 flex flex-col gap-1">
                     <span className="text-xs uppercase font-bold text-muted-foreground tracking-wider block">
-                      Assigned Activity Prompt
+                      Assigned Target Text
                     </span>
                     <p className="font-sans text-xs text-foreground font-medium italic break-words">
                       &quot;{error.details.expected_text}&quot;

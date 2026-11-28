@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { RosterListSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import { SearchInput } from "@/components/shared/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -467,12 +468,7 @@ export default function RosterPage() {
 
         {/* Loading state */}
         {isLoading ? (
-          <Card className="py-0">
-            <CardContent className="p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-              <Spinner className="size-6 text-primary" />
-              <span className="text-sm font-medium">Loading class roster...</span>
-            </CardContent>
-          </Card>
+          <RosterListSkeleton />
         ) : students?.length === 0 ? (
           /* Empty Roster State */
           <Card className="py-0 overflow-hidden">

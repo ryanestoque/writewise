@@ -263,7 +263,7 @@ export function TakeHomeActivities({
           <EmptyHeader>
             <EmptyTitle>No practice worksheets assigned</EmptyTitle>
             <EmptyDescription className="text-sm max-w-md mx-auto leading-relaxed">
-              When your child&apos;s teacher assigns take-home cursive practice, it will appear right here with a prompt to guide their handwriting on paper.
+              When your child&apos;s teacher assigns take-home cursive practice, it will appear right here with the target text to guide their handwriting on paper.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

@@ -184,9 +184,18 @@ export function NotificationSettingsCard({
           </CardHeader>
           <CardContent className="flex flex-col gap-4 pb-6">
             {isLoading ? (
-              <div role="status" className="flex flex-col gap-2">
-                <span className="text-xs text-muted-foreground">Loading email settings…</span>
-                <Skeleton className="h-5 w-40" aria-hidden="true" />
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label="Loading email settings"
+                className="flex items-center justify-between gap-4"
+              >
+                <span className="sr-only">Loading email settings</span>
+                <div aria-hidden="true" className="flex flex-col gap-1.5 flex-1">
+                  <Skeleton className="h-4 w-24 rounded-md" />
+                  <Skeleton className="h-3.5 w-64 max-w-full rounded-md" />
+                </div>
+                <Skeleton aria-hidden="true" className="h-5 w-9 rounded-full shrink-0" />
               </div>
             ) : draftEnabled !== null ? (
               <FieldGroup>

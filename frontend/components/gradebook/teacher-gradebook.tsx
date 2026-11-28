@@ -49,7 +49,7 @@ import { SearchInput } from "@/components/shared/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldLabel } from "@/components/ui/field";
-import { Skeleton } from "@/components/ui/skeleton";
+import { GradebookWorkspaceSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import {
   Table,
   TableBody,
@@ -211,19 +211,7 @@ export function TeacherGradebook({
           isRetrying={sections.isFetching}
         />
       ) : sections.isPending ? (
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-3">
-            <Skeleton className="h-10 w-56 rounded-xl" />
-            <Skeleton className="h-10 w-40 rounded-xl" />
-          </div>
-          <Card className="py-0 shadow-warm">
-            <CardContent className="flex flex-col gap-3 p-6">
-              <Skeleton className="h-8 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-lg" />
-            </CardContent>
-          </Card>
-        </div>
+        <GradebookWorkspaceSkeleton />
       ) : !sections.data.length ? (
         <Empty className="rounded-xl sm:rounded-2xl border border-border bg-card p-8 shadow-warm">
           <EmptyMedia variant="icon">
@@ -342,23 +330,7 @@ function SectionGrid({
       />
     );
   if (!query.data || query.data.section_id !== sectionId)
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="flex gap-3">
-          <Skeleton className="h-10 w-56 rounded-md" />
-          <Skeleton className="h-10 w-40 rounded-md" />
-          <Skeleton className="h-10 w-44 rounded-md" />
-        </div>
-        <Card className="py-0 shadow-none">
-          <CardContent className="flex flex-col gap-3 p-6">
-            <Skeleton className="h-8 w-full rounded-md" />
-            <Skeleton className="h-12 w-full rounded-md" />
-            <Skeleton className="h-12 w-full rounded-md" />
-            <Skeleton className="h-12 w-full rounded-md" />
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <GradebookWorkspaceSkeleton />;
 
   const book = query.data;
   const rows = book.rows.filter((row) =>

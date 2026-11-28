@@ -212,7 +212,7 @@ class TestCreateSubmission:
                             "bbox": [10, 10, 50, 30],
                             "letter_formation_score": 75.0,
                             "transcription": "the",
-                            "casing_note": "Prompt expects 'The', but recognized 'the'.",
+                            "casing_note": "Target text expects 'The', but recognized 'the'.",
                         }
                     ],
                 }
@@ -222,7 +222,7 @@ class TestCreateSubmission:
         assert "letter_formation" in overlay
         annotations = overlay["letter_formation"]["annotations"]
         assert len(annotations) == 1
-        assert annotations[0]["casing_note"] == "Prompt expects 'The', but recognized 'the'."
+        assert annotations[0]["casing_note"] == "Target text expects 'The', but recognized 'the'."
         for line in raw_output["lines"]:
             for word in line["words"]:
                 assert "letter_formation_score" in word

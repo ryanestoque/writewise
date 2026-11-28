@@ -21,7 +21,7 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { StudentDrillDownSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import {
   Empty,
   EmptyMedia,
@@ -360,11 +360,7 @@ export function StudentDrillDownDrawer({
           {/* Scrollable Drawer Body with Custom Slim Scrollbar */}
           <div className={cn("flex-1 overflow-y-auto overflow-x-hidden p-5 sm:p-6 min-w-0 flex flex-col [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30", hasSubmissions && "gap-6")}>
             {isLoading ? (
-              <div className="flex flex-col gap-4">
-                <Skeleton className="h-32 w-full rounded-xl" />
-                <Skeleton className="h-64 w-full rounded-xl" />
-                <Skeleton className="h-32 w-full rounded-xl" />
-              </div>
+              <StudentDrillDownSkeleton />
             ) : error ? (
               /* Dedicated Error State */
               <Alert variant="destructive" className="my-auto">

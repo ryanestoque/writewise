@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { SearchInput } from "@/components/shared/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/shared/filter-pills";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ActivityCardsGridSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import {
   Tooltip,
   TooltipTrigger,
@@ -537,21 +537,7 @@ export default function ActivitiesPage() {
 
       {/* Content Area */}
       {isLoading ? (
-        /* Loading Skeleton */
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} size="sm">
-              <CardContent className="flex flex-col gap-3">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <div className="flex gap-2 pt-2">
-                  <Skeleton className="h-5 w-16 rounded-full" />
-                  <Skeleton className="h-5 w-12 rounded-full" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <ActivityCardsGridSkeleton />
       ) : activities?.length === 0 ? (
         /* Empty State — No activities */
         <Card className="py-0">

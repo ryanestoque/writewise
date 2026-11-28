@@ -78,7 +78,7 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
   SEGMENTATION_COUNT_MISMATCH: {
     title: "Word Count Mismatch",
     description:
-      "The number of cursive words detected on the paper does not match the assigned prompt text.",
+      "The number of cursive words detected on the paper does not match the assigned target text.",
     advice:
       "Check that the student wrote the complete sentence without skipping words or adding extra lines.",
   },
@@ -118,11 +118,11 @@ export const REJECTION_GUIDE: Record<string, RejectionDetail> = {
       "Verify the student used a dark pencil or pen and that the writing area is in frame.",
   },
   TARGET_TEXT_MISMATCH: {
-    title: "Worksheet Text Doesn't Match Activity Prompt",
+    title: "Worksheet Text Doesn't Match Target Text",
     description:
-      "The transcribed cursive handwriting on the page does not match the assigned activity prompt sentence.",
+      "The transcribed cursive handwriting on the page does not match the assigned target text.",
     advice:
-      "Check that the student wrote the assigned prompt sentence, and ensure strokes are clear and connected.",
+      "Check that the student wrote the assigned target text, and ensure strokes are clear and connected.",
   },
 };
 
@@ -267,7 +267,7 @@ export function SubmissionRejectionCard({
                   {typeof structuredDetails.expectedText === "string" && (
                     <div className="p-2 rounded-lg bg-background/60 border border-destructive/20 flex flex-col gap-0.5">
                       <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
-                        Assigned Prompt
+                        Assigned Target Text
                       </span>
                       <p className="font-sans text-xs text-foreground font-medium break-words">
                         &quot;{structuredDetails.expectedText}&quot;

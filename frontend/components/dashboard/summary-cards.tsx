@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { SummaryCardsSkeleton } from "@/components/teacher/teacher-portal-skeletons";
 import { cn } from "@/lib/utils";
 
 interface SummaryCardsProps {
@@ -44,36 +44,7 @@ export function SummaryCards({
   className,
 }: SummaryCardsProps) {
   if (isLoading) {
-    return (
-      <div className={cn("grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-4", className)}>
-        <Card size="sm" className="xl:col-span-4 py-4 sm:py-5 shadow-warm">
-          <CardHeader>
-            <Skeleton className="h-4 w-28" />
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Skeleton className="h-8 w-24" />
-          </CardContent>
-          <CardFooter>
-            <Skeleton className="h-4 w-48" />
-          </CardFooter>
-        </Card>
-        <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} size="sm" className="shadow-warm">
-              <CardHeader>
-                <Skeleton className="h-4 w-20" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-7 w-16" />
-              </CardContent>
-              <CardFooter>
-                <Skeleton className="h-5 w-24 rounded-full" />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
+    return <SummaryCardsSkeleton className={className} />;
   }
 
   const compositeScore = averages?.composite ?? null;

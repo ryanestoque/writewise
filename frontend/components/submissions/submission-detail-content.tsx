@@ -1220,11 +1220,11 @@ export function SubmissionDetailContent({
                 )}
               </WorksheetImageInspector>
 
-              {/* Target prompt & recognized text card */}
+              {/* Target text & recognized text card */}
               <Card size="sm" className="shrink-0 py-2 shadow-2xs">
                 <CardContent className="flex flex-col gap-2 px-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-semibold text-foreground shrink-0">Target prompt:</span>
+                    <span className="font-semibold text-foreground shrink-0">Target text:</span>
                     <span className="font-medium text-foreground truncate">
                       {resolvedTargetText ? `"${resolvedTargetText}"` : "Cursive Penmanship Practice"}
                     </span>
@@ -1347,9 +1347,16 @@ export function SubmissionDetailContent({
                               open
                             />
                           ) : (
-                            <div className="p-4 flex flex-col gap-3" role="status" aria-label="Loading conversation">
-                              <Skeleton className="h-6 w-48 rounded-md" />
-                              <Skeleton className="h-16 w-full rounded-xl" />
+                            <div
+                              className="p-4 flex flex-col gap-3"
+                              role="status"
+                              aria-live="polite"
+                              aria-label="Loading conversation"
+                            >
+                              <span className="sr-only">Loading conversation</span>
+                              <Skeleton aria-hidden="true" className="h-5 w-44 rounded-md" />
+                              <Skeleton aria-hidden="true" className="h-16 w-3/4 rounded-xl" />
+                              <Skeleton aria-hidden="true" className="h-16 w-2/3 ml-auto rounded-xl" />
                             </div>
                           ))}
                         </CardContent>
