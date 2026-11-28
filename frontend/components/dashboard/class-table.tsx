@@ -381,11 +381,17 @@ export function ClassTable({
       {/* Mobile Student Cards (<640px) — avoids horizontal scrolling a 9-column table on phones */}
       <div className="sm:hidden flex flex-col gap-2.5">
         {/* Compact mobile sort bar */}
-        <Field orientation="horizontal" className="justify-between gap-2">
-          <FieldLabel htmlFor="mobile-student-sort" className="text-xs font-medium text-muted-foreground shrink-0">
+        <Field
+          orientation="horizontal"
+          className="items-center gap-2.5 [&>[data-slot=field-label]]:flex-none"
+        >
+          <FieldLabel
+            htmlFor="mobile-student-sort"
+            className="text-xs font-medium text-muted-foreground whitespace-nowrap"
+          >
             Sort by
           </FieldLabel>
-          <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+          <div className="flex flex-1 min-w-0 items-center gap-2">
             <Select
               items={COLUMNS.map((col) => ({ value: col.field, label: col.label }))}
               value={sortField}
@@ -396,7 +402,7 @@ export function ClassTable({
               <SelectTrigger
                 id="mobile-student-sort"
                 aria-label="Sort by"
-                className="min-h-10 min-w-0 flex-1 max-w-[200px] border-border bg-background"
+                className="min-h-11 w-full flex-1 min-w-0 border-border bg-background"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -416,7 +422,7 @@ export function ClassTable({
               size="icon"
               onClick={() => onSortChange(sortField, sortDirection === "asc" ? "desc" : "asc")}
               aria-label={`Sort direction: ${sortDirection === "asc" ? "ascending" : "descending"}. Click to toggle.`}
-              className="min-h-10 min-w-10 cursor-pointer"
+              className="min-h-11 min-w-11 shrink-0 cursor-pointer"
             >
               {sortDirection === "asc" ? (
                 <ArrowUp className="text-primary" aria-hidden="true" />

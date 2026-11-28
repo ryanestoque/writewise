@@ -22,6 +22,7 @@ import {
 import type { StudentScoreHistoryItem } from "@/lib/hooks/use-dashboard";
 import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { BandBadge } from "@/components/shared/band-badge";
+import { HorizontalScrollRail } from "@/components/shared/horizontal-scroll-rail";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -375,7 +375,7 @@ export function CriterionTrendChart({
 
         {/* Level 2: Skill Filter Chips (Single-line horizontal rail) */}
         {viewMode === "chart" && (
-          <ScrollArea orientation="horizontal" hideScrollbar className="w-full -mx-1 px-1">
+          <HorizontalScrollRail>
             <ToggleGroup
               multiple
               value={[...visibleSeries]}
@@ -385,7 +385,7 @@ export function CriterionTrendChart({
               aria-label="Visible handwriting criteria"
               variant="outline"
               size="sm"
-              className="w-max gap-1.5 py-0.5"
+              className="w-max gap-1.5 py-0.5 pr-1"
             >
               {CRITERION_CONFIG.map((c) => {
                 const isSelected = visibleSeries.has(c.key);
@@ -431,7 +431,7 @@ export function CriterionTrendChart({
                 );
               })}
             </ToggleGroup>
-          </ScrollArea>
+          </HorizontalScrollRail>
         )}
       </div>
 
@@ -441,60 +441,61 @@ export function CriterionTrendChart({
         {/* High-level Trajectory Summary */}
         {trajectoryStats && (
           <Card size="sm" className="bg-muted/20 shadow-none">
-            <CardContent className="flex flex-col sm:grid sm:grid-cols-3 gap-2 sm:gap-2.5 text-xs">
-              {/* Trend metric (order-first on mobile to provide headline context, 3rd column on desktop) */}
-              <div className="order-first sm:order-none flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
+            <CardContent className="flex flex-col gap-2.5 text-xs">
+              {/* Trend summary header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
                 <span className="text-xs text-muted-foreground font-medium shrink-0">
                   <span className="sm:hidden">{trajectoryStats.totalCount} worksheets</span>
                   <span className="hidden sm:inline">Trend · {trajectoryStats.totalCount} worksheets</span>
                 </span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "h-auto px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
-                      trajectoryStats.direction === "improving"
-                        ? "bg-band-4/15 text-band-4-text border-band-4/30"
-                        : trajectoryStats.direction === "lower"
-                          ? "bg-band-2/15 text-band-2-text border-band-2/30"
-                          : "bg-muted text-muted-foreground border-border/60"
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "h-auto px-2.5 py-0.5 rounded-full font-semibold text-xs tabular-nums",
+                    trajectoryStats.direction === "improving"
+                      ? "bg-band-4/15 text-band-4-text border-band-4/30"
+                      : trajectoryStats.direction === "lower"
+                        ? "bg-band-2/15 text-band-2-text border-band-2/30"
+                        : "bg-muted text-muted-foreground border-border/60"
+                  )}
+                >
+                  {trajectoryStats.label}
+                  {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
+                </Badge>
+              </div>
+
+              <Separator />
+
+              {/* First vs. Latest comparison pair */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                {/* Baseline (First) milestone */}
+                <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
+                  <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+                    First ({trajectoryStats.firstDate})
+                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {showScoreDetails && (
+                      <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                        {trajectoryStats.baselineScore.toFixed(1)}%
+                      </span>
                     )}
-                  >
-                    {trajectoryStats.label}
-                    {showScoreDetails ? ` (${formatScoreDifference(trajectoryStats.diff)})` : ""}
-                  </Badge>
+                    <BandBadge score={trajectoryStats.baselineScore} size="sm" />
+                  </div>
                 </div>
-              </div>
 
-              <Separator className="sm:hidden" />
-
-              {/* Baseline (First) milestone */}
-              <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
-                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
-                  First ({trajectoryStats.firstDate})
-                </span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {showScoreDetails && (
-                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
-                      {trajectoryStats.baselineScore.toFixed(1)}%
-                    </span>
-                  )}
-                  <BandBadge score={trajectoryStats.baselineScore} size="sm" />
-                </div>
-              </div>
-
-              {/* Latest milestone */}
-              <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
-                <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
-                  Latest ({trajectoryStats.latestDate})
-                </span>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {showScoreDetails && (
-                    <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
-                      {trajectoryStats.latestScore.toFixed(1)}%
-                    </span>
-                  )}
-                  <BandBadge score={trajectoryStats.latestScore} size="sm" />
+                {/* Latest milestone */}
+                <div className="flex items-center justify-between sm:flex-col sm:items-start sm:gap-1 min-w-0">
+                  <span className="text-xs text-muted-foreground font-medium font-sans tabular-nums">
+                    Latest ({trajectoryStats.latestDate})
+                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {showScoreDetails && (
+                      <span className="font-bold tabular-nums text-foreground text-sm sm:text-base">
+                        {trajectoryStats.latestScore.toFixed(1)}%
+                      </span>
+                    )}
+                    <BandBadge score={trajectoryStats.latestScore} size="sm" />
+                  </div>
                 </div>
               </div>
             </CardContent>

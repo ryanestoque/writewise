@@ -108,13 +108,20 @@ export function SummaryCards({
       </Card>
 
       {/* 5 Penmanship Criteria Strip */}
-      <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {CRITERIA_CARDS.map((card) => {
+      <div className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-5 gap-3">
+        {CRITERIA_CARDS.map((card, index) => {
           const score = averages?.[card.key] ?? null;
           const isFocus =
             lowestCriterion !== null &&
             lowestCriterion.key === card.key &&
             lowestCriterion.score < 75;
+
+          const spanClass =
+            index === 4
+              ? "col-span-2 sm:col-span-3 lg:col-span-1"
+              : index === 3
+                ? "col-span-1 sm:col-span-3 lg:col-span-1"
+                : "col-span-1 sm:col-span-2 lg:col-span-1";
 
           return (
             <Card
@@ -122,6 +129,7 @@ export function SummaryCards({
               size="sm"
               className={cn(
                 "bg-card shadow-warm justify-between gap-2 transition-colors hover:border-primary/40",
+                spanClass,
                 isFocus ? "border-band-1/50" : "border-border"
               )}
             >

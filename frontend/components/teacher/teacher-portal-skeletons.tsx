@@ -66,21 +66,30 @@ export function SummaryCardsSkeleton({
 
       <div
         aria-hidden="true"
-        className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+        className="xl:col-span-8 grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-5 gap-3"
       >
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Card key={i} size="sm" className="bg-card shadow-warm justify-between gap-2">
-            <CardHeader className="gap-1">
-              <Skeleton className="h-4 w-20 rounded-md" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-7 sm:h-8 w-16 rounded-md" />
-            </CardContent>
-            <CardFooter>
-              <Skeleton className="h-5 w-24 rounded-full" />
-            </CardFooter>
-          </Card>
-        ))}
+        {Array.from({ length: 5 }).map((_, i) => {
+          const spanClass =
+            i === 4
+              ? "col-span-2 sm:col-span-3 lg:col-span-1"
+              : i === 3
+                ? "col-span-1 sm:col-span-3 lg:col-span-1"
+                : "col-span-1 sm:col-span-2 lg:col-span-1";
+
+          return (
+            <Card key={i} size="sm" className={cn("bg-card shadow-warm justify-between gap-2", spanClass)}>
+              <CardHeader className="gap-1">
+                <Skeleton className="h-4 w-20 rounded-md" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-7 sm:h-8 w-16 rounded-md" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-5 w-24 rounded-full" />
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
@@ -271,27 +280,23 @@ export function StudentDrillDownSkeleton() {
 
       {/* Overall Performance Hero Card */}
       <Card aria-hidden="true" size="sm" className="shadow-warm-sm">
-        <CardHeader>
-          <Skeleton className="h-4 w-32 rounded-md" />
-          <CardAction>
-            <Skeleton className="h-6 w-24 rounded-full" />
-          </CardAction>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Skeleton className="h-8 sm:h-9 w-24 rounded-md" />
+        <CardContent className="flex flex-col gap-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Skeleton className="h-4 w-32 rounded-md" />
+              <Skeleton className="h-8 sm:h-9 w-24 rounded-md" />
+            </div>
+            <Skeleton className="h-6 w-24 rounded-full shrink-0" />
+          </div>
           <Separator />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {[0, 1].map((idx) => (
-              <div
-                key={idx}
-                className="p-3 rounded-lg bg-muted/20 border border-border/60 flex flex-col gap-2"
-              >
-                <Skeleton className="h-3.5 w-24 rounded-md" />
-                <div className="flex items-center justify-between gap-2">
+              <div key={idx} className="flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton className="h-3 w-20 rounded-md" />
                   <Skeleton className="h-4 w-24 rounded-md" />
-                  <Skeleton className="h-4 w-12 rounded-md" />
                 </div>
-                <Skeleton className="h-5 w-20 rounded-full" />
+                <Skeleton className="h-4 w-12 rounded-md" />
               </div>
             ))}
           </div>
