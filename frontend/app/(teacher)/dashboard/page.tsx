@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "@/components/ui/toast";
 import {
   useDashboardScores,
@@ -15,8 +16,15 @@ import {
   type BandFilter,
 } from "@/components/dashboard/class-table";
 import { StudentDrillDownDrawer } from "@/components/dashboard/student-drill-down";
-import { SubmissionDetailDialog } from "@/components/submissions/submission-detail-dialog";
 import { useTeacherModals } from "@/components/teacher-modals-provider";
+
+const SubmissionDetailDialog = dynamic(
+  () =>
+    import("@/components/submissions/submission-detail-dialog").then(
+      (m) => m.SubmissionDetailDialog
+    ),
+  { ssr: false }
+);
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -228,7 +236,7 @@ export default function DashboardPage() {
           <Button
             type="button"
             onClick={() => openUpload()}
-            className="sm:hidden w-full min-h-11 text-sm font-semibold shadow-warm-xs cursor-pointer"
+            className="sm:hidden w-full min-h-11 text-sm font-semibold shadow-warm-sm cursor-pointer"
           >
             <UploadCloud data-icon="inline-start" aria-hidden="true" />
             <span>Upload Worksheet</span>
@@ -349,25 +357,27 @@ export default function DashboardPage() {
         }
       />
 
-      {/* Submission Detail Dialog */}
-      <SubmissionDetailDialog
-        submission={activeSubmission}
-        submissions={activitySubmissions}
-        currentIndex={
-          activeSubmission && activitySubmissions
-            ? activitySubmissions.findIndex((s) => s.id === activeSubmission.id)
-            : undefined
-        }
-        onNavigate={(s) => {
-          setSelectedSubmissionId(s.id);
-          if (s.activity_id && s.activity_id !== selectedActivityId) {
-            setSelectedActivityId(s.activity_id);
+      {/* Submission Detail Dialog lazy-loaded on first inspection */}
+      {selectedSubmissionId && (
+        <SubmissionDetailDialog
+          submission={activeSubmission}
+          submissions={activitySubmissions}
+          currentIndex={
+            activeSubmission && activitySubmissions
+              ? activitySubmissions.findIndex((s) => s.id === activeSubmission.id)
+              : undefined
           }
-        }}
-        open={isSubmissionModalOpen}
-        onOpenChange={setIsSubmissionModalOpen}
-        activityTargetText={activeSubmission?.activity?.target_text}
-      />
+          onNavigate={(s) => {
+            setSelectedSubmissionId(s.id);
+            if (s.activity_id && s.activity_id !== selectedActivityId) {
+              setSelectedActivityId(s.activity_id);
+            }
+          }}
+          open={isSubmissionModalOpen}
+          onOpenChange={setIsSubmissionModalOpen}
+          activityTargetText={activeSubmission?.activity?.target_text}
+        />
+      )}
     </div>
   );
 }

@@ -61,7 +61,7 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               size="sm"
               onClick={onMoveSection}
               disabled={isRemoving}
-              className="h-8 px-2 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+              className="h-10 sm:h-8 px-2.5 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all motion-reduce:transform-none motion-reduce:transition-colors shrink-0 rounded-lg cursor-pointer"
               aria-label={`Move ${selectedCount} selected ${
                 selectedCount === 1 ? "student" : "students"
               } to another section`}
@@ -91,7 +91,7 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               size="sm"
               onClick={onExportCSV}
               disabled={isRemoving}
-              className="h-8 px-2 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+              className="h-10 sm:h-8 px-2.5 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all motion-reduce:transform-none motion-reduce:transition-colors shrink-0 rounded-lg cursor-pointer"
               aria-label={`Export ${selectedCount} selected ${
                 selectedCount === 1 ? "student" : "students"
               } to CSV`}
@@ -123,7 +123,7 @@ export const FloatingBatchBar = memo(function FloatingBatchBar({
               size="sm"
               onClick={onRemove}
               disabled={isRemoving}
-              className="h-8 px-2 sm:px-3 text-xs font-medium border border-destructive/20 active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+              className="h-10 sm:h-8 px-2.5 sm:px-3 text-xs font-medium border border-destructive/20 active:scale-[0.97] transition-all motion-reduce:transform-none motion-reduce:transition-colors shrink-0 rounded-lg cursor-pointer"
               aria-label={`Remove ${selectedCount} selected ${
                 selectedCount === 1 ? "student" : "students"
               } from roster`}

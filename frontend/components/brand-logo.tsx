@@ -60,7 +60,7 @@ export function BrandLogo({
 }: BrandLogoProps) {
   if (variant === "logo") {
     const heightClasses = {
-      sm: "h-7.5 w-auto",
+      sm: "h-8 w-auto",
       md: "h-9 w-auto",
       lg: "h-12 w-auto",
       xl: "h-16 sm:h-20 w-auto",

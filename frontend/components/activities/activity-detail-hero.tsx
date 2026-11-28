@@ -1,6 +1,7 @@
 "use client";
 
 import { formatActivityDueAt } from "@/lib/utils/activity-deadlines";
+import { getBandFromScore, getBandMeta } from "@/lib/utils/scoring";
 import { memo, useState } from "react";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import type { Activity } from "@/lib/hooks/use-activities";
@@ -46,8 +47,6 @@ import {
   ChevronDown,
   Clock,
   RefreshCw,
-  Home,
-  BookOpen,
 } from "lucide-react";
 
 export interface ClassDiagnosticSummary {
@@ -78,36 +77,35 @@ const CRITERIA_METRICS: Array<{
   { key: "baselineAlignment", label: "Baseline Alignment" },
 ];
 
-export function getCriterionBandStyle(score: number) {
-  if (score >= 80) {
-    return {
-      band: "Excellent",
-      barClass: "bg-band-4",
-      textClass: "text-band-4-text",
-      dotClass: "bg-band-4",
-    };
-  }
-  if (score >= 60) {
-    return {
-      band: "Satisfactory",
-      barClass: "bg-band-3",
-      textClass: "text-band-3-text",
-      dotClass: "bg-band-3",
-    };
-  }
-  if (score >= 40) {
-    return {
-      band: "Developing",
-      barClass: "bg-band-2",
-      textClass: "text-band-2-text",
-      dotClass: "bg-band-2",
-    };
-  }
-  return {
-    band: "Needs Improvement",
+const CRITERION_BAND_STYLES = {
+  excellent: {
+    barClass: "bg-band-4",
+    textClass: "text-band-4-text",
+    dotClass: "bg-band-4",
+  },
+  satisfactory: {
+    barClass: "bg-band-3",
+    textClass: "text-band-3-text",
+    dotClass: "bg-band-3",
+  },
+  developing: {
+    barClass: "bg-band-2",
+    textClass: "text-band-2-text",
+    dotClass: "bg-band-2",
+  },
+  needs_improvement: {
     barClass: "bg-band-1",
     textClass: "text-band-1-text",
     dotClass: "bg-band-1",
+  },
+} as const;
+
+export function getCriterionBandStyle(score: number) {
+  const bandKey = getBandFromScore(score) ?? "needs_improvement";
+  const meta = getBandMeta(bandKey);
+  return {
+    band: meta.label,
+    ...CRITERION_BAND_STYLES[bandKey],
   };
 }
 
@@ -160,14 +158,12 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
       {/* Group 1: Activity Mode & Word Count */}
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
         {activity.is_take_home ? (
-          <span className="inline-flex items-center gap-1 font-medium text-primary">
-            <Home className="size-3 text-primary" aria-hidden="true" />
-            <span>Take-home</span>
+          <span className="font-medium text-primary">
+            Take-home
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 font-medium text-foreground/80">
-            <BookOpen className="size-3 text-primary" aria-hidden="true" />
-            <span>In-class</span>
+          <span className="font-medium text-foreground/80">
+            In-class
           </span>
         )}
         <span aria-hidden="true" className="text-muted-foreground/40 select-none">·</span>
@@ -180,9 +176,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
 
       {/* Group 2: Due Date & Closure Policy */}
       <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-        <span className="inline-flex items-center gap-1 tabular-nums whitespace-nowrap">
-          <Clock className="size-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
-          <span>{activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}</span>
+        <span className="tabular-nums whitespace-nowrap">
+          {activity.due_at ? "Due " + formatActivityDueAt(activity.due_at) : "No due date"}
         </span>
         {activity.close_after_due && (
           <>
@@ -200,7 +195,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
         size="sm"
         onClick={onUpload}
         className={cn(
-          "h-9 text-xs font-semibold shadow-2xs",
+          "h-10 sm:h-9 text-xs font-semibold shadow-2xs",
           compact ? "px-2.5" : "px-3"
         )}
         title={`Upload worksheets (${altKey}+U)`}
@@ -444,7 +439,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                   indicatorClassName="bg-primary rounded-full duration-300 motion-reduce:transition-none"
                 />
               ) : (
-                <Button variant="link" onClick={onEdit} className="min-h-9 self-start px-0 text-xs">
+                <Button variant="link" onClick={onEdit} className="min-h-10 sm:min-h-9 self-start px-0 text-xs">
                   Edit assignments
                   <ArrowRight data-icon="inline-end" aria-hidden="true" />
                 </Button>

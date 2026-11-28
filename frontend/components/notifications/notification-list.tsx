@@ -290,7 +290,7 @@ export function NotificationList({
                   variant="ghost"
                   size="xs"
                   onClick={() => setFilter("all")}
-                  className="h-8 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+                  className="h-10 md:h-8 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
                 >
                   Show all notifications
                 </Button>
@@ -300,7 +300,7 @@ export function NotificationList({
                 variant="outline"
                 size="xs"
                 onClick={() => setFilter("all")}
-                className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
+                className="h-10 md:h-8 px-3 text-xs text-muted-foreground hover:text-foreground touch-manipulation cursor-pointer"
               >
                 Show all notifications
               </Button>

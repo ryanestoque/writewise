@@ -100,7 +100,7 @@ export const FloatingActionBar = memo(function FloatingActionBar({
                     variant="link"
                     size="xs"
                     onClick={onSelectAll}
-                    className="h-auto gap-1 text-xs font-medium ml-0.5 cursor-pointer shrink-0 px-1 py-0.5"
+                    className="relative h-auto gap-1 text-xs font-medium ml-0.5 cursor-pointer shrink-0 px-1 py-0.5 after:absolute after:-inset-2 sm:after:hidden"
                     title={`Select all ${totalCount} ${plural}`}
                   >
                     <CheckCheck data-icon="inline-start" aria-hidden="true" />

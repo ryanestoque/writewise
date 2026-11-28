@@ -35,12 +35,6 @@ export function WorksheetPrompt({
           >
             {prompt || "No text specified"}
           </p>
-          {preview && (
-            <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-card via-card/70 to-transparent"
-              aria-hidden="true"
-            />
-          )}
         </div>
       </div>
       {footer && (

@@ -12,7 +12,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -31,7 +30,6 @@ import {
   FileUpIcon,
   ChevronsUpDownIcon,
   KeyboardIcon,
-  GraduationCapIcon,
 } from "lucide-react";
 import { BrandIcon, BrandLogo } from "@/components/brand-logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -185,31 +183,6 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
               </TooltipContent>
             </Tooltip>
           </div>
-
-          {/* Actionable Pending Grading Queue Entry Point */}
-          {typeof pendingSubmissionsCount === "number" && pendingSubmissionsCount > 0 && (
-            <SidebarMenu className="px-2 group-data-[collapsible=icon]:hidden">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  id="queue-pending-review"
-                  size="sm"
-                  render={
-                    <Link
-                      href="/activities"
-                      onClick={handleNavClick}
-                    />
-                  }
-                  className="h-10 md:h-8 bg-sidebar-accent/70 text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium pr-8"
-                >
-                  <ClipboardListIcon aria-hidden="true" />
-                  <span>Pending review</span>
-                </SidebarMenuButton>
-                <SidebarMenuBadge className="top-2 md:top-1 text-sidebar-accent-foreground font-semibold">
-                  {pendingSubmissionsCount}
-                </SidebarMenuBadge>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          )}
 
           <div className="hidden group-data-[collapsible=icon]:flex justify-center pt-1 pb-1 px-1">
             <Tooltip>
@@ -458,9 +431,8 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                           {user.email}
                         </span>
                         {user.schoolName && (
-                          <span className="text-xs text-primary font-medium mt-0.5 flex items-center gap-1.5 truncate">
-                            <GraduationCapIcon className="size-3.5 shrink-0 text-primary/80" aria-hidden="true" />
-                            <span className="truncate">{user.schoolName}</span>
+                          <span className="text-xs text-primary font-medium mt-0.5 truncate">
+                            {user.schoolName}
                           </span>
                         )}
                       </div>

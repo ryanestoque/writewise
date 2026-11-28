@@ -240,7 +240,7 @@ export function WorkGradeSheet({
                   onClick={() => onNavigateStudent("prev")}
                   title="Previous student (Left arrow or K)"
                   aria-label="Previous student"
-                  className="size-9"
+                  className="size-10 sm:size-9"
                 >
                   <ChevronLeft aria-hidden="true" />
                 </Button>
@@ -251,7 +251,7 @@ export function WorkGradeSheet({
                   onClick={() => onNavigateStudent("next")}
                   title="Next student (Right arrow or J)"
                   aria-label="Next student"
-                  className="size-9"
+                  className="size-10 sm:size-9"
                 >
                   <ChevronRight aria-hidden="true" />
                 </Button>
@@ -274,10 +274,10 @@ export function WorkGradeSheet({
           className="flex min-h-0 flex-1 flex-col"
         >
           <TabsList className="mx-4 mt-3 shrink-0">
-            <TabsTrigger value="work" disabled={pending} className="min-h-9">
+            <TabsTrigger value="work" disabled={pending} className="min-h-10 sm:min-h-9">
               Work
             </TabsTrigger>
-            <TabsTrigger value="comments" disabled={pending} className="min-h-9">
+            <TabsTrigger value="comments" disabled={pending} className="min-h-10 sm:min-h-9">
               Comments
             </TabsTrigger>
           </TabsList>
@@ -323,7 +323,7 @@ export function WorkGradeSheet({
                         nativeButton={false}
                         variant="outline"
                         size="sm"
-                        className="min-h-8 shrink-0 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+                        className="min-h-10 sm:min-h-8 shrink-0 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
                         render={
                           <Link
                             href={`/activities/${cell.activity_id}/submissions/${cell.active_submission_id}`}
@@ -338,7 +338,7 @@ export function WorkGradeSheet({
                       <Button
                         type="button"
                         size="sm"
-                        className="h-9 cursor-pointer"
+                        className="h-10 sm:h-9 cursor-pointer"
                         onClick={() =>
                           openUpload({
                             activityId: cell.activity_id,
@@ -479,7 +479,7 @@ export function WorkGradeSheet({
                     />
 
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <Button type="submit" size="sm" className="min-h-9" disabled={pending || !valid}>
+                      <Button type="submit" size="sm" className="min-h-10 sm:min-h-9" disabled={pending || !valid}>
                         {savedDraft ? (
                           <>
                             <Check data-icon="inline-start" aria-hidden="true" />
@@ -493,7 +493,7 @@ export function WorkGradeSheet({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="min-h-9"
+                        className="min-h-10 sm:min-h-9"
                         disabled={pending || cell.points_override === null}
                         onClick={() => {
                           setOverride("");
@@ -513,7 +513,7 @@ export function WorkGradeSheet({
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="min-h-9"
+                              className="min-h-10 sm:min-h-9"
                               disabled={pending}
                             />
                           }
@@ -554,7 +554,7 @@ export function WorkGradeSheet({
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="text-xs min-h-9"
+                        className="text-xs min-h-10 sm:min-h-9"
                         onClick={() => void handleRefreshGrade()}
                       >
                         <RotateCcw data-icon="inline-start" aria-hidden="true" />
@@ -657,10 +657,10 @@ export function WorkGradeSheet({
               >
                 <CollapsibleTrigger
                   type="button"
-                  className="flex w-full cursor-pointer items-center justify-between font-medium text-foreground min-h-9 select-none rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&[data-panel-open]>svg]:rotate-180"
+                  className="flex w-full cursor-pointer items-center justify-between font-medium text-foreground min-h-10 sm:min-h-9 select-none rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring [&[data-panel-open]>svg]:rotate-180"
                 >
                   <span>Submission lifecycle &amp; exceptions</span>
-                  <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200" aria-hidden="true" />
+                  <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 motion-reduce:transform-none motion-reduce:transition-none" aria-hidden="true" />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3">
                   {showLifecycleDetails && (

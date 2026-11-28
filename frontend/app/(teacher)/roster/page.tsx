@@ -29,7 +29,6 @@ import {
   ArrowDown,
   UserPlus,
   SearchX,
-  Mail,
   Send,
   Download,
   FolderKanban } from "lucide-react";
@@ -127,7 +126,7 @@ export default function RosterPage() {
         return;
       }
 
-      if ((e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) && !isTyping) {
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
@@ -432,6 +431,7 @@ export default function RosterPage() {
               onChange={setSelectedSection}
               label="Section:"
               ariaLabel="Filter by class section"
+              className="lg:w-auto lg:max-w-full"
               containerClassName="min-w-0 flex-1 lg:justify-end"
             />
           </div>
@@ -450,7 +450,7 @@ export default function RosterPage() {
               variant="link"
               size="xs"
               onClick={handleResetFilters}
-              className="h-auto px-1 py-0.5 font-medium cursor-pointer"
+              className="relative h-auto px-1 py-0.5 font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
             >
               Clear filters
             </Button>
@@ -459,13 +459,13 @@ export default function RosterPage() {
 
         {/* Loading state */}
         {isLoading ? (
-          <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground shadow-warm">
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
             <Spinner className="size-6 text-primary" />
             <span className="text-sm font-medium">Loading class roster...</span>
           </div>
         ) : students?.length === 0 ? (
           /* Empty Roster State */
-          <div className="bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
             <Empty className="py-14 border-0">
               <EmptyMedia variant="icon" className="bg-secondary text-secondary-foreground">
                 <Users aria-hidden="true" />
@@ -497,7 +497,7 @@ export default function RosterPage() {
           </div>
         ) : filteredStudents.length === 0 ? (
           /* Filter Empty State */
-          <div className="bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
+          <div className="bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
             <Empty className="py-12 border-0">
               <EmptyMedia variant="icon" className="bg-muted text-muted-foreground">
                 <SearchX aria-hidden="true" />
@@ -510,7 +510,7 @@ export default function RosterPage() {
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Button onClick={handleResetFilters} variant="outline" size="sm" className="rounded-lg sm:rounded-xl">
+                <Button onClick={handleResetFilters} variant="outline" size="sm" className="min-h-10 sm:min-h-9 rounded-lg sm:rounded-xl">
                   Clear filters
                 </Button>
               </EmptyContent>
@@ -519,7 +519,7 @@ export default function RosterPage() {
         ) : (
           <>
             {/* Desktop & Tablet Table View (md and up) */}
-            <div className="hidden md:block bg-card border border-border rounded-xl sm:rounded-2xl shadow-warm overflow-hidden">
+            <div className="hidden md:block bg-card border border-border rounded-xl sm:rounded-2xl overflow-hidden">
               <div role="region" aria-label="Class roster table" className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-muted/40">
@@ -537,7 +537,7 @@ export default function RosterPage() {
                       {/* Name Sort Column */}
                       <TableHead
                         aria-sort={sortField === "full_name" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                        className="p-0 font-heading"
+                        className="p-0"
                       >
                         <Button
                           type="button"
@@ -562,7 +562,7 @@ export default function RosterPage() {
                       {/* Section Sort Column */}
                       <TableHead
                         aria-sort={sortField === "section" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                        className="p-0 font-heading"
+                        className="p-0"
                       >
                         <Button
                           type="button"
@@ -587,7 +587,7 @@ export default function RosterPage() {
                       {/* Date Enrolled Column */}
                       <TableHead
                         aria-sort={sortField === "created_at" ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
-                        className="p-0 font-heading"
+                        className="p-0"
                       >
                         <Button
                           type="button"
@@ -609,7 +609,7 @@ export default function RosterPage() {
                         </Button>
                       </TableHead>
 
-                      <TableHead className="text-right font-heading font-medium text-foreground">Actions</TableHead>
+                      <TableHead className="text-right font-medium text-foreground">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -637,9 +637,8 @@ export default function RosterPage() {
                             <div className="flex flex-col min-w-0">
                                 <span className="font-medium text-foreground tracking-tight truncate">{student.full_name}</span>
                                 {student.parent_email ? (
-                                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                    <span className="text-xs text-muted-foreground flex items-center gap-1 truncate font-normal">
-                                      <Mail className="size-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
+                                  <div className="flex min-h-5 items-center gap-1.5 flex-wrap mt-0.5">
+                                    <span className="text-xs text-muted-foreground truncate font-normal">
                                       {student.parent_email}
                                     </span>
                                     {student.parent_status === "active" ? (
@@ -658,7 +657,7 @@ export default function RosterPage() {
                                           onClick={() => handleResendInvite(student)}
                                           disabled={resendingStudentId === student.id}
                                           title="Resend invitation email"
-                                          className="h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer"
+                                          className="relative h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
                                         >
                                           {resendingStudentId === student.id ? (
                                             <Spinner data-icon="inline-start" />
@@ -671,9 +670,11 @@ export default function RosterPage() {
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground italic font-normal">
-                                    No parent email linked
-                                  </span>
+                                  <div className="flex min-h-5 items-center mt-0.5">
+                                    <span className="text-xs text-muted-foreground italic font-normal">
+                                      No parent email linked
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                           </TableCell>
@@ -829,7 +830,7 @@ export default function RosterPage() {
                                   onClick={() => handleResendInvite(student)}
                                   disabled={resendingStudentId === student.id}
                                   title="Resend invitation email"
-                                  className="h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer"
+                                  className="relative h-auto p-0 gap-1 text-[11px] font-medium cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
                                 >
                                   {resendingStudentId === student.id ? (
                                     <Spinner data-icon="inline-start" />
@@ -843,8 +844,7 @@ export default function RosterPage() {
                           )}
                         </div>
                         {student.parent_email ? (
-                          <span className="flex items-center gap-1 truncate font-normal">
-                            <Mail className="size-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
+                          <span className="truncate font-normal">
                             {student.parent_email}
                           </span>
                         ) : (

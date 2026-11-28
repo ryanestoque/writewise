@@ -22,7 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Lock, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
 interface ProfileSettingsCardProps {
@@ -202,7 +202,6 @@ export function ProfileSettingsCard({
                       Email Address
                     </FieldLabel>
                     <Badge variant="secondary" className="text-[11px] font-medium text-muted-foreground">
-                      <Lock data-icon="inline-start" aria-hidden="true" />
                       Verified Login
                     </Badge>
                   </div>

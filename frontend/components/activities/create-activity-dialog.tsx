@@ -39,7 +39,6 @@ import {
   ClipboardList,
   Copy,
   Home,
-  Lightbulb,
 } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
@@ -239,8 +238,7 @@ export function CreateActivityDialog({
 
                 {/* Suggestions / Prompt starters */}
                 <div className="mt-2 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Lightbulb className="size-3.5 text-primary" aria-hidden="true" />
+                  <div className="text-xs font-medium text-muted-foreground">
                     <span>Quick prompt suggestions:</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -251,7 +249,7 @@ export function CreateActivityDialog({
                         variant="outline"
                         size="xs"
                         onClick={() => handleApplySuggestion(sug.text)}
-                        className="cursor-pointer font-normal text-muted-foreground hover:text-foreground"
+                        className="min-h-10 sm:min-h-0 cursor-pointer font-normal text-muted-foreground hover:text-foreground"
                         title={sug.text}
                       >
                         {sug.label}

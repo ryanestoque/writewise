@@ -30,6 +30,7 @@ import {
   PopoverDescription,
 } from "@/components/ui/popover";
 import { getCriterionBandStyle } from "@/components/activities/activity-detail-hero";
+import { SCORE_BAND_THRESHOLDS } from "@/lib/utils/scoring";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -164,7 +165,9 @@ export const SubmissionCard = memo(function SubmissionCard({
     const strongest = sorted[0];
     const lowest = sorted.length > 1 ? sorted[sorted.length - 1] : null;
     const focus =
-      lowest && ((lowest.score ?? 0) < 80 || (strongest.score ?? 0) - (lowest.score ?? 0) >= 10)
+      lowest &&
+      ((lowest.score ?? 0) < SCORE_BAND_THRESHOLDS.EXCELLENT ||
+        (strongest.score ?? 0) - (lowest.score ?? 0) >= 10)
         ? lowest
         : null;
     return { strongestCriterion: strongest, focusCriterion: focus };
@@ -254,7 +257,7 @@ export const SubmissionCard = memo(function SubmissionCard({
               type="button"
               variant="ghost"
               size="xs"
-              className="h-auto px-1 py-0.5 text-xs font-medium text-foreground hover:bg-transparent hover:text-primary"
+              className="relative h-auto px-1 py-0.5 text-xs font-medium text-foreground hover:bg-transparent hover:text-primary after:absolute after:-inset-2 sm:after:hidden"
               aria-label={`View attempt history for ${studentName}. Attempt ${currentAttemptIndex} of ${attemptCount}.`}
             >
               <History data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
@@ -266,7 +269,7 @@ export const SubmissionCard = memo(function SubmissionCard({
               type="button"
               variant="outline"
               size="xs"
-              className="relative h-auto rounded-full border-border/80 bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs backdrop-blur-xs hover:bg-background"
+              className="relative h-auto rounded-full border-border/80 bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-2xs backdrop-blur-xs hover:bg-background after:absolute after:-inset-2 sm:after:hidden"
               aria-label={`View attempt history for ${studentName}. Attempt ${currentAttemptIndex} of ${attemptCount}.`}
             >
               <History data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
@@ -389,7 +392,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                       type="button"
                       variant="ghost"
                       size="xs"
-                      className="h-auto px-1 py-0.5 cursor-help text-xs font-medium text-band-2-text hover:bg-transparent hover:opacity-80"
+                      className="relative h-auto px-1 py-0.5 cursor-help text-xs font-medium text-band-2-text hover:bg-transparent hover:opacity-80 after:absolute after:-inset-2 sm:after:hidden"
                       aria-label="Worksheet processed. Pending teacher rubric score."
                     />
                   }
@@ -441,7 +444,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                         {criteriaData.map((c) => (
                           <span
                             key={c.key}
-                            className={cn("block h-full flex-1 rounded-2xs transition-transform group-hover/crit:scale-y-110", c.barClass)}
+                            className={cn("block h-full flex-1 rounded-2xs transition-transform group-hover/crit:scale-y-110 motion-reduce:transform-none motion-reduce:transition-none", c.barClass)}
                           />
                         ))}
                       </div>
@@ -610,7 +613,7 @@ export const SubmissionCard = memo(function SubmissionCard({
                 variant="link"
                 size="xs"
                 onClick={() => onSelect(latestSubmission)}
-                className="h-auto px-0 py-0 text-[11px] font-medium"
+                className="relative h-auto px-0 py-0 text-[11px] font-medium after:absolute after:-inset-2 sm:after:hidden"
                 aria-label={`Switch to newest upload for ${studentName}`}
               >
                 <span>View latest</span>
@@ -642,7 +645,7 @@ export const SubmissionCard = memo(function SubmissionCard({
       <Button
         variant="outline"
         size="sm"
-        className="h-8 min-h-8 px-2.5 text-xs shrink-0 font-medium shadow-2xs hover:bg-background"
+        className="h-10 sm:h-8 min-h-10 sm:min-h-8 px-2.5 text-xs shrink-0 font-medium shadow-2xs hover:bg-background"
         onClick={() => onSelect(latestSubmission)}
         aria-label={`Switch to newest upload for ${studentName}`}
       >

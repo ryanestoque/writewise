@@ -285,7 +285,7 @@ export function CriterionTrendChart({
       year: "numeric",
     });
     return (
-      <Card size="sm" className={cn("shadow-warm-xs", className)}>
+      <Card size="sm" className={cn("shadow-warm-sm", className)}>
         <CardHeader>
           <CardTitle as="h4" className="text-sm font-semibold">
             First Worksheet Recorded

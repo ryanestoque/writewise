@@ -829,12 +829,12 @@ export function QualityErrorCard({
           {/* Text information */}
           <div className="flex flex-col gap-1.5 min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4
+              <h3
                 id="quality-error-card-title"
                 className="text-sm sm:text-base font-semibold text-foreground tracking-tight leading-snug"
               >
                 {presentation.title}
-              </h4>
+              </h3>
               {presentation.badgeLabel && (
                 <Badge
                   variant="outline"
@@ -943,7 +943,7 @@ export function QualityErrorCard({
           error.details.expected_text.trim().length > 0 && (
             <Card size="sm" className="py-3 sm:py-3.5 border-border/80 shadow-2xs">
               <CardHeader className="px-3 sm:px-3.5">
-                <CardTitle as="h5" className="text-xs font-semibold text-muted-foreground">
+                <CardTitle as="h4" className="text-xs font-semibold text-muted-foreground">
                   Practice sentence for this worksheet
                 </CardTitle>
               </CardHeader>
@@ -961,7 +961,7 @@ export function QualityErrorCard({
             typeof error.details?.expected_text === "string") && (
             <Card size="sm" className="gap-2.5 py-3 sm:py-3.5 border-border/80 shadow-2xs">
               <CardHeader className="items-center px-3 sm:px-3.5">
-                <CardTitle as="h5" className="text-xs font-semibold text-foreground">
+                <CardTitle as="h4" className="text-xs font-semibold text-foreground">
                   Handwriting Recognition Output
                 </CardTitle>
                 {typeof error.details?.similarity === "number" && (
@@ -973,7 +973,7 @@ export function QualityErrorCard({
                         error.details.similarity >= 0.8
                           ? "bg-success/10 text-success border-success/30"
                           : error.details.similarity >= 0.4
-                          ? "bg-warning/10 text-warning border-warning/30"
+                          ? "bg-warning/10 text-warning-foreground dark:text-warning border-warning/30"
                           : "bg-destructive/10 text-destructive border-destructive/30"
                       )}
                     >
@@ -1124,7 +1124,7 @@ export function QualityErrorCard({
               type="button"
               variant="outline"
               onClick={onProceedAnyway}
-              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium shadow-warm-xs"
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium shadow-warm-sm"
             >
               <CheckCircle data-icon="inline-start" className="text-primary" aria-hidden="true" />
               Proceed Anyway
@@ -1136,7 +1136,7 @@ export function QualityErrorCard({
               type="button"
               variant="outline"
               onClick={onRetry}
-              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium shadow-warm-xs"
+              className="w-full sm:w-auto min-h-[44px] sm:min-h-9 h-10 sm:h-9 px-3.5 text-xs sm:text-sm font-medium shadow-warm-sm"
             >
               <RotateCcw data-icon="inline-start" aria-hidden="true" />
               {retryLabel ?? "Retry Upload"}
@@ -1156,7 +1156,7 @@ export function QualityErrorCard({
         >
           <DialogContent
             showCloseButton
-            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100dvh-2rem))] border border-border shadow-warm-lg"
+            className="w-[calc(100%-1.5rem)] max-w-3xl sm:max-w-3xl p-0 gap-0 overflow-hidden flex flex-col max-h-[min(92dvh,calc(100dvh-2rem))] border border-border shadow-warm"
           >
             {/* Modal Header: Title and Zoom Toolbar */}
             <DialogHeader className="p-3 sm:p-3.5 bg-muted/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">

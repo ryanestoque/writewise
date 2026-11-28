@@ -1,13 +1,27 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, type SetStateAction } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase/client";
-import { QuickUploadDialog } from "@/components/quick-upload-dialog";
-import { RubricReferenceDialog } from "@/components/rubric-reference-dialog";
-import { CursiveGuideDialog } from "@/components/cursive-guide-dialog";
-import { ShortcutsDialog } from "@/components/shortcuts-dialog";
+
+const QuickUploadDialog = dynamic(
+  () => import("@/components/quick-upload-dialog").then((m) => m.QuickUploadDialog),
+  { ssr: false }
+);
+const RubricReferenceDialog = dynamic(
+  () => import("@/components/rubric-reference-dialog").then((m) => m.RubricReferenceDialog),
+  { ssr: false }
+);
+const CursiveGuideDialog = dynamic(
+  () => import("@/components/cursive-guide-dialog").then((m) => m.CursiveGuideDialog),
+  { ssr: false }
+);
+const ShortcutsDialog = dynamic(
+  () => import("@/components/shortcuts-dialog").then((m) => m.ShortcutsDialog),
+  { ssr: false }
+);
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,30 +67,76 @@ export function useTeacherModals() {
 }
 
 export function TeacherModalsProvider({ children }: { children: React.ReactNode }) {
-  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadOpen, setUploadOpenState] = useState(false);
+  const [uploadMounted, setUploadMounted] = useState(false);
   const [uploadPrefill, setUploadPrefill] = useState<{
     activityId?: string;
     studentId?: string;
   }>({});
-  const [rubricOpen, setRubricOpen] = useState(false);
-  const [cursiveGuideOpen, setCursiveGuideOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [rubricOpen, setRubricOpenState] = useState(false);
+  const [rubricMounted, setRubricMounted] = useState(false);
+  const [cursiveGuideOpen, setCursiveGuideOpenState] = useState(false);
+  const [cursiveGuideMounted, setCursiveGuideMounted] = useState(false);
+  const [shortcutsOpen, setShortcutsOpenState] = useState(false);
+  const [shortcutsMounted, setShortcutsMounted] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
 
+  const setUploadOpen = useCallback((value: SetStateAction<boolean>) => {
+    setUploadOpenState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      if (next) setUploadMounted(true);
+      return next;
+    });
+  }, []);
+
+  const setRubricOpen = useCallback((value: SetStateAction<boolean>) => {
+    setRubricOpenState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      if (next) setRubricMounted(true);
+      return next;
+    });
+  }, []);
+
+  const setCursiveGuideOpen = useCallback((value: SetStateAction<boolean>) => {
+    setCursiveGuideOpenState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      if (next) setCursiveGuideMounted(true);
+      return next;
+    });
+  }, []);
+
+  const setShortcutsOpen = useCallback((value: SetStateAction<boolean>) => {
+    setShortcutsOpenState((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      if (next) setShortcutsMounted(true);
+      return next;
+    });
+  }, []);
+
   const openUpload = useCallback(
     (opts?: { activityId?: string; studentId?: string }) => {
       setUploadPrefill(opts ?? {});
-      setUploadOpen(true);
+      setUploadMounted(true);
+      setUploadOpenState(true);
     },
     []
   );
-  const openRubric = useCallback(() => setRubricOpen(true), []);
-  const openCursiveGuide = useCallback(() => setCursiveGuideOpen(true), []);
-  const openShortcuts = useCallback(() => setShortcutsOpen(true), []);
+  const openRubric = useCallback(() => {
+    setRubricMounted(true);
+    setRubricOpenState(true);
+  }, []);
+  const openCursiveGuide = useCallback(() => {
+    setCursiveGuideMounted(true);
+    setCursiveGuideOpenState(true);
+  }, []);
+  const openShortcuts = useCallback(() => {
+    setShortcutsMounted(true);
+    setShortcutsOpenState(true);
+  }, []);
   const openSignOut = useCallback(() => setSignOutOpen(true), []);
 
   // Global hotkeys for educator efficiency (⌘K / Ctrl+K, Alt+R, Alt+C, and ?)
@@ -133,7 +193,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [setUploadOpen, setRubricOpen, setCursiveGuideOpen, setShortcutsOpen]);
 
   async function handleSignOut() {
     try {
@@ -173,19 +233,27 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
     >
       {children}
 
-      {/* Global Teacher Modals rendered once at layout root */}
-      <QuickUploadDialog
-        open={uploadOpen}
-        onOpenChange={(val) => {
-          setUploadOpen(val);
-          if (!val) setUploadPrefill({});
-        }}
-        prefilledActivityId={uploadPrefill.activityId}
-        prefilledStudentId={uploadPrefill.studentId}
-      />
-      <RubricReferenceDialog open={rubricOpen} onOpenChange={setRubricOpen} />
-      <CursiveGuideDialog open={cursiveGuideOpen} onOpenChange={setCursiveGuideOpen} />
-      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      {/* Global Teacher Modals lazy-loaded on first trigger */}
+      {uploadMounted && (
+        <QuickUploadDialog
+          open={uploadOpen}
+          onOpenChange={(val) => {
+            setUploadOpen(val);
+            if (!val) setUploadPrefill({});
+          }}
+          prefilledActivityId={uploadPrefill.activityId}
+          prefilledStudentId={uploadPrefill.studentId}
+        />
+      )}
+      {rubricMounted && (
+        <RubricReferenceDialog open={rubricOpen} onOpenChange={setRubricOpen} />
+      )}
+      {cursiveGuideMounted && (
+        <CursiveGuideDialog open={cursiveGuideOpen} onOpenChange={setCursiveGuideOpen} />
+      )}
+      {shortcutsMounted && (
+        <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      )}
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
         <AlertDialogContent>

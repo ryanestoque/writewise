@@ -186,11 +186,11 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="justify-start px-2 text-muted-foreground hover:text-foreground [&[data-panel-open]>svg]:rotate-180"
+                className="min-h-10 sm:min-h-8 justify-start px-2 text-muted-foreground hover:text-foreground [&[data-panel-open]>svg]:rotate-180"
               />
             }
           >
-            <ChevronDown data-icon="inline-start" className="transition-transform duration-200" aria-hidden="true" />
+            <ChevronDown data-icon="inline-start" className="transition-transform duration-200 motion-reduce:transform-none motion-reduce:transition-none" aria-hidden="true" />
             <span>Individual students (optional)</span>
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
@@ -232,6 +232,7 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
                 type="button"
                 variant="outline"
                 size="sm"
+                className="min-h-10 sm:min-h-8"
                 onClick={() =>
                   toggle(
                     target.student_id ? "student_id" : "section_id",

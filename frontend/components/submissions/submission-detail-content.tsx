@@ -423,13 +423,13 @@ export function SubmissionDetailContent({
       const isPrev =
         e.key === "ArrowLeft" ||
         e.key === "Left" ||
-        e.key === "j" ||
-        e.key === "J";
+        e.key === "k" ||
+        e.key === "K";
       const isNext =
         e.key === "ArrowRight" ||
         e.key === "Right" ||
-        e.key === "k" ||
-        e.key === "K";
+        e.key === "j" ||
+        e.key === "J";
 
       if (!isPrev && !isNext) return;
 
@@ -869,8 +869,8 @@ export function SubmissionDetailContent({
             }
           }}
           className="size-10 sm:size-8 text-muted-foreground hover:text-foreground disabled:opacity-30"
-          aria-label="Previous student (Key: J or ←)"
-          title="Previous student (← / J)"
+          aria-label="Previous student (Key: K or ←)"
+          title="Previous student (← / K)"
         >
           <ChevronLeft aria-hidden="true" />
         </Button>
@@ -893,8 +893,8 @@ export function SubmissionDetailContent({
             }
           }}
           className="size-10 sm:size-8 text-muted-foreground hover:text-foreground disabled:opacity-30"
-          aria-label="Next student (Key: K or →)"
-          title="Next student (→ / K)"
+          aria-label="Next student (Key: J or →)"
+          title="Next student (→ / J)"
         >
           <ChevronRight aria-hidden="true" />
         </Button>
@@ -1024,7 +1024,7 @@ export function SubmissionDetailContent({
           >
             <ArrowLeft
               data-icon="inline-start"
-              className="transition-transform group-hover:-translate-x-0.5"
+              className="transition-transform group-hover:-translate-x-0.5 motion-reduce:transform-none motion-reduce:transition-none"
               aria-hidden="true"
             />
             <span className="truncate max-w-xs sm:max-w-md">

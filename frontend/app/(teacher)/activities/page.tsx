@@ -526,7 +526,7 @@ export default function ActivitiesPage() {
             variant="link"
             size="xs"
             onClick={() => setSearchQuery("")}
-            className="h-auto p-0 cursor-pointer"
+            className="relative h-auto p-0 cursor-pointer after:absolute after:-inset-2 sm:after:hidden"
           >
             Clear search
           </Button>
@@ -689,7 +689,7 @@ export default function ActivitiesPage() {
                   size="sm"
                   disabled={isBulkPending}
                   onClick={() => handleBulkArchive(true)}
-                  className="h-8 px-2 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+                  className="h-10 sm:h-8 px-2.5 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all motion-reduce:transform-none motion-reduce:transition-colors shrink-0 rounded-lg cursor-pointer"
                   aria-label={`Archive ${selectedIds.size} selected ${
                     selectedIds.size === 1 ? "activity" : "activities"
                   }`}
@@ -717,7 +717,7 @@ export default function ActivitiesPage() {
                   size="sm"
                   disabled={isBulkPending}
                   onClick={() => handleBulkArchive(false)}
-                  className="h-8 px-2 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all shrink-0 rounded-lg cursor-pointer"
+                  className="h-10 sm:h-8 px-2.5 sm:px-3 text-xs font-medium border-border/80 hover:bg-muted/80 hover:text-foreground active:scale-[0.97] transition-all motion-reduce:transform-none motion-reduce:transition-colors shrink-0 rounded-lg cursor-pointer"
                   aria-label={`Restore ${selectedIds.size} selected ${
                     selectedIds.size === 1 ? "activity" : "activities"
                   }`}

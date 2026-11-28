@@ -158,14 +158,16 @@ export function QuickUploadDialog({
         showCloseButton={!isUploading}
         className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
       >
-        {/* key remounts the flow on every open/close so state starts fresh */}
-        <UploadFlow
-          key={open ? "open" : "closed"}
-          onClose={() => onOpenChange(false)}
-          prefilledActivityId={prefilledActivityId}
-          prefilledStudentId={prefilledStudentId}
-          onUploadingChange={setIsUploading}
-        />
+        {/* Only mount UploadFlow while open so closed routes do not fire background queries */}
+        {open ? (
+          <UploadFlow
+            key="open"
+            onClose={() => onOpenChange(false)}
+            prefilledActivityId={prefilledActivityId}
+            prefilledStudentId={prefilledStudentId}
+            onUploadingChange={setIsUploading}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   );

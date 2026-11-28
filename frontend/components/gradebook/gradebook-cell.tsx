@@ -123,7 +123,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
   const contextTouch = useContext(TouchDeviceContext);
   const isTouchDevice = propIsTouchDevice ?? contextTouch;
   const inputRef = useRef<HTMLInputElement>(null);
-  const cellRef = useRef<HTMLDivElement>(null);
+  const cellRef = useRef<HTMLButtonElement>(null);
   const cellId = useId();
 
   const initialVal =
@@ -152,6 +152,8 @@ export const GradebookCellButton = memo(function GradebookCellButton({
         data-gradecell
         data-row={row}
         data-column={column}
+        role="group"
+        aria-label={`${label ? `${label}: ` : ""}Not assigned`}
         tabIndex={isFocused ? 0 : -1}
         onFocus={onFocusCell}
         className="text-muted-foreground block p-2 text-xs select-none min-h-[5rem]"
@@ -214,11 +216,11 @@ export const GradebookCellButton = memo(function GradebookCellButton({
       setIsEditing(false);
       setInputVal(initialVal);
       setError(null);
-      cellRef.current?.focus();
+      requestAnimationFrame(() => cellRef.current?.focus());
     }
   }
 
-  function handleCellKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+  function handleCellKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
     if (isEditing) return;
     if (e.key === "Enter") {
       if (canEditScore) {
@@ -240,7 +242,6 @@ export const GradebookCellButton = memo(function GradebookCellButton({
   if (isEditing) {
     return (
       <div
-        ref={cellRef}
         className="bg-card ring-2 ring-primary relative min-h-[5rem] w-full rounded-sm p-2"
         data-gradecell-active
       >
@@ -292,7 +293,7 @@ export const GradebookCellButton = memo(function GradebookCellButton({
                   setIsEditing(false);
                   setInputVal(initialVal);
                   setError(null);
-                  cellRef.current?.focus();
+                  requestAnimationFrame(() => cellRef.current?.focus());
                 }}
                 aria-label="Cancel editing"
                 className="text-muted-foreground relative after:absolute after:-inset-1.5 size-7 rounded-sm cursor-pointer"
@@ -317,275 +318,238 @@ export const GradebookCellButton = memo(function GradebookCellButton({
 
   return (
     <div
-      ref={cellRef}
-      tabIndex={isFocused ? 0 : -1}
-      data-gradecell
-      data-row={row}
-      data-column={column}
-      aria-label={`${label ?? "Work grade"}: ${statusLabel}, ${
-        cell.final_points === null
-          ? "no point grade"
-          : `${cell.final_points} of ${cell.points_possible} points`
-      }, ${
-        cell.assessment_composite !== null
-          ? `composite score ${Math.round(Number(cell.assessment_composite))}%`
-          : "no assessment"
-      }, ${
-        cell.points_possible === null
-          ? "bands only"
-          : cell.publication === "released"
-            ? "released to parents"
-            : "draft"
-      }${hasUnreadComments ? ", unread comments" : ""}. Click or Space to inspect, Enter to edit score.`}
-      onClick={() => {
-        onFocusCell?.();
-        onOpen();
-      }}
-      onFocus={() => {
-        onFocusCell?.();
-      }}
-      onKeyDown={handleCellKeyDown}
       className={cn(
-        "group hover:bg-muted/70 hover:border-border/60 relative flex min-h-[5rem] w-full flex-col justify-between rounded-sm border p-2 text-left transition-colors cursor-pointer focus-visible:outline-none",
+        "group hover:bg-muted/70 hover:border-border/60 relative min-h-[5rem] w-full rounded-sm border transition-colors",
         isFocused
           ? "border-primary/60 ring-2 ring-primary/40 bg-muted/40"
           : "border-transparent"
       )}
     >
-      {viewMode === "diagnostic" ? (
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-1.5 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-              {cell.assessment_composite !== null ? (
-                <div className="flex items-center gap-1 min-w-0">
-                  <BandBadge score={Number(cell.assessment_composite)} size="sm" />
-                  <span className="text-xs font-semibold tabular-nums text-foreground">
-                    {Math.round(Number(cell.assessment_composite))}%
+      <button
+        type="button"
+        ref={cellRef}
+        tabIndex={isFocused ? 0 : -1}
+        data-gradecell
+        data-row={row}
+        data-column={column}
+        aria-label={`${label ?? "Work grade"}: ${statusLabel}, ${
+          cell.final_points === null
+            ? "no point grade"
+            : `${cell.final_points} of ${cell.points_possible} points`
+        }, ${
+          cell.assessment_composite !== null
+            ? `composite score ${Math.round(Number(cell.assessment_composite))}%`
+            : "no assessment"
+        }, ${
+          cell.points_possible === null
+            ? "bands only"
+            : cell.publication === "released"
+              ? "released to parents"
+              : "draft"
+        }${hasUnreadComments ? ", unread comments" : ""}. Click or Space to inspect, Enter to edit score.`}
+        onClick={() => {
+          onFocusCell?.();
+          onOpen();
+        }}
+        onFocus={() => {
+          onFocusCell?.();
+        }}
+        onKeyDown={handleCellKeyDown}
+        className="flex min-h-[5rem] w-full flex-col justify-between rounded-sm p-2 text-left cursor-pointer focus-visible:outline-none"
+      >
+        {viewMode === "diagnostic" ? (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between gap-1.5 min-w-0 pr-12">
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                {cell.assessment_composite !== null ? (
+                  <div className="flex items-center gap-1 min-w-0">
+                    <BandBadge score={Number(cell.assessment_composite)} size="sm" />
+                    <span className="text-xs font-semibold tabular-nums text-foreground">
+                      {Math.round(Number(cell.assessment_composite))}%
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="h-auto px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight bg-muted text-foreground border-border/50"
+                    >
+                      {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
+                    </Badge>
+                  </div>
+                ) : statusLabel === "Awaiting scan" ? (
+                  <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                    <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
+                    Awaiting scan
                   </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground italic">No assessment</span>
+                )}
+
+                {cell.late && (
                   <Badge
                     variant="outline"
-                    className="h-auto px-1.5 py-0.5 rounded text-[10px] font-medium tracking-tight bg-muted text-foreground border-border/50"
+                    className="h-auto px-1 py-0 rounded text-xs font-medium bg-band-2/15 text-band-2-text border-band-2/30"
                   >
-                    {cell.assessment_source === "manual" ? "Teacher rubric" : "Calibrated"}
+                    Late
                   </Badge>
-                </div>
-              ) : statusLabel === "Awaiting scan" ? (
-                <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                )}
+
+                {hasUnreadComments && (
+                  <Badge variant="secondary" title="Unread parent/teacher comments">
+                    <MessageSquare data-icon="inline-start" aria-hidden="true" />
+                    Unread
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <p
+              className="text-[11px] leading-tight text-muted-foreground line-clamp-2"
+              title={developmentalNote}
+            >
+              {developmentalNote}
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-1.5 min-w-0 pr-12">
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                <span className="block text-sm font-semibold tabular-nums text-foreground truncate">
+                  {cell.coursework_status === "Excused" ? (
+                    <Badge
+                      variant="secondary"
+                      className="h-auto px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground"
+                    >
+                      Excused
+                    </Badge>
+                  ) : cell.points_possible === null ? (
+                    <span className="text-xs text-muted-foreground font-normal">Bands only</span>
+                  ) : cell.final_points === null ? (
+                    <>
+                      <span className="text-muted-foreground font-semibold">—</span>{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        / {cell.points_possible}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {cell.final_points}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        / {cell.points_possible}
+                      </span>
+                    </>
+                  )}
+                </span>
+
+                {cell.late && (
+                  <Badge
+                    variant="outline"
+                    className="h-auto px-1 py-0 rounded text-xs font-medium bg-band-2/15 text-band-2-text border-band-2/30"
+                  >
+                    Late
+                  </Badge>
+                )}
+
+                {hasUnreadComments && (
+                  <Badge variant="secondary" title="Unread parent/teacher comments">
+                    <MessageSquare data-icon="inline-start" aria-hidden="true" />
+                    Unread
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+              {statusLabel === "Awaiting scan" ? (
+                <span className="flex items-center gap-1">
                   <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
-                  Awaiting scan
+                  <span>Awaiting scan</span>
+                </span>
+              ) : statusLabel === "Returned" ? (
+                <span className="font-medium text-muted-foreground">Returned for revision</span>
+              ) : statusLabel === "Turned in" ? (
+                <span className="font-medium text-primary">Turned in</span>
+              ) : cell.coursework_status !== "Excused" ? (
+                <span className="text-muted-foreground/80">{statusLabel}</span>
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-auto flex flex-col gap-1 pt-1">
+          <Separator className="bg-border/40" />
+          <div className="flex items-center justify-between gap-1.5">
+          <div className="shrink-0">
+            {viewMode === "diagnostic" ? (
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {cell.points_possible === null
+                  ? "Bands only"
+                  : cell.final_points !== null
+                    ? `${cell.final_points}/${cell.points_possible} pts`
+                    : "No pts"}
+              </span>
+            ) : cell.assessment_composite !== null ? (
+              <BandBadge score={Number(cell.assessment_composite)} size="sm" />
+            ) : (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
+          </div>
+
+          <div className="text-right truncate">
+            {cell.points_possible !== null && cell.coursework_status !== "Excused" ? (
+              cell.publication === "released" ? (
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-medium text-band-4-text"
+                  title="Released to parent portal"
+                >
+                  <Check className="size-3 shrink-0" aria-hidden="true" />
+                  <span>Released{cell.points_override !== null ? " (Overridden)" : ""}</span>
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground italic">No assessment</span>
-              )}
-
-              {cell.late && (
-                <Badge
-                  variant="outline"
-                  className="h-auto px-1 py-0 rounded text-xs font-medium bg-band-2/15 text-band-2-text border-band-2/30"
+                <span
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+                  title="Draft (not visible to parents yet)"
                 >
-                  Late
-                </Badge>
-              )}
-
-              {hasUnreadComments && (
-                <Badge variant="secondary" title="Unread parent/teacher comments">
-                  <MessageSquare data-icon="inline-start" aria-hidden="true" />
-                  Unread
-                </Badge>
-              )}
-            </div>
-
-            <div
-              className={cn(
-                "flex items-center gap-0.5 transition-opacity shrink-0",
-                isTouchDevice
-                  ? "opacity-90"
-                  : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
-              )}
-            >
-              {canEditScore && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditing();
-                  }}
-                  aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
-                >
-                  <Pencil aria-hidden="true" />
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpen();
-                }}
-                aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
-              >
-                <SlidersHorizontal aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-
-          <p
-            className="text-[11px] leading-tight text-muted-foreground line-clamp-2"
-            title={developmentalNote}
-          >
-            {developmentalNote}
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between gap-1.5 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-              <span className="block text-sm font-semibold tabular-nums text-foreground truncate">
-                {cell.coursework_status === "Excused" ? (
-                  <Badge
-                    variant="secondary"
-                    className="h-auto px-1.5 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground"
-                  >
-                    Excused
-                  </Badge>
-                ) : cell.points_possible === null ? (
-                  <span className="text-xs text-muted-foreground font-normal">Bands only</span>
-                ) : cell.final_points === null ? (
-                  <>
-                    <span className="text-muted-foreground font-semibold">—</span>{" "}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      / {cell.points_possible}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    {cell.final_points}{" "}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      / {cell.points_possible}
-                    </span>
-                  </>
-                )}
-              </span>
-
-              {cell.late && (
-                <Badge
-                  variant="outline"
-                  className="h-auto px-1 py-0 rounded text-xs font-medium bg-band-2/15 text-band-2-text border-band-2/30"
-                >
-                  Late
-                </Badge>
-              )}
-
-              {hasUnreadComments && (
-                <Badge variant="secondary" title="Unread parent/teacher comments">
-                  <MessageSquare data-icon="inline-start" aria-hidden="true" />
-                  Unread
-                </Badge>
-              )}
-            </div>
-
-            <div
-              className={cn(
-                "flex items-center gap-0.5 transition-opacity shrink-0",
-                isTouchDevice
-                  ? "opacity-90"
-                  : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
-              )}
-            >
-              {canEditScore && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditing();
-                  }}
-                  aria-label={`Edit score for ${label ?? "student"}`}
-                  className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
-                >
-                  <Pencil aria-hidden="true" />
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpen();
-                }}
-                aria-label={`Inspect details for ${label ?? "student"}`}
-                className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
-              >
-                <SlidersHorizontal aria-hidden="true" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-            {statusLabel === "Awaiting scan" ? (
-              <span className="flex items-center gap-1">
-                <span className="size-1.5 rounded-full bg-muted-foreground/60 shrink-0" />
-                <span>Awaiting scan</span>
-              </span>
-            ) : statusLabel === "Returned" ? (
-              <span className="font-medium text-muted-foreground">Returned for revision</span>
-            ) : statusLabel === "Turned in" ? (
-              <span className="font-medium text-primary">Turned in</span>
-            ) : cell.coursework_status !== "Excused" ? (
-              <span className="text-muted-foreground/80">{statusLabel}</span>
+                  <span className="size-1.5 rounded-full bg-band-2 shrink-0" />
+                  <span>Draft{cell.points_override !== null ? " · Overridden" : ""}</span>
+                </span>
+              )
             ) : null}
           </div>
+          </div>
         </div>
-      )}
+      </button>
 
-      <div className="mt-auto flex flex-col gap-1 pt-1">
-        <Separator className="bg-border/40" />
-        <div className="flex items-center justify-between gap-1.5">
-        <div className="shrink-0">
-          {viewMode === "diagnostic" ? (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {cell.points_possible === null
-                ? "Bands only"
-                : cell.final_points !== null
-                  ? `${cell.final_points}/${cell.points_possible} pts`
-                  : "No pts"}
-            </span>
-          ) : cell.assessment_composite !== null ? (
-            <BandBadge score={Number(cell.assessment_composite)} size="sm" />
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
-        </div>
-
-        <div className="text-right truncate">
-          {cell.points_possible !== null && cell.coursework_status !== "Excused" ? (
-            cell.publication === "released" ? (
-              <span
-                className="inline-flex items-center gap-1 text-xs font-medium text-band-4-text"
-                title="Released to parent portal"
-              >
-                <Check className="size-3 shrink-0" aria-hidden="true" />
-                <span>Released{cell.points_override !== null ? " (Overridden)" : ""}</span>
-              </span>
-            ) : (
-              <span
-                className="inline-flex items-center gap-1 text-xs text-muted-foreground"
-                title="Draft (not visible to parents yet)"
-              >
-                <span className="size-1.5 rounded-full bg-band-2 shrink-0" />
-                <span>Draft{cell.points_override !== null ? " · Overridden" : ""}</span>
-              </span>
-            )
-          ) : null}
-        </div>
-        </div>
+      <div
+        className={cn(
+          "pointer-events-auto absolute top-2 right-2 z-10 flex items-center gap-0.5 transition-opacity",
+          isTouchDevice
+            ? "opacity-90"
+            : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+        )}
+      >
+        {canEditScore && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-xs"
+            tabIndex={-1}
+            onClick={() => startEditing()}
+            aria-label={`Edit score for ${label ?? "student"}`}
+            className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
+          >
+            <Pencil aria-hidden="true" />
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          tabIndex={-1}
+          onClick={onOpen}
+          aria-label={`Inspect details for ${label ?? "student"}`}
+          className="text-muted-foreground hover:text-foreground hover:bg-background/80 relative after:absolute after:-inset-1.5 size-6 rounded-sm cursor-pointer"
+        >
+          <SlidersHorizontal aria-hidden="true" />
+        </Button>
       </div>
     </div>
   );

@@ -561,14 +561,14 @@ function SectionGrid({
               <ToggleGroupItem
                 value="points"
                 size="sm"
-                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-8.5 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
+                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-10 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
               >
                 Points
               </ToggleGroupItem>
               <ToggleGroupItem
                 value="diagnostic"
                 size="sm"
-                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-8.5 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
+                className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-10 sm:min-h-7 whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent data-pressed:bg-primary data-pressed:text-primary-foreground data-pressed:hover:bg-primary data-pressed:hover:text-primary-foreground data-pressed:shadow-warm-sm data-pressed:font-semibold"
               >
                 Diagnostic
               </ToggleGroupItem>
@@ -697,7 +697,7 @@ function SectionGrid({
             <div
               ref={tableRef}
             className={cn(
-              "bg-card max-h-[70svh] overflow-auto rounded-xl sm:rounded-2xl border border-border shadow-warm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none print:shadow-none",
+              "bg-card max-h-[70svh] overflow-auto rounded-xl sm:rounded-2xl border border-border transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring print:max-h-none print:overflow-visible print:border-none print:shadow-none",
               selected.size > 0 && "pb-24 sm:pb-20"
             )}
             tabIndex={-1}

@@ -557,6 +557,7 @@ export function SubmissionLifecycleControls({
             <Button
               size="sm"
               variant="outline"
+              className="min-h-10 sm:min-h-8"
               onClick={() => setReturnOpen(true)}
               disabled={pending}
             >
@@ -566,6 +567,7 @@ export function SubmissionLifecycleControls({
           {canRelease && (
             <Button
               size="sm"
+              className="min-h-10 sm:min-h-8"
               onClick={() => {
                 setError(null);
                 setReleaseConfirmOpen(true);
@@ -587,6 +589,7 @@ export function SubmissionLifecycleControls({
             <Button
               size="sm"
               variant="outline"
+              className="min-h-10 sm:min-h-8"
               onClick={() => act("pin")}
               disabled={pending || !work}
             >
@@ -594,7 +597,7 @@ export function SubmissionLifecycleControls({
             </Button>
           )}
           {work?.pinned_submission_id && (
-            <Button size="sm" variant="ghost" onClick={() => act("unpin")} disabled={pending}>
+            <Button size="sm" variant="ghost" className="min-h-10 sm:min-h-8" onClick={() => act("unpin")} disabled={pending}>
               Use automatic selection
             </Button>
           )}
@@ -785,6 +788,7 @@ function WorkSettingsForm({
                 type="button"
                 variant="outline"
                 size="xs"
+                className="min-h-10 sm:min-h-0"
                 onClick={() => addDays(1)}
                 disabled={update.isPending}
               >
@@ -794,6 +798,7 @@ function WorkSettingsForm({
                 type="button"
                 variant="outline"
                 size="xs"
+                className="min-h-10 sm:min-h-0"
                 onClick={() => addDays(3)}
                 disabled={update.isPending}
               >
@@ -803,6 +808,7 @@ function WorkSettingsForm({
                 type="button"
                 variant="outline"
                 size="xs"
+                className="min-h-10 sm:min-h-0"
                 onClick={() => addDays(7)}
                 disabled={update.isPending}
               >
@@ -814,7 +820,7 @@ function WorkSettingsForm({
                 type="button"
                 variant="ghost"
                 size="xs"
-                className="text-muted-foreground hover:text-foreground ml-auto"
+                className="min-h-10 sm:min-h-0 text-muted-foreground hover:text-foreground ml-auto"
                 onClick={resetToClassDeadline}
                 disabled={update.isPending}
               >

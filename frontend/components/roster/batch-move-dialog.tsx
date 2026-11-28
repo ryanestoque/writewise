@@ -174,7 +174,7 @@ export function BatchMoveDialog({
                           autoCapitalize="words"
                           autoCorrect="off"
                           spellCheck={false}
-                          className="h-10 sm:h-9.5 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                          className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
                         />
                         {(existingSections.length > 0 || isCustomSection) && (
                           <ComboboxContent>

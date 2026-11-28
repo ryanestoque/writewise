@@ -691,7 +691,7 @@ export function ClassTable({
 
                         {/* Action Chevron */}
                         <TableCell className="py-3 pr-4 pl-0 text-right">
-                          <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all inline-block" aria-hidden="true" />
+                          <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-foreground group-hover:translate-x-0.5 transition-all motion-reduce:transform-none motion-reduce:transition-colors inline-block" aria-hidden="true" />
                         </TableCell>
                       </TableRow>
                     );

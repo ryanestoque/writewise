@@ -241,7 +241,7 @@ export function ManageSectionsDialog({ open, onOpenChange }: ManageSectionsDialo
                     variant="outline"
                     size="sm"
                     onClick={() => refetch()}
-                    className="h-8 px-3 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                    className="h-10 sm:h-8 px-3 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
                   >
                     <RefreshCw data-icon="inline-start" aria-hidden="true" />
                     <span>Try Again</span>

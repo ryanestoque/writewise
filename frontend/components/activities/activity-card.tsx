@@ -42,9 +42,6 @@ import {
   Copy,
   Archive,
   ArchiveRestore,
-  Home,
-  BookOpen,
-  CalendarDays,
 } from "lucide-react";
 
 export interface ActivityCardProps {
@@ -204,19 +201,16 @@ export const ActivityCard = memo(function ActivityCard({
               variant="outline"
               className="bg-muted/60 text-muted-foreground border-border/80"
             >
-              <Archive data-icon="inline-start" aria-hidden="true" />
               Archived
             </Badge>
           ) : (
             <div className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               {activity.is_take_home ? (
-                <span className="inline-flex items-center gap-1 text-primary">
-                  <Home className="size-3.5 text-primary" aria-hidden="true" />
+                <span className="text-primary">
                   Take-home
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-foreground/80">
-                  <BookOpen className="size-3.5 text-primary" aria-hidden="true" />
+                <span className="text-foreground/80">
                   In-Class
                 </span>
               )}
@@ -340,8 +334,7 @@ export const ActivityCard = memo(function ActivityCard({
         {/* Status header with count and timestamp */}
         <div className="flex items-center justify-between gap-1.5 text-xs">
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className="flex items-center gap-1.5 truncate text-xs font-semibold text-foreground">
-              <Inbox className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="truncate text-xs font-semibold text-foreground">
               {totalStudents > 0 ? (
                 <span className="truncate tabular-nums">
                   {collectedStudents} of {totalStudents}{" "}
@@ -366,8 +359,7 @@ export const ActivityCard = memo(function ActivityCard({
             )}
           </div>
 
-          <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground tabular-nums">
-            <CalendarDays className="size-3.5" aria-hidden="true" />
+          <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
             {relativeTime}
           </span>
         </div>
@@ -377,51 +369,50 @@ export const ActivityCard = memo(function ActivityCard({
           <Tooltip>
             <TooltipTrigger
               render={
-                <div
-                  tabIndex={0}
-                  role="progressbar"
-                  aria-valuenow={Math.min(collectedStudents, totalStudents)}
-                  aria-valuemin={0}
-                  aria-valuemax={totalStudents}
-                  aria-valuetext={`${completedCount} completed, ${processingCount} processing, ${rejectedCount} needing re-scan out of ${totalStudents} assigned students`}
+                <Button
+                  type="button"
+                  variant="ghost"
                   aria-label={`Submission progress: ${completedCount} completed, ${processingCount} processing, ${rejectedCount} needing re-scan out of ${totalStudents} assigned students`}
                   onClick={(e) => e.stopPropagation()}
-                  className="group/progress -my-1.5 w-full cursor-help rounded-full py-2 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted/60 shadow-warm-sm transition-all group-hover/progress:brightness-95">
-                    {completedCount > 0 && (
-                      <div
-                        className="bg-primary transition-all duration-300 motion-reduce:transition-none"
-                        style={{
-                          width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
-                        }}
-                      />
-                    )}
-                    {processingCount > 0 && (
-                      <div
-                        className="bg-warning transition-all duration-300 motion-reduce:transition-none"
-                        style={{
-                          width: `${Math.min((processingCount / totalStudents) * 100, 100)}%`,
-                        }}
-                      />
-                    )}
-                    {rejectedCount > 0 && (
-                      <div
-                        className="bg-destructive transition-all duration-300 motion-reduce:transition-none"
-                        style={{
-                          width: `${Math.min((rejectedCount / totalStudents) * 100, 100)}%`,
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
+                  className="group/progress -my-1.5 h-auto w-full cursor-help rounded-full px-0 py-2 hover:bg-transparent active:not-aria-[haspopup]:translate-y-0 touch-manipulation"
+                />
               }
-            />
+            >
+              <div
+                aria-hidden="true"
+                className="flex h-2 w-full overflow-hidden rounded-full bg-muted/60 shadow-warm-sm transition-all group-hover/progress:brightness-95"
+              >
+                {completedCount > 0 && (
+                  <div
+                    className="bg-primary transition-all duration-300 motion-reduce:transition-none"
+                    style={{
+                      width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
+                    }}
+                  />
+                )}
+                {processingCount > 0 && (
+                  <div
+                    className="bg-warning transition-all duration-300 motion-reduce:transition-none"
+                    style={{
+                      width: `${Math.min((processingCount / totalStudents) * 100, 100)}%`,
+                    }}
+                  />
+                )}
+                {rejectedCount > 0 && (
+                  <div
+                    className="bg-destructive transition-all duration-300 motion-reduce:transition-none"
+                    style={{
+                      width: `${Math.min((rejectedCount / totalStudents) * 100, 100)}%`,
+                    }}
+                  />
+                )}
+              </div>
+            </TooltipTrigger>
             <TooltipContent
               side="top"
               sideOffset={6}
               arrowClassName="bg-popover fill-popover border-b border-r border-border"
-              className="flex min-w-[220px] flex-col items-stretch gap-2 rounded-xl border border-border bg-popover p-3 text-xs text-popover-foreground shadow-warm-md"
+              className="flex min-w-[220px] flex-col items-stretch gap-2 rounded-xl border border-border bg-popover p-3 text-xs text-popover-foreground shadow-warm"
             >
               <div className="flex items-center justify-between font-semibold text-foreground">
                 <span className="font-heading text-xs font-medium">Assigned Students</span>

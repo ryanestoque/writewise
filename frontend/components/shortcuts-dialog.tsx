@@ -132,9 +132,9 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
         <div className="p-6 pt-4 flex flex-col gap-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           {categories.map((category) => (
             <div key={category} className="flex flex-col gap-2.5">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">
                 {category}
-              </h4>
+              </h3>
               <ItemGroup className="gap-0 rounded-xl border border-border bg-card">
                 {shortcuts
                   .filter((s) => s.category === category)

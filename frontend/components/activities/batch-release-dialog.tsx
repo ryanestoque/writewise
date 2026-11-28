@@ -73,7 +73,7 @@ export const BatchReleaseDialog = memo(function BatchReleaseDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-lg p-6 shadow-warm-lg">
+      <AlertDialogContent className="max-w-lg p-6 shadow-warm">
         <AlertDialogHeader className="flex flex-col gap-2">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">

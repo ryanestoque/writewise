@@ -188,7 +188,7 @@ export function WorksheetHistory({
                     <Button
                       nativeButton={false}
                       size="sm"
-                      className="min-h-9 text-xs font-semibold"
+                      className="min-h-10 sm:min-h-9 text-xs font-semibold"
                       render={
                         <Link
                           href={`/activities/${activityId}/submissions/${attempt.id}${queueQuery}`}
@@ -210,7 +210,7 @@ export function WorksheetHistory({
                           onSelectAttempt(attempt);
                           handleClose();
                         }}
-                        className="min-h-9 text-xs font-medium"
+                        className="min-h-10 sm:min-h-9 text-xs font-medium"
                       >
                         <Eye data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
                         <span>Preview on card</span>
@@ -227,7 +227,7 @@ export function WorksheetHistory({
                           submission: attempt,
                           attemptNumber: attempts.length - index })
                       }
-                      className="ml-auto min-h-9 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
+                      className="ml-auto min-h-10 sm:min-h-9 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 data-icon="inline-start" aria-hidden="true" />
                       <span>Delete</span>

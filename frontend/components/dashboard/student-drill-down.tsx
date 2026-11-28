@@ -397,7 +397,7 @@ export function StudentDrillDownDrawer({
               /* Actionable Pedagogical Onboarding & Criteria Preview Empty State */
               <div className="flex flex-col gap-6">
                 {/* Hero Upload Prompt Card using Standard Empty Primitives */}
-                <Empty className="p-4 sm:p-6 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center shadow-warm-xs">
+                <Empty className="p-4 sm:p-6 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center shadow-warm-sm">
                   <EmptyHeader>
                     <EmptyTitle className="font-heading text-base font-semibold text-foreground">
                       No Graded Worksheets Yet
@@ -410,7 +410,7 @@ export function StudentDrillDownDrawer({
                     <Button
                       type="button"
                       size="default"
-                      className="text-xs font-semibold cursor-pointer shadow-warm-xs min-h-11 sm:min-h-10 px-4"
+                      className="text-xs font-semibold cursor-pointer shadow-warm-sm min-h-11 sm:min-h-10 px-4"
                       onClick={() => {
                         onOpenChange(false);
                         if (onUpload && student.studentId) {
@@ -434,7 +434,7 @@ export function StudentDrillDownDrawer({
                     </h3>
                   </div>
 
-                  <Card size="sm" className="p-0 shadow-warm-xs">
+                  <Card size="sm" className="p-0 shadow-warm-sm">
                     <CardContent className="p-0">
                       <ItemGroup className="gap-0">
                         {RUBRIC_CRITERIA.map((criterion, index) => (
@@ -467,7 +467,7 @@ export function StudentDrillDownDrawer({
                 <TabsContent value="overview" className="mt-0 focus-visible:outline-none flex flex-col gap-6">
               {/* Integrated Overall Performance & Highlights Hero Card */}
               {student.scores.composite !== null && (
-                <Card size="sm" className="shadow-warm-xs">
+                <Card size="sm" className="shadow-warm-sm">
                   <CardHeader>
                     <CardTitle as="h3" className="font-sans text-xs font-medium text-muted-foreground">
                       Overall Performance
@@ -576,7 +576,7 @@ export function StudentDrillDownDrawer({
                           : []
                       )
                     }
-                    className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border shadow-warm-xs"
+                    className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border shadow-warm-sm"
                   >
                     {RUBRIC_CRITERIA.map((criterion) => {
                       const score = student.scores[criterion.criterionKey];
@@ -718,7 +718,7 @@ export function StudentDrillDownDrawer({
                 <Empty className="p-8 sm:p-10 rounded-xl border border-dashed border-border/80 bg-muted/20 my-auto">
                   <EmptyMedia
                     variant="icon"
-                    className="rounded-full bg-background border border-border/60 text-primary shadow-warm-xs"
+                    className="rounded-full bg-background border border-border/60 text-primary shadow-warm-sm"
                   >
                     <LineChart className="size-5" aria-hidden="true" />
                   </EmptyMedia>
@@ -743,7 +743,7 @@ export function StudentDrillDownDrawer({
                   </EmptyContent>
                 </Empty>
               ) : (
-                <Card size="sm" className="shadow-warm-xs">
+                <Card size="sm" className="shadow-warm-sm">
                   <CardHeader>
                     <CardTitle as="h4" className="text-sm font-semibold">
                       Skill Trajectories
@@ -865,7 +865,7 @@ function SubmissionHistoryItem({
           <BandBadge score={item.compositeScore} size="sm" showDot={false} />
         </div>
         <ChevronRight
-          className="size-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all"
+          className="size-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all motion-reduce:transform-none motion-reduce:transition-colors"
           aria-hidden="true"
         />
       </ItemActions>
