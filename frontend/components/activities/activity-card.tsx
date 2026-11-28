@@ -388,7 +388,7 @@ export const ActivityCard = memo(function ActivityCard({
                   <>
                     {completedCount > 0 && (
                       <div
-                        className="bg-primary transition-[width] duration-300 motion-reduce:transition-none"
+                        className="h-full shrink-0 bg-primary transition-[width] duration-300 motion-reduce:transition-none"
                         style={{
                           width: `${Math.min((completedCount / totalStudents) * 100, 100)}%`,
                         }}
@@ -396,7 +396,7 @@ export const ActivityCard = memo(function ActivityCard({
                     )}
                     {processingCount > 0 && (
                       <div
-                        className="bg-warning transition-[width] duration-300 motion-reduce:transition-none"
+                        className="h-full shrink-0 bg-warning transition-[width] duration-300 motion-reduce:transition-none"
                         style={{
                           width: `${Math.min((processingCount / totalStudents) * 100, 100)}%`,
                         }}
@@ -404,7 +404,7 @@ export const ActivityCard = memo(function ActivityCard({
                     )}
                     {rejectedCount > 0 && (
                       <div
-                        className="bg-destructive transition-[width] duration-300 motion-reduce:transition-none"
+                        className="h-full shrink-0 bg-destructive transition-[width] duration-300 motion-reduce:transition-none"
                         style={{
                           width: `${Math.min((rejectedCount / totalStudents) * 100, 100)}%`,
                         }}

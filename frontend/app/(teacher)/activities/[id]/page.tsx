@@ -1272,11 +1272,11 @@ export default function ActivityDetailPage({ params }: { params: Promise<{ id: s
         className="flex flex-col gap-3 sm:gap-4 pt-4 sm:pt-6 scroll-mt-20"
       >
         {/* Section Header with Controls */}
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
           <div>
             <h2
               id="submissions-heading"
-              className="font-heading text-foreground text-lg font-semibold tracking-tight sm:text-xl"
+              className="font-heading text-foreground text-lg font-semibold tracking-tight whitespace-nowrap sm:text-xl"
             >
               Student work
             </h2>

@@ -288,13 +288,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
       className="gap-0 px-4 py-3 sm:p-5"
     >
       {/* Unified Responsive Title & Metadata */}
-      <CardHeader className="p-0 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center justify-between gap-3 sm:block">
+      <CardHeader className="p-0 flex flex-col items-stretch gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0 w-full sm:w-auto sm:flex-1">
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 sm:block">
             <CardTitle
               as="h1"
               id="activity-prompt-heading"
-              className="text-lg font-semibold break-words leading-snug sm:text-xl"
+              className="min-w-0 text-lg font-semibold break-words leading-snug sm:text-xl"
             >
               {activity.title || "Untitled Activity"}
             </CardTitle>
@@ -325,8 +325,8 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
           onOpenChange={setIsPromptExpanded}
           render={<section aria-label="Target text" className="mt-3.5 flex flex-col gap-2" />}
         >
-          {/* Standard print / non-cursive ground truth text with Copy aligned at the bottom end */}
-          <div className="flex flex-wrap items-end justify-between gap-2 sm:gap-3">
+          {/* Standard print / non-cursive ground truth text with Copy vertically centered */}
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <p className="min-w-0 flex-1 text-sm font-medium text-foreground tracking-tight leading-relaxed break-words select-all">
               {targetText || (
                 <span className="text-muted-foreground/70 italic text-sm font-normal">
@@ -334,7 +334,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 </span>
               )}
             </p>
-            <div className="ml-auto flex shrink-0 items-center gap-1 self-end">
+            <div className="ml-auto flex shrink-0 items-center gap-1">
               <Button
                 type="button"
                 variant="ghost"
@@ -486,32 +486,27 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             )}
           </Alert>
         ) : classDiagnostics ? (
-          <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2.5 sm:flex-row sm:items-center">
-            <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2.5">
+            <div className="flex min-w-0 max-w-full flex-col items-start gap-1">
               <p className="text-muted-foreground text-xs flex items-center gap-1.5 flex-wrap">
                 <span>Class average</span>
                 <span aria-hidden="true" className="text-muted-foreground/40 select-none">·</span>
                 <span className="tabular-nums">{classDiagnostics.completedCount} scored</span>
               </p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <Badge
-                  variant="outline"
-                  className={cn("px-2 py-0.5 text-xs font-medium", classDiagnostics.scoreBand.className)}
-                >
-                  {classDiagnostics.scoreBand.label}
-                </Badge>
-                {classDiagnostics.focusCriterion && (
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground text-xs">
-                    <span aria-hidden="true" className="text-muted-foreground/40 select-none hidden min-[360px]:inline">·</span>
-                    <span className="truncate">
-                      Focus:{" "}
-                      <strong className="text-foreground font-medium">
-                        {classDiagnostics.focusCriterion.name.toLowerCase()}
-                      </strong>
-                    </span>
-                  </span>
-                )}
-              </div>
+              {classDiagnostics.focusCriterion && (
+                <p className="text-muted-foreground text-xs">
+                  Focus:{" "}
+                  <strong className="text-foreground font-medium">
+                    {classDiagnostics.focusCriterion.name.toLowerCase()}
+                  </strong>
+                </p>
+              )}
+              <Badge
+                variant="outline"
+                className={cn("mt-0.5 px-2 py-0.5 text-xs font-medium", classDiagnostics.scoreBand.className)}
+              >
+                {classDiagnostics.scoreBand.label}
+              </Badge>
             </div>
             <Popover>
               <PopoverTrigger

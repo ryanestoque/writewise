@@ -257,7 +257,7 @@ export const SubmissionCard = memo(function SubmissionCard({
               type="button"
               variant="ghost"
               size="xs"
-              className="relative h-auto px-1 py-0.5 text-xs font-medium text-foreground hover:bg-transparent hover:text-primary after:absolute after:-inset-2 sm:after:hidden"
+              className="relative h-auto pl-0 has-data-[icon=inline-start]:pl-0 pr-1 py-0.5 text-xs font-medium text-foreground hover:bg-transparent hover:text-primary after:absolute after:-inset-2 sm:after:hidden"
               aria-label={`View attempt history for ${studentName}. Attempt ${currentAttemptIndex} of ${attemptCount}.`}
             >
               <History data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
@@ -283,7 +283,7 @@ export const SubmissionCard = memo(function SubmissionCard({
   );
   const selectionControl = onToggleSelect && (
     <div
-      className={compact ? "ml-auto" : "absolute right-2.5 bottom-2.5 z-20"}
+      className={compact ? "shrink-0" : "absolute right-2.5 bottom-2.5 z-20"}
       onClick={(e) => e.stopPropagation()}
     >
       <Field
@@ -313,9 +313,9 @@ export const SubmissionCard = memo(function SubmissionCard({
   );
   const studentIdentity = (
     <div className="flex flex-col gap-1 min-w-0">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
         <h3
-          className="text-foreground text-sm font-semibold sm:text-base leading-snug truncate min-w-0"
+          className="text-foreground text-sm font-semibold sm:text-base leading-snug break-words min-w-0"
           title={studentName}
         >
           {studentName}
@@ -341,7 +341,7 @@ export const SubmissionCard = memo(function SubmissionCard({
             ) : null}
             {submission.uploader_role === "parent" && (
               <>
-                <Badge variant="secondary">Parent upload</Badge>
+                <span>Parent upload</span>
                 <span className="text-muted-foreground/40 select-none" aria-hidden="true">·</span>
               </>
             )}
@@ -798,28 +798,28 @@ export const SubmissionCard = memo(function SubmissionCard({
         <CardContent className="p-0 flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_auto] lg:items-center lg:gap-6">
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-2 lg:block">
-              <div className="min-w-0">{studentIdentity}</div>
-              <div className="flex items-center gap-1 shrink-0 lg:hidden">
-                {inspectAction}
-                {cardOverflowMenu}
-              </div>
+              <div className="min-w-0 flex-1">{studentIdentity}</div>
+              {cardOverflowMenu && (
+                <div className="shrink-0 lg:hidden -mr-1.5 -mt-1.5">
+                  {cardOverflowMenu}
+                </div>
+              )}
             </div>
           </div>
           <div className="min-w-0">
             {scoreSummary}
             {newestUpload}
           </div>
-          <div
-            className={cn(
-              "flex flex-wrap items-center justify-between gap-2 lg:justify-end",
-              !onToggleSelect && submission.status !== "rejected" && "hidden lg:flex"
-            )}
-          >
+          <div className="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
             {selectionControl}
-            <div className="hidden lg:flex items-center gap-2">
+            <div className="flex-1 lg:flex-initial [&>button]:w-full lg:[&>button]:w-auto">
               {inspectAction}
-              {cardOverflowMenu}
             </div>
+            {cardOverflowMenu && (
+              <div className="hidden lg:block shrink-0">
+                {cardOverflowMenu}
+              </div>
+            )}
           </div>
         </CardContent>
       ) : (
@@ -959,18 +959,25 @@ export const UnsubmittedCard = memo(function UnsubmittedCard({
     return (
       <Card size="sm" className="p-3.5 sm:p-4 text-left transition-all hover:border-border/80">
         <CardContent className="p-0 flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_auto] lg:items-center lg:gap-6">
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <h3 className="text-foreground text-sm font-semibold sm:text-base leading-snug truncate min-w-0 shrink">
-                {student.full_name}
-              </h3>
-              <div className="shrink-0">
-                <ActivityWorkStatus state={workState ?? null} unavailable={!workState && !workLoading} />
+          <div className="flex items-start justify-between gap-2 min-w-0">
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="text-foreground text-sm font-semibold sm:text-base leading-snug truncate min-w-0 shrink">
+                  {student.full_name}
+                </h3>
+                <div className="shrink-0">
+                  <ActivityWorkStatus state={workState ?? null} unavailable={!workState && !workLoading} />
+                </div>
               </div>
+              <p className="text-muted-foreground text-xs">
+                Awaiting submission
+              </p>
             </div>
-            <p className="text-muted-foreground text-xs">
-              Awaiting submission
-            </p>
+            {overflowMenu && (
+              <div className="shrink-0 lg:hidden -mr-1.5 -mt-1.5">
+                {overflowMenu}
+              </div>
+            )}
           </div>
           <div className="text-muted-foreground text-xs">
             <span className="italic">No worksheet uploaded yet</span>
@@ -979,14 +986,18 @@ export const UnsubmittedCard = memo(function UnsubmittedCard({
             <Button
               variant="outline"
               size="sm"
-              className="min-h-11 md:min-h-9 text-xs font-medium"
+              className="w-full lg:w-auto min-h-11 md:min-h-9 text-xs font-medium"
               onClick={() => onUpload(student.id)}
               aria-label={`Upload worksheet for ${student.full_name}`}
             >
               <Upload data-icon="inline-start" aria-hidden="true" />
               <span>Upload worksheet</span>
             </Button>
-            {overflowMenu}
+            {overflowMenu && (
+              <div className="hidden lg:block shrink-0">
+                {overflowMenu}
+              </div>
+            )}
           </div>
         </CardContent>
         {deadlineDialog}
