@@ -2,14 +2,16 @@
 
 import { useState, useMemo } from "react";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayBody,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayFooter,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -221,7 +223,7 @@ export function WorksheetViewDialog({
       size="sm"
       pressed={showGuideLines}
       onPressedChange={setShowGuideLines}
-      className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-brand-100 aria-pressed:text-brand-900 dark:aria-pressed:bg-brand-950 dark:aria-pressed:text-brand-200 cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-brand-500"
+      className="h-auto min-h-10 sm:min-h-8 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-secondary aria-pressed:text-secondary-foreground cursor-pointer touch-manipulation shrink-0 focus-visible:ring-2 focus-visible:ring-primary"
       title="Toggle 3-line penmanship paper guides"
     >
       <span className="hidden sm:inline">Paper lines</span>
@@ -230,16 +232,16 @@ export function WorksheetViewDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+    <ResponsiveRichOverlay open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveRichOverlayContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header */}
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
+        <ResponsiveRichOverlayHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-start justify-between gap-2 pr-11 sm:pr-10">
-            <div className="min-w-0 space-y-1">
-              <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
+            <div className="min-w-0 flex flex-col gap-1">
+              <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 {childName ? `${childName}'s Worksheet` : "Worksheet Feedback"}
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+              </ResponsiveRichOverlayTitle>
+              <ResponsiveRichOverlayDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <time dateTime={submissionDate} className="font-sans tabular-nums">
                   {formattedDate}
                 </time>
@@ -251,7 +253,7 @@ export function WorksheetViewDialog({
                     </span>
                   </>
                 )}
-              </DialogDescription>
+              </ResponsiveRichOverlayDescription>
             </div>
 
             {showHeaderMenu && (
@@ -267,7 +269,7 @@ export function WorksheetViewDialog({
                     />
                   }
                 >
-                  <MoreHorizontal className="size-4" aria-hidden="true" />
+                  <MoreHorizontal aria-hidden="true" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 rounded-xl">
                   <DropdownMenuGroup>
@@ -285,10 +287,10 @@ export function WorksheetViewDialog({
               </DropdownMenu>
             )}
           </div>
-        </DialogHeader>
+        </ResponsiveRichOverlayHeader>
 
         {/* Content Body: Split view (Worksheet pinned left, Feedback & Notes tabbed right) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <ResponsiveRichOverlayBody className="p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
             {/* Left (Desktop) / Top (Mobile): Worksheet Photo & Single-Line Marks Bar */}
             <div className="lg:col-span-6 lg:sticky lg:top-0 flex flex-col w-full gap-3">
@@ -371,24 +373,21 @@ export function WorksheetViewDialog({
                   variant="default"
                   onViewChange={setActiveView}
                 >
-                  <div className="space-y-4 w-full">
+                  <div className="flex flex-col gap-4 w-full">
                     {returnNote && (
-                      <div
-                        role="status"
-                        className="rounded-xl border border-band-2/40 bg-band-2/15 p-3 text-xs sm:text-sm space-y-1"
-                      >
-                        <p className="text-xs font-semibold text-band-2-text">
+                      <Alert role="status" className="border-band-2/40 bg-band-2/15 p-3">
+                        <AlertTitle className="text-xs font-semibold text-band-2-text">
                           Teacher note
-                        </p>
-                        <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                        </AlertTitle>
+                        <AlertDescription className="text-xs sm:text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
                           {returnNote}
-                        </p>
-                      </div>
+                        </AlertDescription>
+                      </Alert>
                     )}
 
                     {compositeScore != null && (
                       <Card size="sm" className="border-border/80 shadow-none gap-2.5">
-                        <CardContent className="space-y-2.5">
+                        <CardContent className="flex flex-col gap-2.5">
                           <div className="flex items-center justify-between gap-2">
                             {compositeBandMeta && (
                               <div className="flex items-center gap-2 min-w-0">
@@ -422,7 +421,7 @@ export function WorksheetViewDialog({
                     )}
 
                     {scores && bands && (
-                      <div className="space-y-2">
+                      <div className="flex flex-col gap-2">
                         <h3 className="text-sm font-heading font-semibold text-foreground px-0.5">
                           Skill breakdown
                         </h3>
@@ -472,11 +471,11 @@ export function WorksheetViewDialog({
                 </SubmissionCommentTabs>
               </div>
             </div>
-          </div>
+          </ResponsiveRichOverlayBody>
 
         {/* Footer — single calm primary CTA when practice is available */}
         {onPracticeNow && activeView !== "comments" && (
-          <DialogFooter className="px-4 py-3 sm:px-5 border-t border-border bg-card/80">
+          <ResponsiveRichOverlayFooter className="border-t border-border bg-card/80 sm:px-5 sm:py-3">
             <Button
               type="button"
               variant="default"
@@ -485,14 +484,14 @@ export function WorksheetViewDialog({
                 onOpenChange(false);
                 onPracticeNow();
               }}
-              className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold gap-1.5 cursor-pointer touch-manipulation shadow-warm-sm"
+              className="h-11 sm:h-9 px-4 text-xs sm:text-sm font-semibold cursor-pointer touch-manipulation shadow-warm-sm"
             >
-              <PenLine className="size-3.5" aria-hidden="true" />
+              <PenLine data-icon="inline-start" aria-hidden="true" />
               <span>Practice together</span>
             </Button>
-          </DialogFooter>
+          </ResponsiveRichOverlayFooter>
         )}
-      </DialogContent>
+      </ResponsiveRichOverlayContent>
 
       {/* Delete Confirmation Modal */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -531,6 +530,6 @@ export function WorksheetViewDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </ResponsiveRichOverlay>
   );
 }

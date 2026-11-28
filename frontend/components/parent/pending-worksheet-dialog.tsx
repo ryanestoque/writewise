@@ -2,13 +2,15 @@
 
 import { useMemo } from "react";
 import { Camera, ArrowLeft } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayBody,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WorksheetImageInspector } from "@/components/shared/worksheet-image-inspector";
@@ -50,31 +52,31 @@ export function PendingWorksheetDialog({
   }, [item.submissionDate]);
 
   return (
-    <Dialog
+    <ResponsiveRichOverlay
       open
       onOpenChange={(open) => {
         if (!open) onBack();
       }}
     >
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+      <ResponsiveRichOverlayContent className="w-[calc(100%-1.5rem)] sm:w-[95vw] sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[min(94dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
         {/* Header matching WorksheetViewDialog */}
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
+        <ResponsiveRichOverlayHeader className="p-4 sm:p-5 pb-3 border-b border-border bg-card/80">
           <div className="flex items-center justify-between gap-3 pr-10">
-            <div className="min-w-0 space-y-1">
+            <div className="min-w-0 flex flex-col gap-1">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={onBack}
-                className="h-auto min-h-[40px] sm:min-h-[36px] px-2 py-1 mb-0.5 text-xs font-medium text-brand-700 dark:text-brand-300 hover:text-brand-800 dark:hover:text-brand-200 cursor-pointer group touch-manipulation"
+                className="h-auto min-h-10 sm:min-h-9 w-fit px-2 py-1 mb-0.5 text-xs font-medium text-primary hover:text-primary/80 cursor-pointer group touch-manipulation"
               >
-                <ArrowLeft data-icon="inline-start" className="size-3.5 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+                <ArrowLeft data-icon="inline-start" className="transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
                 <span>{backLabel}</span>
               </Button>
-              <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
+              <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground truncate">
                 Worksheet &amp; Review Status
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+              </ResponsiveRichOverlayTitle>
+              <ResponsiveRichOverlayDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-foreground">{childName}</span>
                 <span>&middot;</span>
                 <time dateTime={item.submissionDate} className="font-sans tabular-nums">
@@ -88,13 +90,13 @@ export function PendingWorksheetDialog({
                     </span>
                   </>
                 )}
-              </DialogDescription>
+              </ResponsiveRichOverlayDescription>
             </div>
           </div>
-        </DialogHeader>
+        </ResponsiveRichOverlayHeader>
 
         {/* Content Body: Split view (Worksheet pinned left, Status & Notes tabbed right) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <ResponsiveRichOverlayBody className="p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
             {/* Left Column: Photo Inspector */}
             <div className="lg:col-span-6 lg:sticky lg:top-0 flex flex-col w-full gap-3">
@@ -125,11 +127,11 @@ export function PendingWorksheetDialog({
                 variant="default"
                 open
               >
-                <div className="space-y-4 w-full">
+                <div className="flex flex-col gap-4 w-full">
                   <Card className="p-0 gap-0 border-border/80 shadow-none">
-                    <CardContent className="p-4 sm:p-5 space-y-4">
+                    <CardContent className="p-4 sm:p-5 flex flex-col gap-4">
                       {/* Status Headline & Explanation */}
-                      <div className="space-y-1.5">
+                      <div className="flex flex-col gap-1.5">
                         <h3 className="font-heading text-base font-semibold text-foreground">
                           {item.status === "returned"
                             ? "New photo requested"
@@ -149,17 +151,14 @@ export function PendingWorksheetDialog({
 
                       {/* Teacher Return Note if present */}
                       {item.returnNote && (
-                        <div
-                          role="status"
-                          className="rounded-xl border border-band-2/40 bg-band-2/15 p-3 text-xs sm:text-sm space-y-1"
-                        >
-                          <p className="text-xs font-semibold text-band-2-text">
+                        <Alert role="status" className="border-band-2/40 bg-band-2/15 p-3">
+                          <AlertTitle className="text-xs font-semibold text-band-2-text">
                             Teacher note
-                          </p>
-                          <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                          </AlertTitle>
+                          <AlertDescription className="text-xs sm:text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
                             {item.returnNote}
-                          </p>
-                        </div>
+                          </AlertDescription>
+                        </Alert>
                       )}
 
                       {/* Primary Action */}
@@ -171,9 +170,9 @@ export function PendingWorksheetDialog({
                               onBack();
                               onUploadActivity?.(item.activityId);
                             }}
-                            className="w-full h-11 sm:h-9 gap-2 font-semibold cursor-pointer touch-manipulation"
+                            className="w-full h-11 sm:h-9 font-semibold cursor-pointer touch-manipulation"
                           >
-                            <Camera className="size-4" aria-hidden="true" />
+                            <Camera data-icon="inline-start" aria-hidden="true" />
                             <span>Send new photo</span>
                           </Button>
                         </div>
@@ -184,8 +183,8 @@ export function PendingWorksheetDialog({
               </SubmissionCommentTabs>
             </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveRichOverlayBody>
+      </ResponsiveRichOverlayContent>
+    </ResponsiveRichOverlay>
   );
 }
