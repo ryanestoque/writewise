@@ -61,11 +61,19 @@ import {
   ResponsiveRichOverlayTitle,
 } from "@/components/shared/responsive-rich-overlay";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ClipboardList,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Camera,
+  MoreHorizontal,
   Trash2,
   Clock3,
   Eye,
@@ -1101,18 +1109,52 @@ function PhotoPreviewDialog({
     <>
       <ResponsiveRichOverlay open={open} onOpenChange={onOpenChange}>
         <ResponsiveRichOverlayContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl max-h-[90dvh] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
-          <ResponsiveRichOverlayHeader className="p-4 sm:p-5 border-b border-border/70 pr-12 flex flex-col gap-1">
-            <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground break-words">
-              {title}
-            </ResponsiveRichOverlayTitle>
-            {(childName || statusLabel) && (
-              <p className="text-xs font-medium text-muted-foreground">
-                {[childName, statusLabel].filter(Boolean).join(" · ")}
-              </p>
-            )}
-            <ResponsiveRichOverlayDescription className="text-xs text-muted-foreground italic break-words line-clamp-2">
-              &ldquo;{normalizeActivityPrompt(targetText)}&rdquo;
-            </ResponsiveRichOverlayDescription>
+          <ResponsiveRichOverlayHeader className="p-4 sm:p-5 border-b border-border/70">
+            <div className="flex items-start justify-between gap-2 pr-12 md:pr-9">
+              <div className="min-w-0 flex flex-col gap-1">
+                <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground break-words">
+                  {title}
+                </ResponsiveRichOverlayTitle>
+                {(childName || statusLabel) && (
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {[childName, statusLabel].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                <ResponsiveRichOverlayDescription className="text-xs text-muted-foreground italic break-words line-clamp-2">
+                  &ldquo;{normalizeActivityPrompt(targetText)}&rdquo;
+                </ResponsiveRichOverlayDescription>
+              </div>
+
+              {canDelete && submissionId && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        disabled={deleteMutation.isPending}
+                        className="-mt-1 size-11 md:size-8 rounded-lg border-border/70 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer touch-manipulation"
+                        aria-label="Worksheet options"
+                      />
+                    }
+                  >
+                    <MoreHorizontal aria-hidden="true" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        <Trash2 aria-hidden="true" />
+                        <span>Delete upload</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </ResponsiveRichOverlayHeader>
 
           <ResponsiveRichOverlayBody className="p-4 sm:p-5">
@@ -1131,58 +1173,39 @@ function PhotoPreviewDialog({
             />
           </ResponsiveRichOverlayBody>
 
-          <ResponsiveRichOverlayFooter
-            showCloseButton={false}
-            className="flex-wrap border-t border-border sm:p-4 sm:items-center sm:justify-between bg-background"
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              {activityId && childId && submissionId && (
-                <WorkCommentsButton
-                  scope={{ activityId, studentId: childId }}
-                  activeSubmissionId={submissionId}
-                  activityTitle={title}
-                  teacherName={teacherName}
-                  audience="parent"
-                  hasUnread={hasUnreadComments}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 px-3"
-                />
-              )}
-              {canDelete && submissionId && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  disabled={deleteMutation.isPending}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive px-3 cursor-pointer"
-                >
-                  <Trash2 data-icon="inline-start" aria-hidden="true" />
-                  <span>Delete upload</span>
-                </Button>
-              )}
-              {canSendNewPhoto && onSendNewPhoto && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onSendNewPhoto}
-                  className="h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium px-3 cursor-pointer"
-                >
-                  <Camera data-icon="inline-start" aria-hidden="true" />
-                  <span>Send new photo</span>
-                </Button>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-11 sm:h-9 min-h-11 sm:min-h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer ml-auto"
+          {((activityId && childId && submissionId) ||
+            (canSendNewPhoto && onSendNewPhoto)) && (
+            <ResponsiveRichOverlayFooter
+              showCloseButton={false}
+              className="border-t border-border sm:p-4 sm:items-center sm:justify-end bg-background"
             >
-              Close
-            </Button>
-          </ResponsiveRichOverlayFooter>
+              <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
+                {activityId && childId && submissionId && (
+                  <WorkCommentsButton
+                    scope={{ activityId, studentId: childId }}
+                    activeSubmissionId={submissionId}
+                    activityTitle={title}
+                    teacherName={teacherName}
+                    audience="parent"
+                    hasUnread={hasUnreadComments}
+                    className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium gap-1.5 px-3"
+                  />
+                )}
+                {canSendNewPhoto && onSendNewPhoto && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onSendNewPhoto}
+                    className="flex-1 sm:flex-initial min-w-0 h-11 sm:h-9 min-h-11 sm:min-h-9 text-xs sm:text-sm font-medium px-3 cursor-pointer"
+                  >
+                    <Camera data-icon="inline-start" aria-hidden="true" />
+                    <span className="truncate">Send new photo</span>
+                  </Button>
+                )}
+              </div>
+            </ResponsiveRichOverlayFooter>
+          )}
         </ResponsiveRichOverlayContent>
       </ResponsiveRichOverlay>
 
