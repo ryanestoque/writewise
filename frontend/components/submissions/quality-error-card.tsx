@@ -787,8 +787,8 @@ export function QualityErrorCard({
                 )}
               >
                 {imageError ? (
-                  <div className="size-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-1 text-center">
-                    <ImageOff className="size-4 mb-0.5" aria-hidden="true" />
+                  <div className="size-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-1 text-center gap-0.5">
+                    <ImageOff aria-hidden="true" />
                     <span className="text-xs leading-tight font-medium">No preview</span>
                   </div>
                 ) : (
@@ -973,7 +973,7 @@ export function QualityErrorCard({
                         error.details.similarity >= 0.8
                           ? "bg-success/10 text-success border-success/30"
                           : error.details.similarity >= 0.4
-                          ? "bg-warning/10 text-warning-foreground dark:text-warning border-warning/30"
+                          ? "bg-warning/10 text-warning-foreground border-warning/30"
                           : "bg-destructive/10 text-destructive border-destructive/30"
                       )}
                     >
@@ -1302,7 +1302,7 @@ export function QualityErrorCard({
             {/* Modal Footer: Targeted Diagnostic Advice & Direct Remediation Action */}
             <ResponsiveRichOverlayFooter className="p-3 sm:p-3.5 bg-background flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 shrink-0">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Lightbulb className="size-3.5 shrink-0 text-warning" aria-hidden="true" />
+                <Lightbulb className="size-3.5 shrink-0 text-warning-foreground" aria-hidden="true" />
                 <span className="line-clamp-1 sm:line-clamp-none">
                   {presentation.tips[0] || "Check lighting, focus, and line clarity"}
                 </span>
