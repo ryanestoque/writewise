@@ -235,12 +235,13 @@ export function LatestSubmissionCard({
         <div className="md:col-span-5 flex items-center justify-center bg-secondary/45 p-4 sm:p-6">
           {imageUrl && imageUrl !== failedImageUrl ? (
             <AspectRatio ratio={4 / 3} className="w-full max-w-md">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => openWorksheetForCriterion()}
                 aria-haspopup="dialog"
                 aria-label={`Inspect worksheet photo for ${displayActivityText}`}
-                className="group relative size-full cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-background shadow-warm-sm transition-shadow hover:shadow-warm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                className="group relative size-full cursor-pointer overflow-hidden rounded-lg border-border/70 bg-background p-0 shadow-warm-sm transition-shadow hover:border-primary/40 hover:bg-background hover:shadow-warm focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Image
                   src={imageUrl}
@@ -250,7 +251,7 @@ export function LatestSubmissionCard({
                   className="object-contain p-1.5 transition-transform duration-200 ease-out group-hover:scale-[1.015] motion-reduce:transition-none"
                   onError={() => setFailedImageUrl(imageUrl)}
                 />
-              </button>
+              </Button>
             </AspectRatio>
           ) : imageLoading && latest.imagePath ? (
             <AspectRatio
@@ -378,10 +379,11 @@ export function LatestSubmissionCard({
               <Item
                 key={key}
                 size="sm"
-                className="group flex-nowrap rounded-none border-0 px-4 sm:px-6 py-3.5 min-h-12 w-full justify-between text-left cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring last:rounded-b-xl"
+                className="group h-auto flex-nowrap rounded-none border-0 px-4 sm:px-6 py-3.5 min-h-12 w-full justify-between text-left font-normal whitespace-normal cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring last:rounded-b-xl"
                 render={
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => openWorksheetForCriterion(key, "details")}
                     aria-haspopup="dialog"
                   />
