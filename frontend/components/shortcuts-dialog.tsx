@@ -2,12 +2,13 @@
 
 import { Fragment } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from "@/components/shared/responsive-modal";
 import {
   Item,
   ItemActions,
@@ -118,18 +119,18 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
   const categories = Array.from(new Set(shortcuts.map((s) => s.category)));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-md max-h-[min(90dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
-        <DialogHeader className="p-6 pb-4 border-b shrink-0">
-          <DialogTitle className="text-base font-semibold">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent className="w-[calc(100%-1.5rem)] max-w-md max-h-[min(90dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+        <ResponsiveModalHeader className="p-6 pb-4 border-b shrink-0">
+          <ResponsiveModalTitle className="text-base font-semibold">
             Keyboard Shortcuts
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription className="sr-only">
             Accelerators for fast teacher navigation in WriteWise.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
-        <div className="p-6 pt-4 flex flex-col gap-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <ResponsiveModalBody className="p-5 sm:p-6 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col gap-5">
           {categories.map((category) => (
             <div key={category} className="flex flex-col gap-2.5">
               <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">
@@ -160,8 +161,8 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
               </ItemGroup>
             </div>
           ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveModalBody>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }

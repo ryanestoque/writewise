@@ -13,13 +13,14 @@ import { toActivityDueAt, toActivityDueInput } from "@/lib/utils/activity-deadli
 import { ApiError } from "@/lib/utils/api-error";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveModal,
+  ResponsiveModalBody,
+  ResponsiveModalContent,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+} from "@/components/shared/responsive-modal";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
@@ -180,22 +181,22 @@ export function EditActivityDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm">
-        <DialogHeader className="pb-3 sm:pb-4 shrink-0 text-left">
-          <DialogTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
+    <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+      <ResponsiveModalContent className="w-[calc(100%-1.5rem)] max-w-lg sm:max-w-[540px] max-h-[min(92dvh,calc(100dvh-2rem))] flex flex-col p-5 sm:p-6 rounded-2xl sm:rounded-3xl gap-0 overflow-hidden shadow-warm">
+        <ResponsiveModalHeader className="pb-3 sm:pb-4 shrink-0 text-left">
+          <ResponsiveModalTitle className="font-heading text-lg sm:text-xl font-semibold tracking-tight text-foreground">
             Edit Activity
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </ResponsiveModalTitle>
+          <ResponsiveModalDescription className="sr-only">
             Update the title, target text, assignments, instructions, due date, or take-home setting.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveModalDescription>
+        </ResponsiveModalHeader>
 
         <form
           onSubmit={form.handleSubmit(onSubmit)}
           className="flex flex-col flex-1 min-h-0 overflow-hidden pt-1"
         >
-          <div className="overflow-y-auto overflow-x-hidden overscroll-contain px-1 py-1 flex-1 min-h-0">
+          <ResponsiveModalBody className="overflow-x-hidden px-5 py-2 md:px-1 md:py-1">
             <FieldGroup>
               {/* Chunk 1: Activity Prompt */}
               <ActivityTitleField form={form} />
@@ -323,10 +324,10 @@ export function EditActivityDialog({
                 pointsNotice={pointsNotice}
               />
             </FieldGroup>
-          </div>
+          </ResponsiveModalBody>
 
           <Separator className="mt-2 shrink-0" />
-          <DialogFooter className="pt-3.5 sm:pt-4 sm:justify-between shrink-0">
+          <ResponsiveModalFooter className="pt-3.5 sm:pt-4 sm:justify-between shrink-0">
             <Button
               type="button"
               variant="ghost"
@@ -347,7 +348,7 @@ export function EditActivityDialog({
               )}
               Save Changes
             </Button>
-          </DialogFooter>
+          </ResponsiveModalFooter>
         </form>
         <AlertDialog open={removeConfirmation} onOpenChange={setRemoveConfirmation}>
           <AlertDialogContent>
@@ -373,7 +374,7 @@ export function EditActivityDialog({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   );
 }
