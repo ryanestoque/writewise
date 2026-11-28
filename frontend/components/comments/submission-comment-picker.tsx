@@ -191,12 +191,18 @@ function LoadedPicker({
     setSelectedId(nextSubmissionId);
   };
 
+  const uploadSelectItems = rows.map((row, index) => ({
+    value: row.submission_id,
+    label: `Upload ${rows.length - index} · ${UPLOAD_TIME_FORMAT.format(new Date(row.submitted_at))}`,
+  }));
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {rows.length > 1 && (
         <Field className="shrink-0 gap-1.5 px-4 pt-0.5 pb-2 sm:gap-2 sm:pt-1 sm:pb-3">
           <FieldLabel htmlFor={id}>Worksheet upload</FieldLabel>
           <Select
+            items={uploadSelectItems}
             value={selected?.submission_id ?? ""}
             onValueChange={(value) => {
               if (value) handleUploadChange(value);
@@ -207,8 +213,8 @@ function LoadedPicker({
               id={id}
               className="h-11 md:h-9 min-h-11 md:min-h-9 w-full bg-card border-border font-sans tabular-nums cursor-pointer touch-manipulation"
             >
-              <SelectValue placeholder="Choose an upload">
-                {selected ? renderUploadSummary(selected, selectedIndex) : undefined}
+              <SelectValue>
+                {selected ? renderUploadSummary(selected, selectedIndex) : "Choose an upload"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent align="start">
