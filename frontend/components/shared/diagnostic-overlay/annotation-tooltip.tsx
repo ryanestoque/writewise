@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState, type RefObject } from "react";
 import type { ActiveAnnotationHover } from "./types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
@@ -335,95 +336,97 @@ function TooltipCard({
         </svg>
       </div>
 
-      <div
+      <Card
         ref={cardRef}
+        size="sm"
         style={{ maxWidth: `${cardWidth}px`, width: `${cardWidth}px` }}
         className={cn(
-          "p-2 sm:p-3 rounded-xl shadow-warm border backdrop-blur-md transition-colors relative",
+          "gap-0 py-0 rounded-xl shadow-warm backdrop-blur-md transition-colors relative bg-popover/95 text-popover-foreground",
           isPinned ? "pointer-events-auto select-text" : "pointer-events-none select-none",
-          "bg-popover/95 text-popover-foreground",
           isAttention
             ? "border-band-1/45 ring-2 ring-band-1/10"
             : "border-primary/45 ring-2 ring-primary/10"
         )}
       >
-        <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
-          {isAttention ? (
-            <AlertCircle
-              className="size-3.5 sm:size-4 shrink-0 text-band-1"
-              aria-hidden="true"
-            />
-          ) : (
-            <CheckCircle2
-              className="size-3.5 sm:size-4 shrink-0 text-primary"
-              aria-hidden="true"
-            />
-          )}
-          <span
-            className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-0 truncate"
-            title={CRITERION_FULL_LABELS[criterion] ?? criterion}
-          >
-            {CRITERION_LABELS[criterion] ?? criterion}
-          </span>
-          <Badge
-            variant={isAttention ? "outline" : "secondary"}
-            className={cn(
-              "ml-auto text-[10px] sm:text-xs px-1.5 py-0 sm:py-0.5 h-auto font-medium border shrink-0 whitespace-nowrap",
-              isAttention
-                ? "border-band-1/30 text-band-1-text bg-band-1/15"
-                : "border-primary/25 text-secondary-foreground bg-secondary"
+        <CardContent className="p-2 sm:p-3">
+          <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-1.5 min-w-0">
+            {isAttention ? (
+              <AlertCircle
+                className="size-3.5 sm:size-4 shrink-0 text-band-1"
+                aria-hidden="true"
+              />
+            ) : (
+              <CheckCircle2
+                className="size-3.5 sm:size-4 shrink-0 text-primary"
+                aria-hidden="true"
+              />
             )}
-          >
-            {isAttention ? "Needs Attention" : "Consistent"}
-          </Badge>
-          {isPinned && onDismiss && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDismiss();
-              }}
-              className="ml-0.5 shrink-0 pointer-events-auto text-muted-foreground hover:text-foreground"
-              aria-label="Close annotation"
-              title="Close annotation details"
+            <span
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground min-w-0 truncate"
+              title={CRITERION_FULL_LABELS[criterion] ?? criterion}
             >
-              <X aria-hidden="true" />
-            </Button>
+              {CRITERION_LABELS[criterion] ?? criterion}
+            </span>
+            <Badge
+              variant={isAttention ? "outline" : "secondary"}
+              className={cn(
+                "ml-auto text-xs px-1.5 py-0 sm:py-0.5 h-auto font-medium border shrink-0 whitespace-nowrap",
+                isAttention
+                  ? "border-band-1/30 text-band-1-text bg-band-1/15"
+                  : "border-primary/25 text-secondary-foreground bg-secondary"
+              )}
+            >
+              {isAttention ? "Needs Attention" : "Consistent"}
+            </Badge>
+            {isPinned && onDismiss && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDismiss();
+                }}
+                className="relative ml-0.5 shrink-0 pointer-events-auto text-muted-foreground hover:text-foreground after:absolute after:-inset-2.5 md:after:hidden"
+                aria-label="Close annotation"
+                title="Close annotation details"
+              >
+                <X aria-hidden="true" />
+              </Button>
+            )}
+          </div>
+
+          <p className="text-xs sm:text-[13px] font-semibold leading-tight sm:leading-snug break-words line-clamp-1 sm:line-clamp-2">
+            {title}
+          </p>
+          <p className="text-xs text-muted-foreground leading-snug sm:leading-relaxed mt-0.5 sm:mt-1 break-words line-clamp-2 sm:line-clamp-none">
+            {note}
+          </p>
+
+          {criterion === "letter_formation" && isAttention && showMeasurementDetails && (
+            <p className="text-xs font-medium text-band-1-text mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
+              <span className="inline-block size-1.5 rounded-full bg-band-1 shrink-0" aria-hidden="true" />
+              <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
+            </p>
           )}
-        </div>
 
-        <p className="text-[11.5px] sm:text-[13px] font-semibold leading-tight sm:leading-snug break-words line-clamp-1 sm:line-clamp-2">
-          {title}
-        </p>
-        <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug sm:leading-relaxed mt-0.5 sm:mt-1 break-words line-clamp-2 sm:line-clamp-none">
-          {note}
-        </p>
+          {criterion === "spacing" && showMeasurementDetails && (
+            <p className="text-xs font-medium text-muted-foreground mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
+              <span className="inline-block size-1.5 rounded-full bg-primary shrink-0" aria-hidden="true" />
+              <span>Measured relative to midline ruling (x-height). Target range: 1.5× – 2.5× guideline for words, 0.3× – 0.5× for letters.</span>
+            </p>
+          )}
 
-        {criterion === "letter_formation" && isAttention && showMeasurementDetails && (
-          <p className="text-[10px] sm:text-[11px] font-medium text-band-1-text mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-band-1 shrink-0" aria-hidden="true" />
-            <span>Highlighted zones show stroke irregularities flagged by the CNN.</span>
-          </p>
-        )}
-
-        {criterion === "spacing" && showMeasurementDetails && (
-          <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground mt-1 sm:mt-1.5 hidden sm:flex items-center gap-1.5">
-            <span className="inline-block size-1.5 rounded-full bg-primary shrink-0" aria-hidden="true" />
-            <span>Measured relative to midline ruling (x-height). Target range: 1.5× – 2.5× guideline for words, 0.3× – 0.5× for letters.</span>
-          </p>
-        )}
-
-        {!isPinned && (
-          <>
-            <Separator className="mt-1 sm:mt-1.5 hidden sm:block" />
-            <div className="pt-0.5 sm:pt-1 text-[9px] sm:text-[10px] text-muted-foreground hidden sm:flex items-center justify-between">
-              <span>Click to pin details</span>
-            </div>
-          </>
-        )}
-      </div>
+          {!isPinned && (
+            <>
+              <Separator className="mt-1 sm:mt-1.5 hidden sm:block" />
+              <div className="pt-0.5 sm:pt-1 text-xs text-muted-foreground hidden sm:flex items-center justify-between">
+                <span>Click to pin details</span>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }
