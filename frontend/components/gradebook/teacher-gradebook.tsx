@@ -38,7 +38,9 @@ import { GradebookBulkDialog } from "./gradebook-bulk-dialog";
 import { QueryRecovery } from "@/components/shared/query-recovery";
 import { FloatingActionBar } from "@/components/ui/floating-action-bar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SearchInput } from "@/components/ui/search-input";
 import { FilterPills, type FilterPillItem } from "@/components/ui/filter-pills";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -471,13 +473,6 @@ function SectionGrid({
     }
   }
 
-  function handleViewModeKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      e.preventDefault();
-      setViewMode((prev) => (prev === "points" ? "diagnostic" : "points"));
-    }
-  }
-
   const currentActivityFilterLabel =
     ACTIVITY_FILTER_ITEMS.find((item) => item.value === filter)?.label ?? "All activities";
 
@@ -535,47 +530,33 @@ function SectionGrid({
             />
           )}
 
-          <div
-            role="radiogroup"
+          <ToggleGroup
+            value={[viewMode]}
+            multiple={false}
+            spacing={0}
+            onValueChange={(vals) => {
+              if (vals.length > 0) {
+                setViewMode(vals[0] as "points" | "diagnostic");
+              }
+            }}
             aria-label="Gradebook view mode"
-            onKeyDown={handleViewModeKeyDown}
             className="inline-flex items-center rounded-lg sm:rounded-xl border border-border bg-background p-0.5 text-xs font-medium shrink-0"
           >
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              role="radio"
-              aria-checked={viewMode === "points"}
-              tabIndex={viewMode === "points" ? 0 : -1}
-              onClick={() => setViewMode("points")}
-              className={cn(
-                "h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
-                viewMode === "points"
-                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-brand-700 dark:hover:bg-primary hover:text-white dark:hover:text-primary-foreground shadow-warm-sm font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent"
-              )}
+            <ToggleGroupItem
+              value="points"
+              size="sm"
+              className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground aria-pressed:hover:bg-brand-700 dark:aria-pressed:hover:bg-primary aria-pressed:hover:text-white dark:aria-pressed:hover:text-primary-foreground aria-pressed:shadow-warm-sm aria-pressed:font-semibold"
             >
               Points
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              role="radio"
-              aria-checked={viewMode === "diagnostic"}
-              tabIndex={viewMode === "diagnostic" ? 0 : -1}
-              onClick={() => setViewMode("diagnostic")}
-              className={cn(
-                "h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap",
-                viewMode === "diagnostic"
-                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground hover:bg-brand-700 dark:hover:bg-primary hover:text-white dark:hover:text-primary-foreground shadow-warm-sm font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent"
-              )}
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="diagnostic"
+              size="sm"
+              className="h-auto px-2.5 py-1.5 rounded-md sm:rounded-lg transition-all cursor-pointer min-h-[34px] sm:min-h-[28px] whitespace-nowrap text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-transparent dark:hover:bg-transparent aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground aria-pressed:hover:bg-brand-700 dark:aria-pressed:hover:bg-primary aria-pressed:hover:text-white dark:aria-pressed:hover:text-primary-foreground aria-pressed:shadow-warm-sm aria-pressed:font-semibold"
             >
               Diagnostic
-            </Button>
-          </div>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
@@ -595,10 +576,13 @@ function SectionGrid({
 
         <div className="flex items-center gap-2">
           {pendingDraftReleaseCount > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-band-2/15 border border-band-2/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-2-text">
+            <Badge
+              variant="outline"
+              className="h-auto gap-1.5 rounded-full bg-band-2/15 border-band-2/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-2-text"
+            >
               <span className="size-1.5 rounded-full bg-band-2" aria-hidden="true" />
               <span>{pendingDraftReleaseCount} draft {pendingDraftReleaseCount === 1 ? "grade" : "grades"} pending release</span>
-            </span>
+            </Badge>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-band-4/15 border border-band-4/30 px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-medium text-band-4-text">
               <span className="size-1.5 rounded-full bg-band-4" aria-hidden="true" />

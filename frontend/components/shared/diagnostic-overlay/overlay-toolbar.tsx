@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -429,24 +430,24 @@ export const OverlayToolbar = memo(function OverlayToolbar({
           ) : (
             <div className="relative min-w-0 flex-1 flex items-center">
               {canScrollLeft && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon-xs"
                   onClick={() => {
                     filterScrollRef.current?.scrollBy({ left: -80, behavior: "smooth" });
                   }}
                   aria-label="Scroll to see earlier criteria filters"
-                  className="@min-[640px]:hidden absolute left-0 z-10 flex size-8 min-h-11 min-w-11 items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                  className="@min-[640px]:hidden absolute left-0 z-10 size-8 min-h-11 min-w-11 rounded-full bg-background/95 text-muted-foreground shadow-xs border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
                 >
-                  <ChevronLeft className="size-4" aria-hidden="true" />
-                </button>
+                  <ChevronLeft aria-hidden="true" />
+                </Button>
               )}
 
               <div
                 ref={filterScrollRef}
-                role="group"
-                aria-label="Worksheet diagnostic criteria filters"
                 className={cn(
-                  "flex items-center gap-1 overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 @min-[640px]:flex-wrap @min-[640px]:overflow-visible transition-[mask-image]",
+                  "flex items-center overflow-x-auto no-scrollbar scroll-smooth py-0.5 min-w-0 flex-1 @min-[640px]:overflow-visible transition-[mask-image]",
                   canScrollLeft && canScrollRight
                     ? "[mask-image:linear-gradient(to_right,transparent,black_14px,black_calc(100%-14px),transparent)] @min-[640px]:[mask-image:none]"
                     : canScrollRight
@@ -456,72 +457,85 @@ export const OverlayToolbar = memo(function OverlayToolbar({
                         : "@min-[640px]:[mask-image:none]"
                 )}
               >
-                {FILTERS.map((item) => {
-                  const Icon = item.icon;
-                  const isSelected = activeCriterion === item.id;
-                  const count = attentionCounts[item.id] ?? 0;
-                  const isWeakest = weakest === item.id;
+                <ToggleGroup
+                  value={[activeCriterion]}
+                  multiple={false}
+                  spacing={1}
+                  disabled={!visible}
+                  onValueChange={(vals) => {
+                    if (vals.length > 0) {
+                      onChangeCriterion(vals[0] as CriterionFilter);
+                    }
+                  }}
+                  aria-label="Worksheet diagnostic criteria filters"
+                  className="flex items-center gap-1 @min-[640px]:flex-wrap"
+                >
+                  {FILTERS.map((item) => {
+                    const Icon = item.icon;
+                    const isSelected = activeCriterion === item.id;
+                    const count = attentionCounts[item.id] ?? 0;
+                    const isWeakest = weakest === item.id;
 
-                  return (
-                    <Button
-                      key={item.id}
-                      type="button"
-                      variant={isSelected ? "default" : "ghost"}
-                      size="sm"
-                      disabled={!visible}
-                      onClick={() => onChangeCriterion(item.id)}
-                      aria-pressed={isSelected}
-                      className={cn(
-                        "shrink-0 h-11 @min-[540px]:h-8 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-colors cursor-pointer touch-manipulation",
-                        isSelected
-                          ? "bg-primary hover:bg-primary-hover text-primary-foreground shadow-2xs font-semibold"
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                        !visible && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <Icon className="size-3 shrink-0" aria-hidden="true" />
-                      <span className="hidden @min-[400px]:inline">{item.label}</span>
-                      <span className="inline @min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
-                      {isWeakest && !isSelected && count > 0 && (
-                        <span
-                          role="img"
-                          className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
-                          title="Recommended focus area"
-                          aria-label="Recommended focus area"
-                        >
-                          <span className="sr-only">Recommended focus area</span>
-                        </span>
-                      )}
-                      {count > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
-                            isSelected
-                              ? "bg-primary-foreground/20 text-primary-foreground"
-                              : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
-                          )}
-                        >
-                          <span className="sr-only">({count} attention items)</span>
-                          <span aria-hidden="true">{count}</span>
-                        </Badge>
-                      )}
-                    </Button>
-                  );
-                })}
+                    return (
+                      <ToggleGroupItem
+                        key={item.id}
+                        value={item.id}
+                        size="sm"
+                        disabled={!visible}
+                        className={cn(
+                          "shrink-0 h-11 @min-[540px]:h-8 min-h-11 @min-[540px]:min-h-0 px-2.5 @min-[540px]:px-2 text-xs @min-[540px]:text-[11px] font-medium rounded-lg gap-1.5 transition-colors cursor-pointer touch-manipulation",
+                          isSelected
+                            ? "bg-primary hover:bg-primary-hover text-primary-foreground aria-pressed:bg-primary aria-pressed:text-primary-foreground shadow-2xs font-semibold"
+                            : "hover:bg-muted text-muted-foreground hover:text-foreground",
+                          !visible && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <Icon className="size-3 shrink-0" aria-hidden="true" />
+                        <span className="hidden @min-[400px]:inline">{item.label}</span>
+                        <span className="inline @min-[400px]:hidden">{item.shortLabel ?? item.label}</span>
+                        {isWeakest && !isSelected && count > 0 && (
+                          <span
+                            role="img"
+                            className="size-1.5 rounded-full bg-band-1 animate-pulse motion-reduce:animate-none shrink-0"
+                            title="Recommended focus area"
+                            aria-label="Recommended focus area"
+                          >
+                            <span className="sr-only">Recommended focus area</span>
+                          </span>
+                        )}
+                        {count > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "px-1.5 py-0 h-4 text-[10px] font-bold rounded-full",
+                              isSelected
+                                ? "bg-primary-foreground/20 text-primary-foreground"
+                                : "bg-band-1/15 text-band-1-text dark:bg-band-1/25 border border-band-1/30"
+                            )}
+                          >
+                            <span className="sr-only">({count} attention items)</span>
+                            <span aria-hidden="true">{count}</span>
+                          </Badge>
+                        )}
+                      </ToggleGroupItem>
+                    );
+                  })}
+                </ToggleGroup>
               </div>
 
               {canScrollRight && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="icon-xs"
                   onClick={() => {
                     filterScrollRef.current?.scrollBy({ left: 80, behavior: "smooth" });
                   }}
                   aria-label="Scroll to see more criteria filters"
-                  className="@min-[640px]:hidden absolute right-0 z-10 flex size-8 min-h-11 min-w-11 items-center justify-center rounded-full bg-background/95 text-muted-foreground shadow-xs border border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
+                  className="@min-[640px]:hidden absolute right-0 z-10 size-8 min-h-11 min-w-11 rounded-full bg-background/95 text-muted-foreground shadow-xs border-border/70 hover:text-foreground active:scale-95 transition-transform cursor-pointer touch-manipulation after:absolute after:-inset-1 after:content-['']"
                 >
-                  <ChevronRight className="size-4" aria-hidden="true" />
-                </button>
+                  <ChevronRight aria-hidden="true" />
+                </Button>
               )}
             </div>
           )}

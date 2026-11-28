@@ -21,9 +21,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   SlidersHorizontal,
   CheckSquare,
@@ -265,164 +267,158 @@ export const ActivityReviewToolbar = memo(function ActivityReviewToolbar({
 
             <div
               ref={scrollRef}
-              role="group"
-              aria-label="Student work inbox filters"
               style={maskStyle}
               className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth max-w-full touch-pan-x overscroll-x-contain py-0.5"
             >
-              <Button
-                type="button"
-                variant={statusFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  if (viewMode !== "grouped") onViewModeChange("grouped");
-                  onStatusFilterChange("all");
-                }}
-                aria-pressed={statusFilter === "all"}
-                className={cn(
-                  PILL_BASE_CLASS,
-                  statusFilter === "all" ? PILL_ACTIVE_CLASS : PILL_INACTIVE_CLASS
-                )}
-              >
-                <span>All Students</span>
-                {allWorkFilter?.count != null && (
-                  <span
-                    className={cn(
-                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
-                      statusFilter === "all"
-                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    )}
-                  >
-                    {allWorkFilter.count}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                type="button"
-                variant={statusFilter === "needs_scoring" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  if (viewMode !== "grouped") onViewModeChange("grouped");
-                  onStatusFilterChange("needs_scoring");
-                }}
-                aria-pressed={statusFilter === "needs_scoring"}
-                className={cn(
-                  PILL_BASE_CLASS,
-                  statusFilter === "needs_scoring"
-                    ? PILL_ACTIVE_CLASS
-                    : PILL_INACTIVE_CLASS
-                )}
-              >
-                <span>To Grade</span>
-                {needsScoringCount > 0 && (
-                  <span
-                    className={cn(
-                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
-                      statusFilter === "needs_scoring"
-                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
-                        : "bg-primary/10 text-primary font-bold"
-                    )}
-                  >
-                    {needsScoringCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                type="button"
-                variant={statusFilter === "missing" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  if (viewMode !== "grouped") onViewModeChange("grouped");
-                  onStatusFilterChange("missing");
-                }}
-                aria-pressed={statusFilter === "missing"}
-                className={cn(
-                  PILL_BASE_CLASS,
-                  statusFilter === "missing"
-                    ? PILL_ACTIVE_CLASS
-                    : PILL_INACTIVE_CLASS
-                )}
-              >
-                <span>Missing</span>
-                {missingCount > 0 && (
-                  <span
-                    className={cn(
-                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
-                      statusFilter === "missing"
-                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    )}
-                  >
-                    {missingCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                type="button"
-                variant={statusFilter === "released" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  if (viewMode !== "grouped") onViewModeChange("grouped");
-                  onStatusFilterChange("released");
-                }}
-                aria-pressed={statusFilter === "released"}
-                className={cn(
-                  PILL_BASE_CLASS,
-                  statusFilter === "released"
-                    ? PILL_ACTIVE_CLASS
-                    : PILL_INACTIVE_CLASS
-                )}
-              >
-                <span>Done &amp; Released</span>
-                {releasedCount > 0 && (
-                  <span
-                    className={cn(
-                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
-                      statusFilter === "released"
-                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
-                        : "bg-muted text-foreground"
-                    )}
-                  >
-                    {releasedCount}
-                  </span>
-                )}
-              </Button>
-
-              {unreadCommentsCount > 0 && (
-                <Button
-                  type="button"
-                  variant={statusFilter === "unread_comments" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
+              <ToggleGroup
+                value={[statusFilter]}
+                multiple={false}
+                spacing={1.5}
+                onValueChange={(vals) => {
+                  if (vals.length > 0) {
                     if (viewMode !== "grouped") onViewModeChange("grouped");
-                    onStatusFilterChange("unread_comments");
-                  }}
-                  aria-pressed={statusFilter === "unread_comments"}
+                    onStatusFilterChange(vals[0] as SubmissionFilter);
+                  }
+                }}
+                aria-label="Student work inbox filters"
+                className="flex items-center gap-1.5"
+              >
+                <ToggleGroupItem
+                  value="all"
+                  variant="outline"
+                  size="sm"
                   className={cn(
                     PILL_BASE_CLASS,
-                    statusFilter === "unread_comments"
-                      ? PILL_ACTIVE_CLASS
-                      : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 hover:text-primary dark:bg-primary/5 dark:hover:bg-primary/10"
+                    statusFilter === "all"
+                      ? cn(PILL_ACTIVE_CLASS, "aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground")
+                      : PILL_INACTIVE_CLASS
                   )}
                 >
-                  <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
-                  <span>Unread Comments</span>
-                  <span
+                  <span>All Students</span>
+                  {allWorkFilter?.count != null && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                        statusFilter === "all"
+                          ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      )}
+                    >
+                      {allWorkFilter.count}
+                    </Badge>
+                  )}
+                </ToggleGroupItem>
+
+                <ToggleGroupItem
+                  value="needs_scoring"
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    PILL_BASE_CLASS,
+                    statusFilter === "needs_scoring"
+                      ? cn(PILL_ACTIVE_CLASS, "aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground")
+                      : PILL_INACTIVE_CLASS
+                  )}
+                >
+                  <span>To Grade</span>
+                  {needsScoringCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                        statusFilter === "needs_scoring"
+                          ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                          : "bg-primary/10 text-primary font-bold"
+                      )}
+                    >
+                      {needsScoringCount}
+                    </Badge>
+                  )}
+                </ToggleGroupItem>
+
+                <ToggleGroupItem
+                  value="missing"
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    PILL_BASE_CLASS,
+                    statusFilter === "missing"
+                      ? cn(PILL_ACTIVE_CLASS, "aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground")
+                      : PILL_INACTIVE_CLASS
+                  )}
+                >
+                  <span>Missing</span>
+                  {missingCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                        statusFilter === "missing"
+                          ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      )}
+                    >
+                      {missingCount}
+                    </Badge>
+                  )}
+                </ToggleGroupItem>
+
+                <ToggleGroupItem
+                  value="released"
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    PILL_BASE_CLASS,
+                    statusFilter === "released"
+                      ? cn(PILL_ACTIVE_CLASS, "aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground")
+                      : PILL_INACTIVE_CLASS
+                  )}
+                >
+                  <span>Done &amp; Released</span>
+                  {releasedCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                        statusFilter === "released"
+                          ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                          : "bg-muted text-foreground"
+                      )}
+                    >
+                      {releasedCount}
+                    </Badge>
+                  )}
+                </ToggleGroupItem>
+
+                {unreadCommentsCount > 0 && (
+                  <ToggleGroupItem
+                    value="unread_comments"
+                    variant="outline"
+                    size="sm"
                     className={cn(
-                      "text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                      PILL_BASE_CLASS,
                       statusFilter === "unread_comments"
-                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
-                        : "bg-primary/15 text-primary"
+                        ? cn(PILL_ACTIVE_CLASS, "aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground")
+                        : "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 hover:text-primary dark:bg-primary/5 dark:hover:bg-primary/10"
                     )}
                   >
-                    {unreadCommentsCount}
-                  </span>
-                </Button>
-              )}
+                    <MessageSquare className="size-3.5 shrink-0" aria-hidden="true" />
+                    <span>Unread Comments</span>
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full transition-colors tabular-nums",
+                        statusFilter === "unread_comments"
+                          ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                          : "bg-primary/15 text-primary"
+                      )}
+                    >
+                      {unreadCommentsCount}
+                    </Badge>
+                  </ToggleGroupItem>
+                )}
+              </ToggleGroup>
 
               <div className="inline-flex items-center shrink-0">
                 <DropdownMenu>

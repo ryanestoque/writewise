@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FieldLegend, FieldSet } from "@/components/ui/field";
 import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,21 +18,18 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   type ScoreBand,
   type ManualScore,
   type Submission,
-  useSubmitManualScore,
-} from "@/lib/hooks/use-submissions";
+  useSubmitManualScore } from "@/lib/hooks/use-submissions";
 import {
   Keyboard,
   Layers,
@@ -41,10 +41,8 @@ import {
   ChevronRight,
   Check,
   HelpCircle,
-  Loader2,
   CheckCheck,
-  Send,
-} from "lucide-react";
+  Send } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/utils/api-error";
 import { CV_BENCHMARK_RANGES, getBandFromScore } from "@/lib/utils/scoring";
@@ -81,39 +79,32 @@ export const CRITERIA_GUIDE: Record<
     rubricGoal:
       "Check loop closures on tall/descending stems (b, d, g, l) and smooth cursive connections.",
     coachingTip:
-      "Encourage continuous strokes without lifting the pencil inside letter loops.",
-  },
+      "Encourage continuous strokes without lifting the pencil inside letter loops." },
   "Size Consistency": {
     rubricGoal:
       "Check that short letters reach the dotted midline and tall letters touch the headline.",
     coachingTip:
-      "Remind student that lowercase bodies (a, c, e, o) should stay below the dotted midline.",
-  },
+      "Remind student that lowercase bodies (a, c, e, o) should stay below the dotted midline." },
   Spacing: {
     rubricGoal:
       "Check even gaps between letters and about one letter width between words.",
     coachingTip:
-      "Aim for a one-finger space between words to prevent crowding.",
-  },
+      "Aim for a one-finger space between words to prevent crowding." },
   "Slant Angle": {
     rubricGoal:
       "Check typical forward stem lean and consistency within and between words.",
     coachingTip:
-      "Angling the paper slightly on the desk helps maintain a steady forward lean.",
-  },
+      "Angling the paper slightly on the desk helps maintain a steady forward lean." },
   Slant: {
     rubricGoal:
       "Check typical forward stem lean and consistency within and between words.",
     coachingTip:
-      "Angling the paper slightly on the desk helps maintain a steady forward lean.",
-  },
+      "Angling the paper slightly on the desk helps maintain a steady forward lean." },
   "Baseline Alignment": {
     rubricGoal:
       "Check that letters rest evenly along the solid bottom guideline.",
     coachingTip:
-      "Watch for words that float above or sag below the baseline ruling.",
-  },
-};
+      "Watch for words that float above or sag below the baseline ruling." } };
 
 export const RUBRIC_BANDS: Array<{
   band: ScoreBand;
@@ -137,8 +128,7 @@ export const RUBRIC_BANDS: Array<{
         "bg-band-1/15 dark:bg-band-1/30 text-band-1-text border-band-1 ring-2 ring-band-1/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-1/15 text-band-1-text border-band-1/40",
-      dotColor: "bg-band-1",
-    },
+      dotColor: "bg-band-1" },
     {
       band: "developing",
       label: "Developing",
@@ -150,8 +140,7 @@ export const RUBRIC_BANDS: Array<{
         "bg-band-2/15 dark:bg-band-2/30 text-band-2-text border-band-2 ring-2 ring-band-2/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-2/15 text-band-2-text border-band-2/40",
-      dotColor: "bg-band-2",
-    },
+      dotColor: "bg-band-2" },
     {
       band: "satisfactory",
       label: "Satisfactory",
@@ -163,8 +152,7 @@ export const RUBRIC_BANDS: Array<{
         "bg-band-3/15 dark:bg-band-3/30 text-band-3-text border-band-3 ring-2 ring-band-3/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-3/15 text-band-3-text border-band-3/40",
-      dotColor: "bg-band-3",
-    },
+      dotColor: "bg-band-3" },
     {
       band: "excellent",
       label: "Excellent",
@@ -176,23 +164,20 @@ export const RUBRIC_BANDS: Array<{
         "bg-band-4/15 dark:bg-band-4/30 text-band-4-text border-band-4 ring-2 ring-band-4/40 shadow-xs font-semibold",
       badgeClass:
         "bg-band-4/15 text-band-4-text border-band-4/40",
-      dotColor: "bg-band-4",
-    },
+      dotColor: "bg-band-4" },
   ];
 
 export const BAND_NUMERIC_SCORES: Record<ScoreBand, number> = {
   needs_improvement: 12.5,
   developing: 37.5,
   satisfactory: 62.5,
-  excellent: 87.5,
-};
+  excellent: 87.5 };
 
 export const BAND_POINTS: Record<ScoreBand, number> = {
   needs_improvement: 1,
   developing: 2,
   satisfactory: 3,
-  excellent: 4,
-};
+  excellent: 4 };
 
 export type SpacingSelection = ScoreBand | "not_applicable" | null;
 
@@ -239,8 +224,7 @@ export function calculateCompositeRubric(
     isSpacingNA,
     avgPercentage,
     overallBandMeta,
-    isComplete,
-  };
+    isComplete };
 }
 
 export const RUBRIC_CRITERIA: Array<{
@@ -260,36 +244,31 @@ export const RUBRIC_CRITERIA: Array<{
       name: "Letter Formation",
       shortName: "Letter Formation",
       stepLabel: "Formation",
-      hint: "Proper cursive loops and complete stroke closures",
-    },
+      hint: "Proper cursive loops and complete stroke closures" },
     {
       key: "size_consistency_band",
       name: "Size Consistency",
       shortName: "Size Consistency",
       stepLabel: "Size",
-      hint: "Proportion and height across 3-line penmanship ruling",
-    },
+      hint: "Proportion and height across 3-line penmanship ruling" },
     {
       key: "spacing_band",
       name: "Spacing",
       shortName: "Spacing",
       stepLabel: "Spacing",
-      hint: "Inter-word rhythm and character separation spacing",
-    },
+      hint: "Inter-word rhythm and character separation spacing" },
     {
       key: "slant_band",
       name: "Slant Angle",
       shortName: "Slant Angle",
       stepLabel: "Slant",
-      hint: "Typical stem lean and consistency within and between words",
-    },
+      hint: "Typical stem lean and consistency within and between words" },
     {
       key: "baseline_alignment_band",
       name: "Baseline Alignment",
       shortName: "Baseline Alignment",
       stepLabel: "Baseline",
-      hint: "Letters resting stably along bottom ruling baseline",
-    },
+      hint: "Letters resting stably along bottom ruling baseline" },
   ];
 
 export function getBandMeta(band?: ScoreBand | "not_applicable" | string | null) {
@@ -304,8 +283,7 @@ export function getBandMeta(band?: ScoreBand | "not_applicable" | string | null)
       activeClass:
         "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold",
       badgeClass: "bg-muted/60 text-muted-foreground border-border",
-      dotColor: "bg-muted-foreground",
-    };
+      dotColor: "bg-muted-foreground" };
   }
   return (
     RUBRIC_BANDS.find((b) => b.band === band) ?? {
@@ -317,8 +295,7 @@ export function getBandMeta(band?: ScoreBand | "not_applicable" | string | null)
       points: 0,
       activeClass: "",
       badgeClass: "bg-muted/60 text-muted-foreground border-border",
-      dotColor: "bg-muted-foreground",
-    }
+      dotColor: "bg-muted-foreground" }
   );
 }
 
@@ -348,8 +325,7 @@ export function extractCriterionCVMetric(
       ? "bg-band-4/15 border-band-4/40 text-band-4-text dark:bg-band-4/25 dark:border-band-4/50"
       : isBorderline
         ? "bg-band-2/15 border-band-2/40 text-band-2-text dark:bg-band-2/25 dark:border-band-2/50"
-        : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:border-band-1/50",
-  });
+        : "bg-band-1/15 border-band-1/40 text-band-1-text dark:bg-band-1/25 dark:border-band-1/50" });
 
   switch (criterionKey) {
     case "letter_formation_band": {
@@ -362,8 +338,7 @@ export function extractCriterionCVMetric(
           value: `${Math.round(val)}%`,
           target: `Target: ${label}`,
           status: isOptimal ? "Optimal" : isBorderline ? "Developing" : "Needs Focus",
-          ...buildMetricStyle(isOptimal, isBorderline),
-        };
+          ...buildMetricStyle(isOptimal, isBorderline) };
       }
       return null;
     }
@@ -382,8 +357,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(2)}x`,
           target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
-          ...buildMetricStyle(isOptimal, isBorderline),
-        };
+          ...buildMetricStyle(isOptimal, isBorderline) };
       }
       return null;
     }
@@ -402,8 +376,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(2)}x`,
           target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
-          ...buildMetricStyle(isOptimal, isBorderline),
-        };
+          ...buildMetricStyle(isOptimal, isBorderline) };
       }
       return null;
     }
@@ -422,8 +395,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(1)}°`,
           target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "Deviating",
-          ...buildMetricStyle(isOptimal, isBorderline),
-        };
+          ...buildMetricStyle(isOptimal, isBorderline) };
       }
       return null;
     }
@@ -440,8 +412,7 @@ export function extractCriterionCVMetric(
           value: `${val.toFixed(3)}`,
           target: `Target: ${shortLabel}`,
           status: isOptimal ? "Within Target" : isBorderline ? "Borderline" : "High Drift",
-          ...buildMetricStyle(isOptimal, isBorderline),
-        };
+          ...buildMetricStyle(isOptimal, isBorderline) };
       }
       return null;
     }
@@ -489,8 +460,7 @@ export function ManualRubricEntryForm({
   onAdvanceNext,
   onNavigateBack,
   canRelease,
-  onSaveAndRelease,
-}: ManualRubricEntryFormProps) {
+  onSaveAndRelease }: ManualRubricEntryFormProps) {
   const { mutate: submitManualScore, isPending: isSubmittingScore } =
     useSubmitManualScore();
 
@@ -514,8 +484,7 @@ export function ManualRubricEntryForm({
     size_consistency_band: initialScores?.size_consistency_band ?? null,
     spacing_band: initialSpacingSelection,
     slant_band: initialScores?.slant_band ?? null,
-    baseline_alignment_band: initialScores?.baseline_alignment_band ?? null,
-  });
+    baseline_alignment_band: initialScores?.baseline_alignment_band ?? null });
 
   const [activeCriterionIndex, setActiveCriterionIndex] = useState<number>(0);
   const [layoutMode, setLayoutModeState] = useState<"stepper" | "list">(() =>
@@ -612,9 +581,7 @@ export function ManualRubricEntryForm({
           size_consistency_band: rubricScores.size_consistency_band!,
           spacing_band: spacingPayload,
           slant_band: rubricScores.slant_band!,
-          baseline_alignment_band: rubricScores.baseline_alignment_band!,
-        },
-      },
+          baseline_alignment_band: rubricScores.baseline_alignment_band! } },
       {
         onSuccess: () => {
           onSuccess?.();
@@ -625,11 +592,9 @@ export function ManualRubricEntryForm({
                   label: "Undo",
                   onClick: () => {
                     onNavigateBack();
-                  },
-                }
+                  } }
                 : undefined,
-              duration: 6000,
-            });
+              duration: 6000 });
             onAdvanceNext();
           } else {
             toast.success("Rubric assessment recorded");
@@ -649,8 +614,7 @@ export function ManualRubricEntryForm({
           } else {
             setSubmitErrorMsg("Failed to submit manual rubric score. Please try again.");
           }
-        },
-      }
+        } }
     );
   }, [
     allBandsSelected,
@@ -681,8 +645,7 @@ export function ManualRubricEntryForm({
         size_consistency_band: rubricScores.size_consistency_band!,
         spacing_band: spacingPayload,
         slant_band: rubricScores.slant_band!,
-        baseline_alignment_band: rubricScores.baseline_alignment_band!,
-      });
+        baseline_alignment_band: rubricScores.baseline_alignment_band! });
       onSuccess?.();
     } catch (err: unknown) {
       if (err instanceof ApiError) {
@@ -727,8 +690,7 @@ export function ManualRubricEntryForm({
       size_consistency_band: band,
       spacing_band: preserveSpacingNA ? "not_applicable" : band,
       slant_band: band,
-      baseline_alignment_band: band,
-    });
+      baseline_alignment_band: band });
     setSubmitErrorMsg(null);
     const bandMeta = getBandMeta(band);
     setAccessibilityAnnouncement(
@@ -746,10 +708,8 @@ export function ManualRubricEntryForm({
           onClick: () => {
             setRubricScores(previousScores);
             setAccessibilityAnnouncement("Previous rubric ratings restored.");
-          },
-        },
-        duration: 6000,
-      }
+          } },
+        duration: 6000 }
     );
   }, [isSingleWordMeasurement]);
 
@@ -820,8 +780,7 @@ export function ManualRubricEntryForm({
           e.preventDefault();
           setRubricScores((prev) => ({
             ...prev,
-            spacing_band: "not_applicable",
-          }));
+            spacing_band: "not_applicable" }));
           setSubmitErrorMsg(null);
           const currentIndex = activeCriterionIndexRef.current;
           const nextIndex = Math.min(currentIndex + 1, RUBRIC_CRITERIA.length - 1);
@@ -846,8 +805,7 @@ export function ManualRubricEntryForm({
         // Update score & auto-clear stale submit error
         setRubricScores((prev) => ({
           ...prev,
-          [currentCriterion.key]: targetOption.band,
-        }));
+          [currentCriterion.key]: targetOption.band }));
         setSubmitErrorMsg(null);
 
         // Auto-advance to the next criterion without wrapping around from 5 -> 1
@@ -872,7 +830,7 @@ export function ManualRubricEntryForm({
               `button[data-criterion="${RUBRIC_CRITERIA[nextIndex].key}"][data-band="${targetOption.band}"]`
             ) ??
             formRef.current?.querySelector<HTMLButtonElement>(
-              `fieldset[aria-labelledby="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[role="radio"][tabindex="0"]`
+              `fieldset[aria-labelledby="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[aria-pressed="true"], fieldset[aria-labelledby="criterion-label-${RUBRIC_CRITERIA[nextIndex].key}"] button[data-criterion]`
             );
           nextBtn?.focus();
         }, 0);
@@ -913,8 +871,7 @@ export function ManualRubricEntryForm({
       if (criterionKey === "spacing_band" && targetOptionIdx === RUBRIC_BANDS.length) {
         setRubricScores((prev) => ({
           ...prev,
-          spacing_band: "not_applicable",
-        }));
+          spacing_band: "not_applicable" }));
         setSubmitErrorMsg(null);
         handleSelectCriterion(criterionIdx);
         setAccessibilityAnnouncement("Spacing marked not applicable.");
@@ -929,8 +886,7 @@ export function ManualRubricEntryForm({
       const targetBand = targetOption.band;
       setRubricScores((prev) => ({
         ...prev,
-        [criterionKey]: targetBand,
-      }));
+        [criterionKey]: targetBand }));
       setSubmitErrorMsg(null);
       handleSelectCriterion(criterionIdx);
       setAccessibilityAnnouncement(
@@ -1150,27 +1106,28 @@ export function ManualRubricEntryForm({
             const metric = extractCriterionCVMetric(currentCriterion.key, measurement);
 
             return (
-              <fieldset
-                role="radiogroup"
+              <FieldSet
                 aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
-                className="space-y-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
+                className="gap-2 space-y-2 p-3 sm:p-3.5 rounded-xl border bg-muted/20 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
               >
                 <div className="min-w-0">
-                  <legend
+                  <FieldLegend
+                    variant="label"
                     id={`stepper-criterion-label-${currentCriterion.key}`}
-                    className="text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
+                    className="mb-0 text-xs font-semibold text-foreground flex items-center gap-1.5 flex-wrap"
                   >
                     <span>{currentCriterion.name}</span>
                     {metric && (
-                      <span
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums ${metric.badgeClass}`}
+                      <Badge
+                        variant="outline"
+                        className={`h-auto gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium tabular-nums ${metric.badgeClass}`}
                         title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
                       >
                         <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
                         <span className="font-semibold">{metric.value}</span>
-                      </span>
+                      </Badge>
                     )}
-                  </legend>
+                  </FieldLegend>
                   <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                     {guide?.rubricGoal ?? currentCriterion.hint}
                   </p>
@@ -1181,9 +1138,37 @@ export function ManualRubricEntryForm({
                   )}
                 </div>
 
-                {/* Segmented Radio Buttons with Responsive Grid */}
-                <div
-                  className={`grid grid-cols-2 gap-1.5 pt-0.5 ${
+                {/* Segmented Rating Buttons with Responsive Grid */}
+                <ToggleGroup
+                  value={selectedBand ? [selectedBand] : []}
+                  multiple={false}
+                  spacing={1.5}
+                  disabled={isSubmittingScore}
+                  onValueChange={(vals) => {
+                    if (vals.length === 0) return;
+                    const nextBand = vals[0] as ScoreBand | "not_applicable";
+                    setRubricScores((prev) => ({
+                      ...prev,
+                      [currentCriterion.key]: nextBand }));
+                    setSubmitErrorMsg(null);
+                    if (nextBand === "not_applicable") {
+                      setAccessibilityAnnouncement("Spacing marked not applicable.");
+                    } else {
+                      const opt = RUBRIC_BANDS.find((o) => o.band === nextBand);
+                      if (opt) {
+                        setAccessibilityAnnouncement(
+                          `${currentCriterion.shortName} rated ${opt.label} (${opt.score}).`
+                        );
+                      }
+                    }
+                    if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
+                      const nextIdx = activeCriterionIndex + 1;
+                      setActiveCriterionIndex(nextIdx);
+                      onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
+                    }
+                  }}
+                  aria-labelledby={`stepper-criterion-label-${currentCriterion.key}`}
+                  className={`grid w-full grid-cols-2 gap-1.5 pt-0.5 ${
                     currentCriterion.key === "spacing_band"
                       ? "@[480px]:grid-cols-5"
                       : "@[480px]:grid-cols-4"
@@ -1191,19 +1176,15 @@ export function ManualRubricEntryForm({
                 >
                   {RUBRIC_BANDS.map((option, optIdx) => {
                     const isChecked = selectedBand === option.band;
-                    const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
 
                     return (
-                      <button
+                      <ToggleGroupItem
                         key={option.band}
-                        type="button"
-                        role="radio"
+                        value={option.band}
+                        variant="outline"
                         data-criterion={currentCriterion.key}
                         data-band={option.band}
-                        tabIndex={isTabTarget ? 0 : -1}
-                        aria-checked={isChecked}
                         aria-label={`${currentCriterion.shortName}: ${option.label} (${option.score})`}
-                        disabled={isSubmittingScore}
                         onKeyDown={(e) =>
                           handleCriterionKeyDown(
                             e,
@@ -1212,22 +1193,7 @@ export function ManualRubricEntryForm({
                             optIdx
                           )
                         }
-                        onClick={() => {
-                          setRubricScores((prev) => ({
-                            ...prev,
-                            [currentCriterion.key]: option.band,
-                          }));
-                          setSubmitErrorMsg(null);
-                          setAccessibilityAnnouncement(
-                            `${currentCriterion.shortName} rated ${option.label} (${option.score}).`
-                          );
-                          if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
-                            const nextIdx = activeCriterionIndex + 1;
-                            setActiveCriterionIndex(nextIdx);
-                            onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
-                          }
-                        }}
-                        className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                        className={`h-auto flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation ${isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                           }`}
@@ -1238,19 +1204,16 @@ export function ManualRubricEntryForm({
                         <span className="text-xs leading-tight font-semibold truncate">
                           {option.shortLabel}
                         </span>
-                      </button>
+                      </ToggleGroupItem>
                     );
                   })}
                   {currentCriterion.key === "spacing_band" && (
-                    <button
-                      type="button"
-                      role="radio"
+                    <ToggleGroupItem
+                      value="not_applicable"
+                      variant="outline"
                       data-criterion="spacing_band"
                       data-band="not_applicable"
-                      tabIndex={selectedBand === "not_applicable" ? 0 : -1}
-                      aria-checked={selectedBand === "not_applicable"}
                       aria-label="Spacing: Not applicable (single-word sample)"
-                      disabled={isSubmittingScore}
                       onKeyDown={(e) =>
                         handleCriterionKeyDown(
                           e,
@@ -1259,20 +1222,7 @@ export function ManualRubricEntryForm({
                           RUBRIC_BANDS.length
                         )
                       }
-                      onClick={() => {
-                        setRubricScores((prev) => ({
-                          ...prev,
-                          spacing_band: "not_applicable",
-                        }));
-                        setSubmitErrorMsg(null);
-                        setAccessibilityAnnouncement("Spacing marked not applicable.");
-                        if (activeCriterionIndex < RUBRIC_CRITERIA.length - 1) {
-                          const nextIdx = activeCriterionIndex + 1;
-                          setActiveCriterionIndex(nextIdx);
-                          onFocusCriterion?.(RUBRIC_CRITERIA[nextIdx].shortName);
-                        }
-                      }}
-                      className={`col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${selectedBand === "not_applicable"
+                      className={`h-auto col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-[38px] touch-manipulation ${selectedBand === "not_applicable"
                           ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
@@ -1283,9 +1233,9 @@ export function ManualRubricEntryForm({
                       <span className="text-xs leading-tight font-semibold truncate">
                         N/A
                       </span>
-                    </button>
+                    </ToggleGroupItem>
                   )}
-                </div>
+                </ToggleGroup>
 
                 {/* Stepper Navigation: Previous / Next Criterion */}
                 <div className="flex items-center justify-between pt-1 border-t border-border/50">
@@ -1329,7 +1279,7 @@ export function ManualRubricEntryForm({
                     <ChevronRight className="size-3.5" aria-hidden="true" />
                   </Button>
                 </div>
-              </fieldset>
+              </FieldSet>
             );
           })()}
         </div>
@@ -1348,11 +1298,10 @@ export function ManualRubricEntryForm({
             const metric = extractCriterionCVMetric(criterion.key, measurement);
 
             return (
-              <fieldset
+              <FieldSet
                 key={criterion.key}
-                role="radiogroup"
                 aria-labelledby={`criterion-label-${criterion.key}`}
-                className={`space-y-1.5 p-2.5 rounded-xl border transition-colors ${isFocused
+                className={`gap-1.5 space-y-1.5 p-2.5 rounded-xl border transition-colors ${isFocused
                     ? "bg-muted/30 border-brand-300/80 dark:border-brand-800/80 ring-1 ring-brand-400/30 shadow-xs"
                     : "bg-muted/15 border-border/60 hover:border-border"
                   }`}
@@ -1364,21 +1313,23 @@ export function ManualRubricEntryForm({
                 }}
               >
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <legend
+                  <FieldLegend
+                    variant="label"
                     id={`criterion-label-${criterion.key}`}
-                    className="text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
+                    className="mb-0 text-xs font-semibold text-foreground flex items-center gap-1.5 cursor-pointer flex-wrap"
                   >
                     <span>{idx + 1}. {criterion.name}</span>
                     {metric && (
-                      <span
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium border tabular-nums ${metric.badgeClass}`}
+                      <Badge
+                        variant="outline"
+                        className={`h-auto gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-sans font-medium tabular-nums ${metric.badgeClass}`}
                         title={`CV Measurement: ${metric.value} (${metric.target}) - ${metric.status}`}
                       >
                         <span className={`size-1.5 rounded-full ${metric.dotClass}`} aria-hidden="true" />
                         <span className="font-semibold">{metric.value}</span>
-                      </span>
+                      </Badge>
                     )}
-                  </legend>
+                  </FieldLegend>
                   {criterion.key === "spacing_band" && isSingleWordMeasurement && (
                     <span className="text-[11px] text-brand-700 dark:text-brand-300 font-medium">
                       No inter-word gaps detected — N/A recommended
@@ -1386,9 +1337,33 @@ export function ManualRubricEntryForm({
                   )}
                 </div>
 
-                {/* Segmented Radio Buttons with WAI-ARIA Roving Tabindex & Mobile Touch Sizing */}
-                <div
-                  className={`grid grid-cols-2 gap-1.5 ${
+                {/* Segmented Rating Buttons with Responsive Grid */}
+                <ToggleGroup
+                  value={selectedBand ? [selectedBand] : []}
+                  multiple={false}
+                  spacing={1.5}
+                  disabled={isSubmittingScore}
+                  onValueChange={(vals) => {
+                    if (vals.length === 0) return;
+                    const nextBand = vals[0] as ScoreBand | "not_applicable";
+                    handleSelectCriterion(idx);
+                    setRubricScores((prev) => ({
+                      ...prev,
+                      [criterion.key]: nextBand }));
+                    setSubmitErrorMsg(null);
+                    if (nextBand === "not_applicable") {
+                      setAccessibilityAnnouncement("Spacing marked not applicable.");
+                    } else {
+                      const opt = RUBRIC_BANDS.find((o) => o.band === nextBand);
+                      if (opt) {
+                        setAccessibilityAnnouncement(
+                          `${criterion.shortName} rated ${opt.label} (${opt.score}).`
+                        );
+                      }
+                    }
+                  }}
+                  aria-labelledby={`criterion-label-${criterion.key}`}
+                  className={`grid w-full grid-cols-2 gap-1.5 ${
                     criterion.key === "spacing_band"
                       ? "@[480px]:grid-cols-5"
                       : "@[480px]:grid-cols-4"
@@ -1396,19 +1371,15 @@ export function ManualRubricEntryForm({
                 >
                   {RUBRIC_BANDS.map((option, optIdx) => {
                     const isChecked = selectedBand === option.band;
-                    const isTabTarget = isChecked || (!selectedBand && optIdx === 0);
 
                     return (
-                      <button
+                      <ToggleGroupItem
                         key={option.band}
-                        type="button"
-                        role="radio"
+                        value={option.band}
+                        variant="outline"
                         data-criterion={criterion.key}
                         data-band={option.band}
-                        tabIndex={isTabTarget ? 0 : -1}
-                        aria-checked={isChecked}
                         aria-label={`${criterion.shortName}: ${option.label} (${option.score})`}
-                        disabled={isSubmittingScore}
                         onKeyDown={(e) =>
                           handleCriterionKeyDown(
                             e,
@@ -1417,19 +1388,8 @@ export function ManualRubricEntryForm({
                             optIdx
                           )
                         }
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectCriterion(idx);
-                          setRubricScores((prev) => ({
-                            ...prev,
-                            [criterion.key]: option.band,
-                          }));
-                          setSubmitErrorMsg(null);
-                          setAccessibilityAnnouncement(
-                            `${criterion.shortName} rated ${option.label} (${option.score}).`
-                          );
-                        }}
-                        className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${isChecked
+                        onClick={(e) => e.stopPropagation()}
+                        className={`h-auto flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation ${isChecked
                             ? option.activeClass
                             : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                           }`}
@@ -1440,19 +1400,16 @@ export function ManualRubricEntryForm({
                         <span className="text-[11px] leading-tight font-medium truncate">
                           {option.shortLabel}
                         </span>
-                      </button>
+                      </ToggleGroupItem>
                     );
                   })}
                   {criterion.key === "spacing_band" && (
-                    <button
-                      type="button"
-                      role="radio"
+                    <ToggleGroupItem
+                      value="not_applicable"
+                      variant="outline"
                       data-criterion="spacing_band"
                       data-band="not_applicable"
-                      tabIndex={selectedBand === "not_applicable" ? 0 : -1}
-                      aria-checked={selectedBand === "not_applicable"}
                       aria-label="Spacing: Not applicable (single-word sample)"
-                      disabled={isSubmittingScore}
                       onKeyDown={(e) =>
                         handleCriterionKeyDown(
                           e,
@@ -1461,17 +1418,8 @@ export function ManualRubricEntryForm({
                           RUBRIC_BANDS.length
                         )
                       }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectCriterion(idx);
-                        setRubricScores((prev) => ({
-                          ...prev,
-                          spacing_band: "not_applicable",
-                        }));
-                        setSubmitErrorMsg(null);
-                        setAccessibilityAnnouncement("Spacing marked not applicable.");
-                      }}
-                      className={`col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed ${selectedBand === "not_applicable"
+                      onClick={(e) => e.stopPropagation()}
+                      className={`h-auto col-span-2 @[480px]:col-span-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg border text-center transition-colors cursor-pointer min-h-11 @[480px]:min-h-9 touch-manipulation ${selectedBand === "not_applicable"
                           ? "bg-muted text-foreground border-border ring-2 ring-border/60 shadow-xs font-semibold"
                           : "bg-surface dark:bg-card border-border/70 text-foreground/80 hover:text-foreground hover:bg-muted/50 hover:border-border"
                         }`}
@@ -1482,10 +1430,10 @@ export function ManualRubricEntryForm({
                       <span className="text-[11px] leading-tight font-medium truncate">
                         N/A
                       </span>
-                    </button>
+                    </ToggleGroupItem>
                   )}
-                </div>
-              </fieldset>
+                </ToggleGroup>
+              </FieldSet>
             );
           })}
         </div>
@@ -1545,7 +1493,7 @@ export function ManualRubricEntryForm({
             >
               {isSavingAndReleasing ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                  <Spinner className="size-3.5" />
                   <span>Releasing...</span>
                 </>
               ) : (
@@ -1571,7 +1519,7 @@ export function ManualRubricEntryForm({
           >
             {isSubmittingScore ? (
               <>
-                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <Spinner className="size-3.5" />
                 <span>Saving...</span>
               </>
             ) : canGoNext && autoAdvance ? (

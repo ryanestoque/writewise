@@ -5,6 +5,7 @@ import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldGroup, FieldError, FieldContent } from "@/components/ui/field";
@@ -13,8 +14,7 @@ import {
   ComboboxInput,
   ComboboxContent,
   ComboboxList,
-  ComboboxItem,
-} from "@/components/ui/combobox";
+  ComboboxItem } from "@/components/ui/combobox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,11 +23,10 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useCreateStudent, useUpdateStudent, useStudents, Student } from "@/lib/hooks/use-students";
 import { useSections } from "@/lib/hooks/use-sections";
-import { Loader2, Plus, Check } from "lucide-react";
+import { Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 
 const studentSchema = z.object({
@@ -38,8 +37,7 @@ const studentSchema = z.object({
     .trim()
     .email("Invalid email address")
     .optional()
-    .or(z.literal("")),
-});
+    .or(z.literal("")) });
 
 type StudentFormValues = z.infer<typeof studentSchema>;
 
@@ -80,9 +78,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
     defaultValues: {
       full_name: "",
       section: defaultSection || "",
-      parent_email: "",
-    },
-  });
+      parent_email: "" } });
 
   const { isDirty } = form.formState;
 
@@ -107,14 +103,12 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
         form.reset({
           full_name: student.full_name,
           section: student.section,
-          parent_email: student.parent_email || "",
-        });
+          parent_email: student.parent_email || "" });
       } else {
         form.reset({
           full_name: "",
           section: defaultSection || "",
-          parent_email: "",
-        });
+          parent_email: "" });
       }
     }
   }, [open, student, defaultSection, form]);
@@ -136,8 +130,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       const payload = {
         full_name: trimmedName,
         section: trimmedSection,
-        parent_email: trimmedEmail,
-      };
+        parent_email: trimmedEmail };
 
       updateStudent(
         { id: student.id, data: payload },
@@ -155,15 +148,13 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
           },
           onError: (error: Error) => {
             toast.error(error.message || "Failed to update student.");
-          },
-        }
+          } }
       );
     } else {
       const payload = {
         full_name: trimmedName,
         section: trimmedSection,
-        parent_email: trimmedEmail || undefined,
-      };
+        parent_email: trimmedEmail || undefined };
 
       createStudent(payload, {
         onSuccess: (data: unknown) => {
@@ -180,8 +171,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
             form.reset({
               full_name: "",
               section: trimmedSection,
-              parent_email: "",
-            });
+              parent_email: "" });
             setTimeout(() => {
               form.setFocus("full_name");
             }, 50);
@@ -191,8 +181,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
         },
         onError: (error: Error) => {
           toast.error(error.message || "Failed to add student.");
-        },
-      });
+        } });
     }
   };
 
@@ -214,8 +203,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
       setDuplicateData({
         full_name: data.full_name.trim(),
         section: data.section.trim(),
-        parent_email: data.parent_email?.trim() || "",
-      });
+        parent_email: data.parent_email?.trim() || "" });
       setPendingAddAnother(addAnother);
       return;
     }
@@ -399,7 +387,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                     onClick={form.handleSubmit((data) => onSubmit(data, true))}
                     className="h-10 sm:h-9 w-full sm:w-auto text-xs font-medium rounded-lg sm:rounded-xl border-border hover:bg-muted/60"
                   >
-                    {isCreating ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
+                    {isCreating ? <Spinner className="w-3.5 h-3.5 mr-1.5" /> : <Plus className="w-3.5 h-3.5 mr-1.5" />}
                     Save & Add Another
                   </Button>
                 )}
@@ -409,7 +397,7 @@ export function StudentDialog({ open, onOpenChange, student, defaultSection }: S
                   className="h-10 sm:h-9 w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs"
                 >
                   {isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-2" />
                   ) : (
                     <Check className="w-4 h-4 mr-1.5" />
                   )}

@@ -8,8 +8,7 @@ import {
   ActivityRosterField,
   ActivityOptionalSettings,
   activitySchema,
-  type ActivityFormValues,
-} from "./activity-assignment-fields";
+  type ActivityFormValues } from "./activity-assignment-fields";
 import { toActivityDueAt, toActivityDueInput } from "@/lib/utils/activity-deadlines";
 import { ApiError } from "@/lib/utils/api-error";
 import {
@@ -17,9 +16,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -30,20 +29,17 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+  AlertDialogAction } from "@/components/ui/alert-dialog";
 import {
   Field,
   FieldLabel,
   FieldGroup,
   FieldError,
-  FieldContent,
-} from "@/components/ui/field";
+  FieldContent } from "@/components/ui/field";
 import {
   type Activity,
-  useUpdateActivity,
-} from "@/lib/hooks/use-activities";
-import { Loader2, Edit3, Home } from "lucide-react";
+  useUpdateActivity } from "@/lib/hooks/use-activities";
+import { Edit3, Home } from "lucide-react";
 import { toast } from "sonner";
 
 function getWordCount(text: string): number {
@@ -61,8 +57,7 @@ interface EditActivityDialogProps {
 export function EditActivityDialog({
   activity,
   open,
-  onOpenChange,
-}: EditActivityDialogProps) {
+  onOpenChange }: EditActivityDialogProps) {
   const { mutate: updateActivity, isPending } = useUpdateActivity();
   const [removeConfirmation, setRemoveConfirmation] = useState(false);
 
@@ -77,9 +72,7 @@ export function EditActivityDialog({
       target_text: activity?.target_text ?? "",
       is_take_home: activity?.is_take_home ?? false,
       points_input: activity?.points_possible?.toString() ?? "",
-      confirm_remove_points: false,
-    },
-  });
+      confirm_remove_points: false } });
 
   const targetText = useWatch({ control: form.control, name: "target_text" });
   const isTakeHome = useWatch({ control: form.control, name: "is_take_home" });
@@ -97,8 +90,7 @@ export function EditActivityDialog({
         target_text: activity.target_text,
         is_take_home: activity.is_take_home,
         points_input: activity.points_possible?.toString() ?? "",
-        confirm_remove_points: false,
-      });
+        confirm_remove_points: false });
     }
   }, [activity, open, form]);
 
@@ -129,9 +121,7 @@ export function EditActivityDialog({
           ...(form.formState.dirtyFields.points_input || data.confirm_remove_points
             ? { points_possible: data.points_input || null }
             : {}),
-          confirm_remove_points: data.confirm_remove_points,
-        },
-      },
+          confirm_remove_points: data.confirm_remove_points } },
       {
         onSuccess: () => {
           toast.success("Activity updated successfully.");
@@ -140,22 +130,18 @@ export function EditActivityDialog({
         onError: (error: Error) => {
           if (error instanceof ApiError && error.code === "POINTS_OVERRIDE_CONFLICT") {
             form.setError("points_input", {
-              message: "An existing override exceeds this maximum. Adjust the override first.",
-            });
+              message: "An existing override exceeds this maximum. Adjust the override first." });
           }
           if (error instanceof ApiError && error.code === "POINTS_REMOVAL_CONFIRMATION_REQUIRED") {
             form.setError("points_input", {
-              message: "Confirm removal of points and existing grade publication.",
-            });
+              message: "Confirm removal of points and existing grade publication." });
           }
           if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
             form.setError("assignments", {
-              message: "Choose sections or students from your current roster.",
-            });
+              message: "Choose sections or students from your current roster." });
           }
           toast.error(error.message || "Failed to update activity.");
-        },
-      }
+        } }
     );
   };
 
@@ -350,7 +336,7 @@ export function EditActivityDialog({
               className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
             >
               {isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
               ) : (
                 <Edit3 className="w-4 h-4 mr-1.5" />
               )}

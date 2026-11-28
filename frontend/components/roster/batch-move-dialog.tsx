@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from "@/components/ui/field";
 import {
@@ -9,15 +10,14 @@ import {
   ComboboxInput,
   ComboboxContent,
   ComboboxList,
-  ComboboxItem,
-} from "@/components/ui/combobox";
+  ComboboxItem } from "@/components/ui/combobox";
 import { Progress } from "@/components/ui/progress";
 import { Student } from "@/lib/hooks/use-students";
 import { useSections } from "@/lib/hooks/use-sections";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
-import { Loader2, Check, Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 interface BatchMoveDialogProps {
@@ -33,8 +33,7 @@ export function BatchMoveDialog({
   onOpenChange,
   selectedStudents,
   allStudents,
-  onComplete,
-}: BatchMoveDialogProps) {
+  onComplete }: BatchMoveDialogProps) {
   const queryClient = useQueryClient();
   const { data: sectionEntities } = useSections();
   const [targetSection, setTargetSection] = useState("");
@@ -95,18 +94,15 @@ export function BatchMoveDialog({
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ section: trimmed }),
-        });
+            Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ section: trimmed }) });
         return response.ok;
       },
       {
         concurrency: 4,
         onProgress: (completed, total) => {
           setProgress(Math.round((completed / total) * 100));
-        },
-      }
+        } }
     );
 
     await queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -229,7 +225,7 @@ export function BatchMoveDialog({
               <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="flex items-center gap-1.5 text-foreground">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    <Spinner className="w-3.5 h-3.5 text-primary" />
                     Moving students to {targetSection}...
                   </span>
                   <span className="text-muted-foreground">{progress}%</span>
@@ -258,7 +254,7 @@ export function BatchMoveDialog({
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner className="w-4 h-4 mr-2" />
                   Moving...
                 </>
               ) : (

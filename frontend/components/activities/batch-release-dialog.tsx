@@ -9,10 +9,10 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import type { Student } from "@/lib/hooks/use-students";
 import { resolveSubmissionScore, getScoreBandLabel } from "@/lib/utils/submission-status";
@@ -35,8 +35,7 @@ export const BatchReleaseDialog = memo(function BatchReleaseDialog({
   totalSelectedCount,
   students,
   isReleasing,
-  onConfirm,
-}: BatchReleaseDialogProps) {
+  onConfirm }: BatchReleaseDialogProps) {
   const studentMap = useMemo(() => {
     const map = new Map<string, string>();
     students?.forEach((s) => map.set(s.id, s.full_name));
@@ -53,8 +52,7 @@ export const BatchReleaseDialog = memo(function BatchReleaseDialog({
       excellent: 0,
       satisfactory: 0,
       developing: 0,
-      needs_improvement: 0,
-    };
+      needs_improvement: 0 };
 
     releasableSubmissions.forEach((sub) => {
       const resolved = resolveSubmissionScore(sub);
@@ -204,7 +202,7 @@ export const BatchReleaseDialog = memo(function BatchReleaseDialog({
           >
             {isReleasing ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                <Spinner className="size-3.5" />
                 <span>Releasing...</span>
               </>
             ) : (

@@ -5,6 +5,7 @@ import { useState, type ReactElement } from "react";
 import { toast } from "sonner";
 import { useDeleteSubmission, type Submission } from "@/lib/hooks/use-submissions";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,8 +13,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,16 +22,14 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { getRejectionSummary, resolveSubmissionScore } from "@/lib/utils/submission-status";
-import { History, Eye, ArrowUpRight, Trash2, Loader2 } from "lucide-react";
+import { History, Eye, ArrowUpRight, Trash2 } from "lucide-react";
 
 const uploadDate = new Intl.DateTimeFormat("en-PH", {
   timeZone: "Asia/Manila",
   dateStyle: "medium",
-  timeStyle: "short",
-});
+  timeStyle: "short" });
 
 export function WorksheetHistory({
   activityId,
@@ -42,8 +40,7 @@ export function WorksheetHistory({
   trigger,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-  onSelectAttempt,
-}: {
+  onSelectAttempt }: {
   activityId: string;
   studentName: string;
   attempts: Submission[];
@@ -182,8 +179,7 @@ export function WorksheetHistory({
                     className={buttonVariants({
                       variant: "default",
                       size: "sm",
-                      className: "min-h-9 gap-1 text-xs font-semibold",
-                    })}
+                      className: "min-h-9 gap-1 text-xs font-semibold" })}
                     href={`/activities/${activityId}/submissions/${attempt.id}${queueQuery}`}
                     onClick={handleClose}
                   >
@@ -216,8 +212,7 @@ export function WorksheetHistory({
                     onClick={() =>
                       setAttemptToDelete({
                         submission: attempt,
-                        attemptNumber: attempts.length - index,
-                      })
+                        attemptNumber: attempts.length - index })
                     }
                     className="ml-auto min-h-9 gap-1 text-xs font-medium text-destructive/80 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                   >
@@ -266,7 +261,7 @@ export function WorksheetHistory({
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    <Spinner className="mr-1.5 size-4" />
                     Deleting...
                   </>
                 ) : (

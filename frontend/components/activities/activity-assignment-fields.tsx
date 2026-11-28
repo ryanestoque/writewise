@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Field, FieldDescription, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useSections } from "@/lib/hooks/use-sections";
 import { useStudents } from "@/lib/hooks/use-students";
@@ -108,27 +109,30 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
   };
 
   return (
-    <fieldset
-      className="border-border flex flex-col gap-3 rounded-xl border p-3.5"
+    <FieldSet
+      className="border-border gap-3 rounded-xl border p-3.5"
       aria-describedby={`${id}-targets-error`}
     >
-      <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <FieldLegend
+        variant="label"
+        className="mb-0 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+      >
         Assign to sections or students{" "}
         <span className="text-destructive" aria-hidden="true">
           *
         </span>
-      </legend>
+      </FieldLegend>
       {(sectionsLoading || studentsLoading) && (
         <p role="status" className="text-muted-foreground text-sm">
           Loading your roster…
         </p>
       )}
       {(sectionsError || studentsError) && (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs"
+        <Alert
+          variant="destructive"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs"
         >
-          <span>Could not load your roster.</span>
+          <AlertDescription className="text-xs">Could not load your roster.</AlertDescription>
           <Button
             type="button"
             variant="outline"
@@ -142,7 +146,7 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
             <RotateCcw className="size-3.5" aria-hidden="true" />
             Retry
           </Button>
-        </div>
+        </Alert>
       )}
       {!sectionsLoading && !studentsLoading && !sectionsError && !studentsError && !sections?.length && !students?.length && (
         <p className="text-muted-foreground text-sm">
@@ -155,15 +159,16 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
       )}
       <div className="flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
         {sections?.map((section) => (
-          <label key={section.id} className="flex min-h-9 items-center gap-3 text-sm cursor-pointer">
+          <Field key={section.id} orientation="horizontal" className="min-h-9 items-center gap-3">
             <Checkbox
+              id={`${id}-section-${section.id}`}
               checked={targets.some((t) => t.section_id === section.id)}
               onCheckedChange={(checked) => toggle("section_id", section.id, !!checked)}
             />
-            <span>
+            <FieldLabel htmlFor={`${id}-section-${section.id}`} className="text-sm font-normal cursor-pointer">
               {section.name} <span className="text-muted-foreground">(section)</span>
-            </span>
-          </label>
+            </FieldLabel>
+          </Field>
         ))}
       </div>
       {!!students?.length && (
@@ -177,16 +182,17 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
           </CollapsibleTrigger>
           <CollapsibleContent className="mt-2 flex max-h-44 flex-col gap-2 overflow-y-auto p-1">
             {students.map((student) => (
-              <label key={student.id} className="flex min-h-9 items-center gap-3 text-sm cursor-pointer">
+              <Field key={student.id} orientation="horizontal" className="min-h-9 items-center gap-3">
                 <Checkbox
+                  id={`${id}-student-${student.id}`}
                   checked={targets.some((t) => t.student_id === student.id)}
                   onCheckedChange={(checked) => toggle("student_id", student.id, !!checked)}
                 />
-                <span>
+                <FieldLabel htmlFor={`${id}-student-${student.id}`} className="text-sm font-normal cursor-pointer">
                   {student.full_name}{" "}
                   <span className="text-muted-foreground">{student.section}</span>
-                </span>
-              </label>
+                </FieldLabel>
+              </Field>
             ))}
           </CollapsibleContent>
         </Collapsible>
@@ -226,7 +232,7 @@ export function ActivityRosterField({ form }: { form: UseFormReturn<ActivityForm
             </div>
           ))}
       <FieldError id={`${id}-targets-error`} errors={[form.formState.errors.assignments]} />
-    </fieldset>
+    </FieldSet>
   );
 }
 
@@ -317,17 +323,20 @@ export function ActivityOptionalSettings({
             aria-describedby={form.formState.errors.due_input ? `${id}-due-error` : undefined}
           />
           <FieldError id={`${id}-due-error`} errors={[form.formState.errors.due_input]} />
-          <label className="flex min-h-10 items-center justify-between gap-3 text-sm cursor-pointer">
-            Close parent uploads after the due date
+          <Field orientation="horizontal" className="min-h-10 items-center justify-between gap-3">
+            <FieldLabel htmlFor={`${id}-close-after-due`} className="text-sm font-normal cursor-pointer">
+              Close parent uploads after the due date
+            </FieldLabel>
             <Switch
+              id={`${id}-close-after-due`}
               checked={closed}
               disabled={!due}
               onCheckedChange={(checked) => form.setValue("close_after_due", checked)}
             />
-          </label>
-          <p className="text-muted-foreground text-xs">
+          </Field>
+          <FieldDescription className="text-xs">
             With this off, late uploads are accepted. Teachers can still upload after closure.
-          </p>
+          </FieldDescription>
         </Field>
       </CollapsibleContent>
     </Collapsible>

@@ -2,8 +2,12 @@ import * as React from "react";
 import { Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Kbd } from "@/components/ui/kbd";
 
 export interface SearchInputProps
@@ -75,15 +79,17 @@ export function SearchInput({
   };
 
   return (
-    <div
-      className={cn("relative w-full sm:w-72", containerClassName)}
+    <InputGroup
+      className={cn(
+        "w-full sm:w-72 h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-lg sm:rounded-xl border border-border bg-background dark:bg-input/30",
+        containerClassName
+      )}
       data-slot="search-input-container"
     >
-      <Search
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground"
-        aria-hidden="true"
-      />
-      <Input
+      <InputGroupAddon align="inline-start">
+        <Search aria-hidden="true" />
+      </InputGroupAddon>
+      <InputGroupInput
         ref={setMergedRef}
         type={type}
         value={value}
@@ -92,35 +98,37 @@ export function SearchInput({
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
-          "h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] pl-9 pr-8 text-base sm:text-sm rounded-lg sm:rounded-xl [&::-webkit-search-cancel-button]:appearance-none",
+          "h-full text-base sm:text-sm [&::-webkit-search-cancel-button]:appearance-none",
           className
         )}
         aria-keyshortcuts={showShortcut ? shortcutKey : undefined}
         {...props}
       />
-      {hasValue ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          onClick={handleClear}
-          disabled={disabled}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 active:not-aria-[haspopup]:-translate-y-1/2 cursor-pointer rounded-full text-muted-foreground hover:text-foreground after:absolute after:-inset-2 after:content-['']"
-          aria-label="Clear search"
-          tabIndex={-1}
-        >
-          <X className="size-3.5" aria-hidden="true" />
-        </Button>
-      ) : showShortcut ? (
-        <div
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden items-center sm:flex"
-          aria-hidden="true"
-        >
-          <Kbd className="h-5 border-border bg-muted px-1.5 text-xs text-muted-foreground font-medium">
-            {shortcutKey}
-          </Kbd>
-        </div>
-      ) : null}
-    </div>
+      {(hasValue || showShortcut) && (
+        <InputGroupAddon align="inline-end">
+          {hasValue ? (
+            <InputGroupButton
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={handleClear}
+              disabled={disabled}
+              className="relative rounded-full text-muted-foreground hover:text-foreground cursor-pointer after:absolute after:-inset-2 after:content-['']"
+              aria-label="Clear search"
+              tabIndex={-1}
+            >
+              <X aria-hidden="true" />
+            </InputGroupButton>
+          ) : (
+            <Kbd
+              className="hidden sm:inline-flex h-5 border-border bg-muted px-1.5 text-xs text-muted-foreground font-medium pointer-events-none"
+              aria-hidden="true"
+            >
+              {shortcutKey}
+            </Kbd>
+          )}
+        </InputGroupAddon>
+      )}
+    </InputGroup>
   );
 }

@@ -3,15 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Card,
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Lock, Loader2, Check } from "lucide-react";
+import { Lock, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface ProfileSettingsCardProps {
@@ -110,99 +118,92 @@ export function ProfileSettingsCard({
       <div>
         <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
           <form onSubmit={handleSave} aria-busy={isSaving}>
-            <CardContent className="flex flex-col gap-5 pt-6 pb-6">
-              {/* Full Name */}
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="full-name"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  Full Name
-                </Label>
-                <Input
-                  id="full-name"
-                  type="text"
-                  autoComplete="name"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    if (nameError && e.target.value.trim()) {
-                      setNameError(null);
-                    }
-                  }}
-                  placeholder="e.g. Maria Santos"
-                  className={`h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors ${
-                    nameError
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }`}
-                  aria-invalid={nameError ? true : false}
-                  aria-describedby={nameError ? "name-error" : undefined}
-                />
-                {nameError ? (
-                  <p
-                    id="name-error"
-                    role="alert"
-                    aria-live="polite"
-                    className="text-xs text-destructive font-medium mt-0.5"
-                  >
-                    {nameError}
-                  </p>
-                ) : null}
-              </div>
-
-              {/* School Name */}
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="school-name"
-                  className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  School / Institution
-                </Label>
-                <Input
-                  id="school-name"
-                  type="text"
-                  autoComplete="organization"
-                  value={schoolName}
-                  onChange={(e) => setSchoolName(e.target.value)}
-                  placeholder="e.g. Holy Cross of Davao College"
-                  className="h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors"
-                  aria-describedby="school-name-hint"
-                />
-                <p id="school-name-hint" className="text-xs text-muted-foreground">
-                  Appears alongside your name in the portal sidebar and class reports.
-                </p>
-              </div>
-
-              {/* Email (Read-only) */}
-              <div className="flex flex-col gap-1.5 pt-1">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="email-display"
+            <CardContent className="pt-6 pb-6">
+              <FieldGroup className="gap-5">
+                {/* Full Name */}
+                <Field data-invalid={nameError ? true : undefined}>
+                  <FieldLabel
+                    htmlFor="full-name"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                   >
-                    Email Address
-                  </Label>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">
-                    <Lock className="size-3" aria-hidden="true" /> Verified Login
-                  </span>
-                </div>
-                <Input
-                  id="email-display"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  readOnly
-                  aria-readonly="true"
-                  className="h-10 sm:h-9 text-base sm:text-sm rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
-                  aria-describedby="email-display-hint"
-                />
-                <p id="email-display-hint" className="text-xs text-muted-foreground">
-                  Your email is your authenticated login identifier and cannot be
-                  changed here. Contact an administrator if your email address has
-                  changed.
-                </p>
-              </div>
+                    Full Name
+                  </FieldLabel>
+                  <Input
+                    id="full-name"
+                    type="text"
+                    autoComplete="name"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (nameError && e.target.value.trim()) {
+                        setNameError(null);
+                      }
+                    }}
+                    placeholder="e.g. Maria Santos"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors"
+                    aria-invalid={nameError ? true : false}
+                    aria-describedby={nameError ? "name-error" : undefined}
+                  />
+                  {nameError ? (
+                    <FieldError id="name-error" role="alert" aria-live="polite" className="text-xs font-medium">
+                      {nameError}
+                    </FieldError>
+                  ) : null}
+                </Field>
+
+                {/* School Name */}
+                <Field>
+                  <FieldLabel
+                    htmlFor="school-name"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
+                    School / Institution
+                  </FieldLabel>
+                  <Input
+                    id="school-name"
+                    type="text"
+                    autoComplete="organization"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    placeholder="e.g. Holy Cross of Davao College"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg transition-colors"
+                    aria-describedby="school-name-hint"
+                  />
+                  <FieldDescription id="school-name-hint" className="text-xs">
+                    Appears alongside your name in the portal sidebar and class reports.
+                  </FieldDescription>
+                </Field>
+
+                {/* Email (Read-only) */}
+                <Field className="pt-1">
+                  <div className="flex items-center justify-between">
+                    <FieldLabel
+                      htmlFor="email-display"
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
+                      Email Address
+                    </FieldLabel>
+                    <Badge variant="secondary" className="gap-1 text-[11px] font-medium text-muted-foreground">
+                      <Lock className="size-3" aria-hidden="true" /> Verified Login
+                    </Badge>
+                  </div>
+                  <Input
+                    id="email-display"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    readOnly
+                    aria-readonly="true"
+                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg bg-muted/60 text-muted-foreground cursor-default border-dashed select-all focus-visible:ring-1 focus-visible:ring-ring/40"
+                    aria-describedby="email-display-hint"
+                  />
+                  <FieldDescription id="email-display-hint" className="text-xs">
+                    Your email is your authenticated login identifier and cannot be
+                    changed here. Contact an administrator if your email address has
+                    changed.
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
             </CardContent>
 
             <CardFooter className="flex flex-col-reverse sm:flex-row justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3.5">
@@ -224,12 +225,12 @@ export function ProfileSettingsCard({
               >
                 {isSaving ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    <Spinner data-icon="inline-start" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Check data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
+                    <Check data-icon="inline-start" aria-hidden="true" />
                     Save Changes
                   </>
                 )}

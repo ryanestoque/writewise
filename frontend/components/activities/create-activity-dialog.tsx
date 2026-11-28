@@ -8,8 +8,7 @@ import {
   ActivityRosterField,
   ActivityOptionalSettings,
   activitySchema,
-  type ActivityFormValues,
-} from "./activity-assignment-fields";
+  type ActivityFormValues } from "./activity-assignment-fields";
 import { toActivityDueAt } from "@/lib/utils/activity-deadlines";
 import { ApiError } from "@/lib/utils/api-error";
 import {
@@ -17,9 +16,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -27,16 +26,13 @@ import {
   FieldLabel,
   FieldGroup,
   FieldError,
-  FieldContent,
-} from "@/components/ui/field";
+  FieldContent } from "@/components/ui/field";
 import { type Activity, useCreateActivity } from "@/lib/hooks/use-activities";
 import {
-  Loader2,
   ClipboardList,
   Home,
   Lightbulb,
-  Copy,
-} from "lucide-react";
+  Copy } from "lucide-react";
 import { toast } from "sonner";
 
 function getWordCount(text: string): number {
@@ -48,20 +44,16 @@ function getWordCount(text: string): number {
 const PROMPT_SUGGESTIONS = [
   {
     label: "Classic Pangram",
-    text: "The quick brown fox jumps over the lazy dog.",
-  },
+    text: "The quick brown fox jumps over the lazy dog." },
   {
     label: "Loop & Join Drill",
-    text: "Sphinx of black quartz, judge my vow.",
-  },
+    text: "Sphinx of black quartz, judge my vow." },
   {
     label: "Nature Practice Drill",
-    text: "Warm breezes blow through the tall green trees.",
-  },
+    text: "Warm breezes blow through the tall green trees." },
   {
     label: "Letter Formation Warm-up",
-    text: "Bright sunny mornings bring cheerful smiles to everyone.",
-  },
+    text: "Bright sunny mornings bring cheerful smiles to everyone." },
 ];
 
 interface CreateActivityDialogProps {
@@ -81,24 +73,21 @@ function activityDraftDefaults(initialValues?: Partial<Activity>): ActivityFormV
     target_text: initialValues?.target_text ?? "",
     is_take_home: initialValues?.is_take_home ?? false,
     points_input: initialValues?.points_possible?.toString() ?? "",
-    confirm_remove_points: false,
-  };
+    confirm_remove_points: false };
 }
 
 export function CreateActivityDialog({
   open,
   onOpenChange,
   initialValues,
-  isDuplicate = false,
-}: CreateActivityDialogProps) {
+  isDuplicate = false }: CreateActivityDialogProps) {
   const { mutate: createActivity, isPending } = useCreateActivity();
   const sourceKey = isDuplicate ? `duplicate:${initialValues?.id ?? ""}` : "create";
   const draftSourceRef = useRef(sourceKey);
 
   const form = useForm<ActivityFormValues>({
     resolver: zodResolver(activitySchema),
-    defaultValues: activityDraftDefaults(initialValues),
-  });
+    defaultValues: activityDraftDefaults(initialValues) });
 
   const targetText = useWatch({ control: form.control, name: "target_text" });
   const isTakeHome = useWatch({ control: form.control, name: "is_take_home" });
@@ -126,8 +115,7 @@ export function CreateActivityDialog({
         close_after_due: data.close_after_due,
         target_text: data.target_text,
         is_take_home: data.is_take_home,
-        points_possible: data.points_input || null,
-      },
+        points_possible: data.points_input || null },
       {
         onSuccess: () => {
           form.reset();
@@ -141,12 +129,10 @@ export function CreateActivityDialog({
         onError: (error: Error) => {
           if (error instanceof ApiError && error.code === "INVALID_ASSIGNMENT_TARGET") {
             form.setError("assignments", {
-              message: "Choose sections or students from your current roster.",
-            });
+              message: "Choose sections or students from your current roster." });
           }
           toast.error(error.message || "Failed to create activity.");
-        },
-      }
+        } }
     );
   };
 
@@ -159,8 +145,7 @@ export function CreateActivityDialog({
 
     form.setValue("target_text", text, {
       shouldValidate: true,
-      shouldDirty: true,
-    });
+      shouldDirty: true });
 
     if (isCustomText) {
       toast("Replaced custom prompt text", {
@@ -169,11 +154,8 @@ export function CreateActivityDialog({
           onClick: () => {
             form.setValue("target_text", previous, {
               shouldValidate: true,
-              shouldDirty: true,
-            });
-          },
-        },
-      });
+              shouldDirty: true });
+          } } });
     }
   };
 
@@ -368,7 +350,7 @@ export function CreateActivityDialog({
               className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto bg-primary hover:bg-brand-700 text-primary-foreground font-medium text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
             >
               {isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
               ) : isDuplicate ? (
                 <Copy className="w-4 h-4 mr-1.5" />
               ) : (

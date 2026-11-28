@@ -26,6 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartContainer,
   ChartTooltip,
@@ -631,12 +632,12 @@ export function CriterionTrendChart({
             </EmptyContent>
           </Empty>
         ) : !hasMounted ? (
-          <div
-            className="h-64 sm:h-72 w-full min-h-[256px] rounded-xl border border-border/40 bg-muted/15 flex items-center justify-center animate-pulse"
+          <Skeleton
+            className="h-64 sm:h-72 w-full min-h-[256px] rounded-xl flex items-center justify-center"
             aria-hidden="true"
           >
             <span className="text-xs text-muted-foreground/60">Rendering progress chart…</span>
-          </div>
+          </Skeleton>
         ) : (
           <ChartContainer
             config={CHART_CONFIG}

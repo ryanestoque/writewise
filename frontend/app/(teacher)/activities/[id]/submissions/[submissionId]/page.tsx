@@ -168,7 +168,7 @@ export default function SubmissionDetailPage({
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-4 animate-pulse motion-reduce:animate-none" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
+      <div className="w-full space-y-4" role="status" aria-label="Loading handwriting submission details" data-page-studio="true">
         {/* Top Back Navigation Trail Skeleton */}
         <div className="py-2 -ml-1 sm:-ml-2">
           <Skeleton className="h-4 w-28 rounded-md" />

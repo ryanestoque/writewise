@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldGroup, FieldContent, FieldError } from "@/components/ui/field";
@@ -10,14 +11,13 @@ import {
   ComboboxInput,
   ComboboxContent,
   ComboboxList,
-  ComboboxItem,
-} from "@/components/ui/combobox";
+  ComboboxItem } from "@/components/ui/combobox";
 import { Progress } from "@/components/ui/progress";
 import { useStudents } from "@/lib/hooks/use-students";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { runConcurrentPool } from "@/lib/utils/concurrent-pool";
-import { Loader2, AlertCircle, UserPlus } from "lucide-react";
+import { AlertCircle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 interface BulkStudentDialogProps {
@@ -122,13 +122,10 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             full_name: studentName,
-            section: trimmedSection,
-          }),
-        });
+            section: trimmedSection }) });
         return response.ok;
       },
       {
@@ -136,8 +133,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
         onProgress: (completed, total) => {
           setProgress(Math.round((completed / total) * 100));
           setStatusMessage(`Enrolled ${completed} of ${total} students...`);
-        },
-      }
+        } }
     );
 
     // Refresh student query cache
@@ -292,7 +288,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
               <div className="space-y-2 p-3 bg-muted/40 rounded-xl border border-border">
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="flex items-center gap-1.5 text-foreground">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                    <Spinner className="w-3.5 h-3.5 text-primary" />
                     {statusMessage}
                   </span>
                   <span className="text-muted-foreground">{progress}%</span>
@@ -328,7 +324,7 @@ export function BulkStudentDialog({ open, onOpenChange, defaultSection }: BulkSt
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner className="w-4 h-4 mr-2" />
                   Enrolling...
                 </>
               ) : (

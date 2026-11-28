@@ -5,9 +5,11 @@ import { memo, useState } from "react";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 import type { Activity } from "@/lib/hooks/use-activities";
 import type { ScoreBandInfo } from "@/lib/utils/submission-status";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
@@ -394,12 +396,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 )}
               </div>
               {totalStudents > 0 ? (
-                <div
-                  className="bg-muted h-1.5 overflow-hidden rounded-full"
-                  role="progressbar"
-                  aria-valuenow={completionRate}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
+                <Progress
+                  value={completionRate}
+                  max={100}
                   aria-label="Students with an official worksheet"
                   aria-valuetext={
                     uniqueStudentsCount +
@@ -409,12 +408,9 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                     completionRate +
                     "%)"
                   }
-                >
-                  <div
-                    className="bg-primary h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
-                    style={{ width: completionRate + "%" }}
-                  />
-                </div>
+                  trackClassName="h-1.5 bg-muted"
+                  indicatorClassName="bg-primary rounded-full duration-300 motion-reduce:transition-none"
+                />
               ) : (
                 <Button variant="link" onClick={onEdit} className="min-h-9 px-0 text-xs">
                   Edit assignments
@@ -441,11 +437,13 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
             <Skeleton className="h-9 w-24 rounded-lg" />
           </div>
         ) : summaryState === "error" ? (
-          <div
-            className="flex min-w-0 flex-1 items-center justify-between gap-2 border-t border-border/40 pt-3 text-xs text-muted-foreground sm:border-t-0 sm:pt-0"
-            role="alert"
+          <Alert
+            variant="destructive"
+            className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border-t border-border/40 bg-transparent px-0 pt-3 pb-0 text-xs text-muted-foreground sm:border-t-0 sm:pt-0 border-0"
           >
-            <span className="truncate">Class insights unavailable.</span>
+            <AlertDescription className="truncate text-xs text-muted-foreground">
+              Class insights unavailable.
+            </AlertDescription>
             {onRetrySummary && (
               <Button
                 variant="ghost"
@@ -457,7 +455,7 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                 Retry
               </Button>
             )}
-          </div>
+          </Alert>
         ) : classDiagnostics ? (
           <div className="flex min-w-0 flex-1 flex-col items-start justify-between gap-2.5 border-t border-border/40 pt-3 sm:border-t-0 sm:pt-0 sm:flex-row sm:items-center">
             <div className="min-w-0 space-y-1">
@@ -539,24 +537,16 @@ export const ActivityDetailHero = memo(function ActivityDetailHero({
                             </span>
                           </div>
                         </div>
-                        <div
-                          className="bg-muted/80 dark:bg-muted dark:ring-1 dark:ring-border/60 h-1.5 w-full overflow-hidden rounded-full"
-                          role="progressbar"
-                          aria-valuenow={score}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
+                        <Progress
+                          value={Math.max(0, Math.min(100, score))}
+                          max={100}
                           aria-label={`${label} class average: ${score}% (${band})`}
-                        >
-                          <div
-                            className={cn(
-                              "h-full w-full rounded-full transition-transform duration-300 ease-out origin-left motion-reduce:transition-none",
-                              barClass
-                            )}
-                            style={{
-                              transform: `scaleX(${Math.max(0, Math.min(100, score)) / 100})`,
-                            }}
-                          />
-                        </div>
+                          trackClassName="h-1.5 bg-muted/80 dark:bg-muted dark:ring-1 dark:ring-border/60"
+                          indicatorClassName={cn(
+                            "rounded-full duration-300 ease-out motion-reduce:transition-none",
+                            barClass
+                          )}
+                        />
                       </div>
                     );
                   })}

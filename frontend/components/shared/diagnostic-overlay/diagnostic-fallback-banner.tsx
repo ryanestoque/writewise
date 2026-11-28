@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { Cpu } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +20,12 @@ export const DiagnosticFallbackBanner = memo(function DiagnosticFallbackBanner({
   const isManual = scoreSource === "manual";
 
   return (
-    <div
+    <Alert
       role="status"
       aria-label="Diagnostic stroke guidelines status"
       className={cn(
         "flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-xl",
-        "bg-muted/30 border border-border/70 text-xs shadow-2xs transition-colors",
+        "bg-muted/30 border-border/70 text-xs shadow-2xs transition-colors",
         className
       )}
     >
@@ -63,6 +64,6 @@ export const DiagnosticFallbackBanner = memo(function DiagnosticFallbackBanner({
           </p>
         </div>
       </div>
-    </div>
+    </Alert>
   );
 });

@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isToday, isYesterday } from "date-fns";
 import { Check, PenTool } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Empty,
   EmptyHeader,
@@ -134,11 +136,13 @@ export function NotificationList({
       className="flex-1 min-h-0 flex flex-col gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-lg"
     >
       {error && (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-foreground shrink-0"
+        <Alert
+          variant="destructive"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-2.5 text-xs shrink-0"
         >
-          <p className="font-medium text-destructive dark:text-destructive">Could not refresh notifications. Your last updates are still shown.</p>
+          <AlertDescription className="font-medium text-xs">
+            Could not refresh notifications. Your last updates are still shown.
+          </AlertDescription>
           <Button
             variant="outline"
             size="xs"
@@ -147,53 +151,49 @@ export function NotificationList({
           >
             Try again
           </Button>
-        </div>
+        </Alert>
       )}
 
       {/* Filter controls */}
       {rows.length > 0 && (
-        <div
-          className="flex items-center gap-1.5 border-b pb-2 px-1 text-xs shrink-0"
-          role="group"
+        <ToggleGroup
+          value={[filter]}
+          multiple={false}
+          spacing={1}
+          onValueChange={(vals) => {
+            if (vals.length > 0) {
+              setFilter(vals[0] as "all" | "unread");
+            }
+          }}
           aria-label="Filter notifications"
+          className="w-full justify-start border-b pb-2 px-1 text-xs shrink-0"
         >
-          <button
-            type="button"
-            aria-pressed={filter === "all"}
-            onClick={() => setFilter("all")}
-            className={cn(
-              "min-h-[44px] md:min-h-[28px] rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation",
-              filter === "all"
-                ? "bg-muted text-foreground font-semibold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
+          <ToggleGroupItem
+            value="all"
+            className="h-auto min-h-[44px] md:min-h-[28px] rounded-md px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-muted aria-pressed:text-foreground aria-pressed:font-semibold aria-pressed:shadow-2xs cursor-pointer touch-manipulation"
           >
             All ({rows.length})
-          </button>
-          <button
-            type="button"
-            aria-pressed={filter === "unread"}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="unread"
             aria-label={
               totalUnreadCount !== undefined && totalUnreadCount > unreadCount
                 ? `Unread (${unreadCount} loaded, ${totalUnreadCount} total)`
                 : undefined
             }
-            onClick={() => setFilter("unread")}
-            className={cn(
-              "min-h-[44px] md:min-h-[28px] flex items-center gap-1.5 rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer touch-manipulation",
-              filter === "unread"
-                ? "bg-muted text-foreground font-semibold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-            )}
+            className="h-auto min-h-[44px] md:min-h-[28px] gap-1.5 rounded-md px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 aria-pressed:bg-muted aria-pressed:text-foreground aria-pressed:font-semibold aria-pressed:shadow-2xs cursor-pointer touch-manipulation"
           >
-            Unread
+            <span>Unread</span>
             {unreadCount > 0 && (
-              <span className="rounded-full bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums">
+              <Badge
+                variant="secondary"
+                className="h-auto rounded-full bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums"
+              >
                 {unreadCount}
-              </span>
+              </Badge>
             )}
-          </button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
       )}
 
       {/* Screen reader dynamic status announcement */}
@@ -257,11 +257,13 @@ export function NotificationList({
                   {loadingMore ? "Loading older updates…" : "Load older updates"}
                 </Button>
                 {Boolean(loadMoreError) && (
-                  <div
-                    role="alert"
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground w-full"
+                  <Alert
+                    variant="destructive"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-2 text-xs w-full"
                   >
-                    <span className="text-destructive font-medium">Failed to load more.</span>
+                    <AlertDescription className="font-medium text-xs">
+                      Failed to load more.
+                    </AlertDescription>
                     <Button
                       variant="outline"
                       size="xs"
@@ -273,7 +275,7 @@ export function NotificationList({
                     >
                       Retry
                     </Button>
-                  </div>
+                  </Alert>
                 )}
                 <Button
                   variant="ghost"
@@ -333,8 +335,13 @@ export function NotificationList({
                 {loadingMore ? "Loading…" : "Load more"}
               </Button>
               {Boolean(loadMoreError) && (
-                <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-foreground">
-                  <span className="text-destructive font-medium">Failed to load more.</span>
+                <Alert
+                  variant="destructive"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-2 text-xs"
+                >
+                  <AlertDescription className="font-medium text-xs">
+                    Failed to load more.
+                  </AlertDescription>
                   <Button
                     variant="outline"
                     size="xs"
@@ -346,7 +353,7 @@ export function NotificationList({
                   >
                     Retry
                   </Button>
-                </div>
+                </Alert>
               )}
             </div>
           )}

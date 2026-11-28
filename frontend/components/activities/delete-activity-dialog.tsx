@@ -5,14 +5,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   type Activity,
-  useDeleteActivity,
-} from "@/lib/hooks/use-activities";
-import { Loader2, Trash2, AlertTriangle } from "lucide-react";
+  useDeleteActivity } from "@/lib/hooks/use-activities";
+import { Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface DeleteActivityDialogProps {
@@ -24,8 +23,7 @@ interface DeleteActivityDialogProps {
 export function DeleteActivityDialog({
   activity,
   open,
-  onOpenChange,
-}: DeleteActivityDialogProps) {
+  onOpenChange }: DeleteActivityDialogProps) {
   const { mutate: deleteActivity, isPending } = useDeleteActivity();
 
   if (!activity) return null;
@@ -41,8 +39,7 @@ export function DeleteActivityDialog({
       },
       onError: (error: Error) => {
         toast.error(error.message || "Failed to delete activity.");
-      },
-    });
+      } });
   };
 
   return (
@@ -101,7 +98,7 @@ export function DeleteActivityDialog({
               className="h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] w-full sm:w-auto text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl shadow-xs cursor-pointer"
             >
               {isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
               ) : (
                 <Trash2 className="w-4 h-4 mr-1.5" />
               )}

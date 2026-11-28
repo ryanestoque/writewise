@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export interface FilterPillItem<T extends string = string> {
   id: T;
@@ -155,8 +156,6 @@ export function FilterPills<T extends string = string>({
       {/* Scrollable Container */}
       <div
         ref={scrollRef}
-        role="group"
-        aria-label={ariaLabel || label || "Filters"}
         style={maskStyle}
         className={cn(
           "flex items-center gap-1.5 overflow-x-auto overflow-y-hidden py-1 pr-1 scrollbar-none max-w-full touch-pan-x touch-pan-y overscroll-x-contain transition-[mask-image]",
@@ -169,47 +168,58 @@ export function FilterPills<T extends string = string>({
           </span>
         )}
 
-        {items.map((item) => {
-          const isSelected = value === item.id;
-          const Icon = item.icon;
+        <ToggleGroup
+          value={[value]}
+          multiple={false}
+          spacing={1.5}
+          onValueChange={(vals) => {
+            if (vals.length > 0) {
+              onChange(vals[0] as T);
+            }
+          }}
+          aria-label={ariaLabel || label || "Filters"}
+          className="flex items-center gap-1.5"
+        >
+          {items.map((item) => {
+            const isSelected = value === item.id;
+            const Icon = item.icon;
 
-          return (
-            <Button
-              key={item.id}
-              type="button"
-              variant={isSelected ? "default" : "outline"}
-              size="sm"
-              id={`${groupId}-pill-${item.id}`}
-              disabled={item.disabled}
-              onClick={() => onChange(item.id)}
-              aria-pressed={isSelected}
-              className={cn(
-                "relative h-auto gap-1.5 px-3 py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg transition-all cursor-pointer touch-manipulation",
-                "after:absolute after:-inset-x-1 after:inset-y-0 after:content-['']",
-                isSelected
-                  ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary hover:bg-brand-700 dark:hover:bg-primary shadow-warm-sm font-semibold"
-                  : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground dark:bg-background dark:hover:bg-muted/60",
-                pillClassName
-              )}
-            >
-              {Icon && <Icon className="size-3.5 shrink-0" />}
-              <span>{item.label}</span>
-              {item.count !== undefined && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums transition-colors",
-                    isSelected
-                      ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
-                      : "bg-muted text-foreground"
-                  )}
-                >
-                  {item.count}
-                </Badge>
-              )}
-            </Button>
-          );
-        })}
+            return (
+              <ToggleGroupItem
+                key={item.id}
+                value={item.id}
+                variant="outline"
+                size="sm"
+                id={`${groupId}-pill-${item.id}`}
+                disabled={item.disabled}
+                className={cn(
+                  "relative h-auto gap-1.5 px-3 py-1.5 min-h-[40px] sm:min-h-[32px] text-xs font-medium rounded-lg transition-all cursor-pointer touch-manipulation",
+                  "after:absolute after:-inset-x-1 after:inset-y-0 after:content-['']",
+                  isSelected
+                    ? "bg-brand-700 dark:bg-primary text-white dark:text-primary-foreground border-brand-700 dark:border-primary hover:bg-brand-700 dark:hover:bg-primary aria-pressed:bg-brand-700 dark:aria-pressed:bg-primary aria-pressed:text-white dark:aria-pressed:text-primary-foreground shadow-warm-sm font-semibold"
+                    : "bg-background text-muted-foreground border-border hover:bg-muted/60 hover:text-foreground dark:bg-background dark:hover:bg-muted/60",
+                  pillClassName
+                )}
+              >
+                {Icon && <Icon className="size-3.5 shrink-0" />}
+                <span>{item.label}</span>
+                {item.count !== undefined && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "h-auto text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums transition-colors",
+                      isSelected
+                        ? "bg-white/20 dark:bg-primary-foreground/20 text-white dark:text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    )}
+                  >
+                    {item.count}
+                  </Badge>
+                )}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
       </div>
 
       {/* Scroll Right Button */}

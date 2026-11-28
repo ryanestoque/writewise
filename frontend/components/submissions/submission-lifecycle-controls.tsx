@@ -5,7 +5,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table2, Send, RotateCcw, ExternalLink, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
+import { Table2, Send, RotateCcw, ExternalLink, CheckCircle2, ArrowRight } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -263,7 +264,7 @@ export function SubmissionLifecycleControls({
           >
             {release.isPending ? (
               <>
-                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <Spinner className="size-3.5" />
                 <span>Releasing…</span>
               </>
             ) : (
@@ -388,7 +389,7 @@ export function SubmissionLifecycleControls({
         >
           {release.isPending ? (
             <>
-              <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              <Spinner className="size-3.5" />
               <span>Releasing…</span>
             </>
           ) : (
@@ -434,7 +435,7 @@ export function SubmissionLifecycleControls({
           >
             {release.isPending ? (
               <>
-                <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                <Spinner className="size-3.5" />
                 <span>Releasing…</span>
               </>
             ) : (
@@ -1197,18 +1198,19 @@ export function ReleaseActivityButton({
             <ActivityReleaseGradePreview inventory={inventory} activityId={activityId} />
           )}
           {step === "review" && hasPointGrades && inventory.ready && !inventory.complete && (
-            <label className="flex min-h-10 cursor-pointer items-start gap-3 text-sm">
+            <Field orientation="horizontal" className="min-h-10 items-start gap-3">
               <Checkbox
+                id="review-uncovered-grades"
                 checked={gradesReviewed}
                 onCheckedChange={(checked) =>
                   setManualReviewSnapshot(checked === true ? snapshot : null)
                 }
               />
-              <span>
+              <FieldLabel htmlFor="review-uncovered-grades" className="text-sm font-normal cursor-pointer">
                 I manually reviewed the uncovered students&apos; point grades, including overrides
                 and zeros.
-              </span>
-            </label>
+              </FieldLabel>
+            </Field>
           )}
           {isError && (
             <div className="flex flex-col gap-2">

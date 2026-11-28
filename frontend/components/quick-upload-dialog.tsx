@@ -6,39 +6,35 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
-} from "react";
+  useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
+  NativeSelectOption } from "@/components/ui/native-select";
 import { toast } from "sonner";
 import {
   Field,
   FieldContent,
-  FieldLabel,
-} from "@/components/ui/field";
+  FieldLabel } from "@/components/ui/field";
 import {
   Combobox,
   ComboboxContent,
   ComboboxEmpty,
   ComboboxInput,
   ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
+  ComboboxList } from "@/components/ui/combobox";
 import { activityAssignedTo } from "@/lib/utils/activity-work";
 import { useActivities } from "@/lib/hooks/use-activities";
 import { useStudents } from "@/lib/hooks/use-students";
@@ -46,8 +42,7 @@ import { useUploadSubmission } from "@/lib/hooks/use-submissions";
 import { rotateImageFile } from "@/lib/utils/image";
 import {
   QualityErrorCard,
-  type QualityError,
-} from "@/components/submissions/quality-error-card";
+  type QualityError } from "@/components/submissions/quality-error-card";
 import {
   UploadCloudIcon,
   CameraIcon,
@@ -57,7 +52,6 @@ import {
   ArrowRightIcon,
   ArrowLeftIcon,
   XIcon,
-  Loader2Icon,
   AlertCircleIcon,
   RotateCwIcon,
   CheckIcon,
@@ -69,8 +63,7 @@ import {
   Plus,
   ChevronDownIcon,
   ShieldCheckIcon,
-  Video,
-} from "lucide-react";
+  Video } from "lucide-react";
 
 interface QuickUploadDialogProps {
   open: boolean;
@@ -98,16 +91,13 @@ const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 const PROCESSING_STAGES = [
   {
     title: "Checking image quality…",
-    detail: "Verifying focus, lighting, and alignment.",
-  },
+    detail: "Verifying focus, lighting, and alignment." },
   {
     title: "Analyzing handwriting…",
-    detail: "Evaluating letter formation, spacing, and slant.",
-  },
+    detail: "Evaluating letter formation, spacing, and slant." },
   {
     title: "Calculating scores…",
-    detail: "Finalizing criteria breakdown.",
-  },
+    detail: "Finalizing criteria breakdown." },
 ] as const;
 
 function subscribeTouch(callback: () => void) {
@@ -140,8 +130,7 @@ export function QuickUploadDialog({
   open,
   onOpenChange,
   prefilledActivityId,
-  prefilledStudentId,
-}: QuickUploadDialogProps) {
+  prefilledStudentId }: QuickUploadDialogProps) {
   const [isUploading, setIsUploading] = useState(false);
 
   return (
@@ -176,8 +165,7 @@ function UploadFlow({
   onClose,
   prefilledActivityId: requestedActivityId,
   prefilledStudentId: requestedStudentId,
-  onUploadingChange,
-}: {
+  onUploadingChange }: {
   onClose: () => void;
   prefilledActivityId?: string;
   prefilledStudentId?: string;
@@ -335,8 +323,7 @@ function UploadFlow({
     return (
       activities?.map((a) => ({
         value: a.id,
-        label: a.title,
-      })) ?? []
+        label: a.title })) ?? []
     );
   }, [activities]);
 
@@ -348,8 +335,7 @@ function UploadFlow({
       }).map((s) => ({
         value: s.id,
         label: s.full_name,
-        sublabel: s.section,
-      })) ?? []
+        sublabel: s.section })) ?? []
     );
   }, [students, activities, prefilledActivityId, activityChoice]);
 
@@ -500,8 +486,7 @@ function UploadFlow({
         video: activeDevId
           ? { deviceId: { exact: activeDevId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
           : { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      };
+        audio: false };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
@@ -604,8 +589,7 @@ function UploadFlow({
         image: selectedFile,
         activityId,
         studentId,
-        bypassTextCheck,
-      },
+        bypassTextCheck },
       {
         onSuccess: (data: unknown) => {
           const res = data as { submission_id?: string; id?: string };
@@ -631,14 +615,12 @@ function UploadFlow({
           } else if (err instanceof Error) {
             error = {
               code: "INTERNAL_ERROR",
-              message: err.message || "Upload failed. Please try again.",
-            };
+              message: err.message || "Upload failed. Please try again." };
           } else {
             error = { code: "INTERNAL_ERROR", message: "Upload failed. Please try again." };
           }
           setUploadError(error);
-        },
-      }
+        } }
     );
   };
 
@@ -805,7 +787,7 @@ function UploadFlow({
             aria-atomic="true"
             className="flex flex-col items-center justify-center py-10 space-y-3.5 text-center min-h-[160px]"
           >
-            <Loader2Icon className="size-8 animate-spin text-primary" />
+            <Spinner className="size-8 text-primary" />
             <div className="space-y-1 transition-all duration-200">
               <p className="text-sm font-semibold text-foreground tracking-tight">
                 {PROCESSING_STAGES[processingStageIndex].title}

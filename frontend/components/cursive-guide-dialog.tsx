@@ -673,12 +673,20 @@ export function CursiveGuideDialog({
                   </Button>
                 </div>
               ) : (
-                <div
+                <ToggleGroup
                   ref={gridRef}
+                  value={[activeLetter.id]}
+                  multiple={false}
+                  spacing={2.5}
                   onKeyDown={handleGridKeyDown}
-                  role="radiogroup"
+                  onValueChange={(vals) => {
+                    if (vals.length > 0) {
+                      setSelectedLetterId(vals[0]);
+                      setMobileView("detail");
+                    }
+                  }}
                   aria-label="Cursive alphabet letters"
-                  className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 print:grid-cols-4 print:gap-3"
+                  className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 print:grid-cols-4 print:gap-3"
                 >
                   {filteredLetters.map((item) => {
                     const isSelected = activeLetter.id === item.id;
@@ -691,23 +699,15 @@ export function CursiveGuideDialog({
 
                     return (
                       <div key={item.id} className="min-w-0 print:break-inside-avoid">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          role="radio"
-                          aria-checked={isSelected}
+                        <ToggleGroupItem
+                          value={item.id}
                           data-letter-id={item.id}
-                          tabIndex={isSelected ? 0 : -1}
-                          onClick={() => {
-                            setSelectedLetterId(item.id);
-                            setMobileView("detail");
-                          }}
                           aria-label={`Letter ${item.id}, ${item.zoneLabel} zone. Click to view formation guide.`}
                           className={cn(
                             "w-full relative group flex flex-col items-stretch justify-start p-0 text-left rounded-xl border transition-all duration-150 overflow-hidden cursor-pointer select-none whitespace-normal",
                             "h-20 sm:h-24 print:h-20 print:border-black print:bg-white",
                             isSelected
-                              ? "border-primary ring-2 ring-primary/40 bg-card hover:bg-card dark:bg-card/90 dark:hover:bg-card/90 shadow-sm"
+                              ? "border-primary ring-2 ring-primary/40 bg-card hover:bg-card aria-pressed:bg-card dark:bg-card/90 dark:hover:bg-card/90 dark:aria-pressed:bg-card/90 shadow-sm"
                               : "border-border/70 bg-card/60 hover:bg-card hover:border-border hover:shadow-2xs dark:bg-card/40 dark:hover:bg-card"
                           )}
                         >
@@ -727,11 +727,11 @@ export function CursiveGuideDialog({
                               {letterDisplayText}
                             </span>
                           </div>
-                        </Button>
+                        </ToggleGroupItem>
                       </div>
                     );
                   })}
-                </div>
+                </ToggleGroup>
               )}
             </section>
           </div>

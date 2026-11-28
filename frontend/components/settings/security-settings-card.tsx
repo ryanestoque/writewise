@@ -3,14 +3,18 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+  CardFooter } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -19,17 +23,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogTrigger } from "@/components/ui/dialog";
 import {
   Eye,
   EyeOff,
   Check,
   X,
   ShieldCheck,
-  Loader2,
-  CheckCircle2,
-} from "lucide-react";
+  CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface SecuritySettingsCardProps {
@@ -58,8 +59,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
       const supabase = createClient();
       const redirectUrl = `${window.location.origin}/auth/callback?next=/reset-password`;
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
+        redirectTo: redirectUrl });
 
       if (error) {
         const status = (error as { status?: number }).status;
@@ -93,12 +93,14 @@ function ForgotPasswordDialog({ email }: { email: string }) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <button
+          <Button
             type="button"
-            className="relative inline-flex items-center text-xs font-medium text-primary hover:text-primary/80 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded py-1 px-1.5 -my-1 -mr-1.5 min-h-[40px] sm:min-h-0 touch-manipulation before:absolute before:-inset-2 before:content-[''] sm:before:hidden"
+            variant="link"
+            size="xs"
+            className="relative h-auto py-1 px-1.5 -my-1 -mr-1.5 min-h-[40px] sm:min-h-0 touch-manipulation before:absolute before:-inset-2 before:content-[''] sm:before:hidden"
           >
             Forgot password?
-          </button>
+          </Button>
         }
       />
       <DialogContent className="sm:max-w-md">
@@ -181,7 +183,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
               >
                 {isSending ? (
                   <>
-                    <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                    <Spinner className="mr-2 size-4" />
                     Sending Link...
                   </>
                 ) : (
@@ -235,8 +237,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
       // 1. Re-authenticate current credentials to verify user identity
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
-        password: currentPassword,
-      });
+        password: currentPassword });
 
       if (signInError) {
         const status = (signInError as { status?: number }).status;
@@ -259,8 +260,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
 
       // 2. Apply the new password
       const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+        password: newPassword });
 
       if (updateError) {
         if (updateError.message.toLowerCase().includes("different")) {
@@ -309,8 +309,14 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                   </Label>
                   <ForgotPasswordDialog email={email} />
                 </div>
-                <div className="relative">
-                  <Input
+                <InputGroup
+                  className={`h-10 sm:h-9 rounded-lg border border-input bg-background dark:bg-input/30 ${
+                    currentPasswordError
+                      ? "border-destructive has-[[data-slot=input-group-control]:focus-visible]:border-destructive has-[[data-slot=input-group-control]:focus-visible]:ring-destructive/30"
+                      : ""
+                  }`}
+                >
+                  <InputGroupInput
                     id="current-password"
                     type={showCurrent ? "text" : "password"}
                     autoComplete="current-password"
@@ -324,29 +330,28 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                       }
                     }}
                     placeholder="Enter current password"
-                    className={`h-10 sm:h-9 text-base sm:text-sm rounded-lg pr-12 transition-colors ${
-                      currentPasswordError
-                        ? "border-destructive focus-visible:ring-destructive"
-                        : ""
-                    }`}
+                    className="h-full text-base sm:text-sm"
                     aria-invalid={currentPasswordError ? true : false}
                     aria-describedby={
                       currentPasswordError ? "current-password-error" : undefined
                     }
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                    aria-label={showCurrent ? "Hide current password" : "Show current password"}
-                  >
-                    {showCurrent ? (
-                      <EyeOff className="size-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="button"
+                      size="icon-sm"
+                      onClick={() => setShowCurrent(!showCurrent)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={showCurrent ? "Hide current password" : "Show current password"}
+                    >
+                      {showCurrent ? (
+                        <EyeOff aria-hidden="true" />
+                      ) : (
+                        <Eye aria-hidden="true" />
+                      )}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
                 {currentPasswordError ? (
                   <p
                     id="current-password-error"
@@ -367,8 +372,8 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                 >
                   New password
                 </Label>
-                <div className="relative">
-                  <Input
+                <InputGroup className="h-10 sm:h-9 rounded-lg border border-input bg-background dark:bg-input/30">
+                  <InputGroupInput
                     id="new-password"
                     type={showNew ? "text" : "password"}
                     autoComplete="new-password"
@@ -377,23 +382,26 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password"
-                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg pr-12 transition-colors"
+                    className="h-full text-base sm:text-sm"
                     aria-describedby="new-password-hint"
                     aria-invalid={newPassword.length > 0 && !allCriteriaMet}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew(!showNew)}
-                    className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                    aria-label={showNew ? "Hide new password" : "Show new password"}
-                  >
-                    {showNew ? (
-                      <EyeOff className="size-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="button"
+                      size="icon-sm"
+                      onClick={() => setShowNew(!showNew)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={showNew ? "Hide new password" : "Show new password"}
+                    >
+                      {showNew ? (
+                        <EyeOff aria-hidden="true" />
+                      ) : (
+                        <Eye aria-hidden="true" />
+                      )}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
 
                 <p id="new-password-hint" className="sr-only">
                   Password must be at least 10 characters and include uppercase, lowercase, and a number.
@@ -489,8 +497,8 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                 >
                   Confirm new password
                 </Label>
-                <div className="relative">
-                  <Input
+                <InputGroup className="h-10 sm:h-9 rounded-lg border border-input bg-background dark:bg-input/30">
+                  <InputGroupInput
                     id="confirm-password"
                     type={showConfirm ? "text" : "password"}
                     autoComplete="new-password"
@@ -499,25 +507,28 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter new password"
-                    className="h-10 sm:h-9 text-base sm:text-sm rounded-lg pr-12 transition-colors"
+                    className="h-full text-base sm:text-sm"
                     aria-describedby={
                       confirmPassword.length > 0 ? "confirm-password-status" : undefined
                     }
                     aria-invalid={confirmPassword.length > 0 && !passwordsMatch}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-[40px] min-w-[40px] size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-                    aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
-                  >
-                    {showConfirm ? (
-                      <EyeOff className="size-4" aria-hidden="true" />
-                    ) : (
-                      <Eye className="size-4" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="button"
+                      size="icon-sm"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                    >
+                      {showConfirm ? (
+                        <EyeOff aria-hidden="true" />
+                      ) : (
+                        <Eye aria-hidden="true" />
+                      )}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
                 {confirmPassword.length > 0 ? (
                   <p
                     id="confirm-password-status"
@@ -551,7 +562,7 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                    <Spinner data-icon="inline-start" className="mr-1.5 size-4" />
                     Updating...
                   </>
                 ) : (

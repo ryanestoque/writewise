@@ -16,9 +16,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Loader2Icon } from "lucide-react";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Spinner } from "@/components/ui/spinner";
 
 interface TeacherModalsContextValue {
   uploadOpen: boolean;
@@ -170,8 +169,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
         openShortcuts,
         signOutOpen,
         setSignOutOpen,
-        openSignOut,
-      }}
+        openSignOut }}
     >
       {children}
 
@@ -209,7 +207,7 @@ export function TeacherModalsProvider({ children }: { children: React.ReactNode 
             >
               {isSigningOut ? (
                 <>
-                  <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
+                  <Spinner className="size-4" />
                   <span>Signing out...</span>
                 </>
               ) : (

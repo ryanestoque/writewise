@@ -207,6 +207,8 @@ Form geometry communicates interaction depth and intent:
 
 ## Components
 
+**Shadcn-First Policy (`base-luma` / Base UI).** Every UI surface across Teacher and Parent portals must compose installed shadcn/ui primitives from `@/components/ui/*` (`Button`, `InputGroup`, `Field`/`FieldGroup`/`FieldSet`, `ToggleGroup`, `Checkbox`, `Alert`, `Badge`, `Collapsible`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `Card`, `Empty`, etc.) before introducing raw HTML controls or bespoke styled wrappers. Exceptions are limited to native `<input type="file">` capture inputs, SVG diagnostic overlay layers, and custom stroke canvases.
+
 ### Buttons
 - **Shape:** 8px radius (`rounded-lg`), height 36px (`h-9`) on desktop, 40px (`h-10`) on mobile.
 - **Primary Button:** Background `#1b6b63`, text `#ffffff`, hover `#145049`. Transition `all 150ms ease-out`.
@@ -277,8 +279,10 @@ WriteWise enforces a one-concept, one-noun vocabulary across both Teacher and Pa
 - **Do** keep data tables flat with crisp 1px borders, reserving shadows for cards and modals.
 - **Do** use domain-grounded icons (`Cpu`, `ScanLine`, `Layers`, `BarChart3`, `Ruler`) representing technical and pedagogical concepts.
 - **Do** render all portal shells and page canvases at full available width (`w-full min-w-0`) with consistent page gutters (`px-4 sm:px-6`) and zero maximum-width container caps.
+- **Do** compose installed shadcn/ui primitives (`@/components/ui/*`) first for all buttons, form fields, input groups, toggles, alerts, badges, collapsibles, progress bars, spinners, and skeletons.
 
 ### Don't:
+- **Don't** hand-roll raw HTML controls (`<button>`, `<input type="checkbox">`, `<fieldset role="radiogroup">`, `<div role="alert">`, `<div role="progressbar">`, `Loader2 animate-spin`) when an installed shadcn/ui primitive covers the pattern.
 - **Don't** use standard red (`#EF4444`) on student scores, progress charts, or handwriting feedback.
 - **Don't** use Poppins for body copy, diagnostic descriptions, or table rows.
 - **Don't** clutter handwriting photos with heavy, opaque annotations that obscure the original handwriting.

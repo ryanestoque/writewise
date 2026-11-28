@@ -2,7 +2,9 @@
 
 import { memo, ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -94,25 +96,28 @@ export const FloatingActionBar = memo(function FloatingActionBar({
               !allSelected &&
               typeof totalCount === "number" &&
               totalCount > selectedCount && (
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="xs"
                   onClick={onSelectAll}
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium ml-0.5 hover:underline underline-offset-2 transition-colors cursor-pointer shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 py-0.5"
+                  className="h-auto gap-1 text-xs font-medium ml-0.5 cursor-pointer shrink-0 px-1 py-0.5"
                   title={`Select all ${totalCount} ${plural}`}
                 >
-                  <CheckCheck className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <CheckCheck data-icon="inline-start" aria-hidden="true" />
                   <span className="hidden sm:inline">
                     Select all ({totalCount})
                   </span>
                   <span className="sm:hidden">All ({totalCount})</span>
-                </button>
+                </Button>
               )}
           </div>
 
           {/* Divider on larger screens if there are children actions */}
           {children && (
-            <div
-              className="h-4 w-px bg-border/80 hidden md:block"
+            <Separator
+              orientation="vertical"
+              className="h-4 hidden md:block"
               aria-hidden="true"
             />
           )}
@@ -125,14 +130,16 @@ export const FloatingActionBar = memo(function FloatingActionBar({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     onClick={onClearSelection}
-                    className="relative flex items-center justify-center h-8 w-8 sm:h-7.5 sm:w-7.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 active:scale-95 transition-all ml-0.5 after:absolute after:-inset-2.5 after:content-[''] shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                    className="relative size-8 sm:size-7 rounded-full text-muted-foreground hover:text-foreground ml-0.5 after:absolute after:-inset-2.5 after:content-[''] shrink-0 cursor-pointer"
                     aria-label="Clear selection (Esc)"
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                    <X aria-hidden="true" />
+                  </Button>
                 }
               />
               <TooltipContent

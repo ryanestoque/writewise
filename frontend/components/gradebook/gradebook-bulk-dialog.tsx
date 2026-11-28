@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useGradebookActions, type SectionGradebook } from "@/lib/hooks/use-gradebook";
 import { invalidateWorkQueries } from "@/lib/hooks/use-activity-work";
 import { gradebookMutation, gradebookRequest } from "@/lib/gradebook/transport";
 import type { components } from "@/types/api";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 
 export function GradebookBulkDialog({
   userId,
@@ -266,7 +269,7 @@ export function GradebookBulkDialog({
                     <div className="flex items-center gap-2">
                       {sec.isLoading ? (
                         <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                          <Loader2 className="size-3 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                          <Spinner className="size-3" />
                           Checking…
                         </span>
                       ) : sec.readyCount > 0 ? (
@@ -287,19 +290,18 @@ export function GradebookBulkDialog({
 
             {/* Zero Ready Alert (Actionable Recovery & Accessibility) */}
             {isZeroReadyTotal ? (
-              <div
-                role="alert"
+              <Alert
                 aria-live="polite"
-                className="rounded-lg border border-band-2/30 bg-band-2/10 p-3.5 text-xs text-band-2-text flex items-start gap-2.5"
+                className="rounded-lg border-band-2/30 bg-band-2/10 p-3.5 text-xs text-band-2-text"
               >
-                <AlertCircle className="size-4 shrink-0 text-band-2-text mt-0.5" aria-hidden="true" />
-                <div className="space-y-1">
-                  <p className="font-semibold text-band-2-text">No draft grades are ready to release</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    No completed draft grades were found for this activity. Score student worksheets in the gradebook first before publishing to parent portals.
-                  </p>
-                </div>
-              </div>
+                <AlertCircle className="text-band-2-text" aria-hidden="true" />
+                <AlertTitle className="text-xs font-semibold text-band-2-text">
+                  No draft grades are ready to release
+                </AlertTitle>
+                <AlertDescription className="text-xs text-muted-foreground leading-relaxed">
+                  No completed draft grades were found for this activity. Score student worksheets in the gradebook first before publishing to parent portals.
+                </AlertDescription>
+              </Alert>
             ) : eligibleCount === 0 && assignedSections.length > 1 ? (
               <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
                 <span>
@@ -329,9 +331,9 @@ export function GradebookBulkDialog({
 
             {/* High-Contrast Acknowledgment Checkbox */}
             {isMultiSectionRelease && totalReadyAcrossSections > 0 && (
-              <label
-                htmlFor="ack-cross-section"
-                className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-card hover:bg-muted/40 p-3 text-xs leading-relaxed text-foreground cursor-pointer select-none transition-colors"
+              <Field
+                orientation="horizontal"
+                className="items-start gap-2.5 rounded-lg border border-border/80 bg-card hover:bg-muted/40 p-3 text-xs leading-relaxed text-foreground transition-colors"
               >
                 <Checkbox
                   id="ack-cross-section"
@@ -340,11 +342,15 @@ export function GradebookBulkDialog({
                   className="mt-0.5 border-foreground/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   aria-describedby="ack-cross-section-desc"
                 />
-                <span id="ack-cross-section-desc">
+                <FieldLabel
+                  htmlFor="ack-cross-section"
+                  id="ack-cross-section-desc"
+                  className="text-xs font-normal leading-relaxed cursor-pointer select-none"
+                >
                   I have reviewed the sections above and confirm releasing ready grades across{" "}
                   <strong>all {assignedSections.length} assigned sections</strong>.
-                </span>
-              </label>
+                </FieldLabel>
+              </Field>
             )}
           </div>
         )}
@@ -368,9 +374,9 @@ export function GradebookBulkDialog({
         )}
 
         {error && (
-          <p role="alert" className="text-destructive text-xs">
+          <FieldError role="alert" className="text-xs">
             {error}
-          </p>
+          </FieldError>
         )}
 
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-border/40">
@@ -387,7 +393,7 @@ export function GradebookBulkDialog({
                 <Button disabled={isConfirmDisabled} onClick={() => void save()} className="min-h-9">
                   {pending ? (
                     <>
-                      <Loader2 className="mr-2 size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                      <Spinner data-icon="inline-start" />
                       {operation === "zero"
                         ? "Marking uncollected…"
                         : operation === "excuse"

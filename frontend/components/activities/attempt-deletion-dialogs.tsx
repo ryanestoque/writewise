@@ -1,6 +1,8 @@
 "use client";
 
 import { memo } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,9 +11,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Loader2 } from "lucide-react";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils/formatters";
 import type { Submission } from "@/lib/hooks/use-submissions";
 import type { Student } from "@/lib/hooks/use-students";
@@ -73,8 +74,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
   studentBatchToDelete,
   onStudentBatchDialogOpenChange,
   isStudentBatchDeleting,
-  onConfirmStudentBatchDelete,
-}: AttemptDeletionDialogsProps) {
+  onConfirmStudentBatchDelete }: AttemptDeletionDialogsProps) {
   return (
     <>
       {/* Batch Delete Confirmation Alert Dialog */}
@@ -103,31 +103,38 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
                   <strong>{hiddenSelectedCount}</strong> hidden {hiddenSelectedCount === 1 ? "attempt is" : "attempts are"} included in this deletion.
                 </span>
                 {onClearHiddenSelection && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="xs"
                     onClick={onClearHiddenSelection}
-                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0 rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+                    className="h-auto p-0 underline hover:no-underline font-semibold cursor-pointer shrink-0 text-amber-900 dark:text-amber-200"
                   >
                     Remove hidden
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
             {unavailableSelectedCount > 0 && (
-              <div role="alert" className="flex items-center justify-between gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-2 text-xs text-destructive">
-                <span>
+              <Alert
+                variant="destructive"
+                className="flex items-center justify-between gap-2 rounded-lg p-2 text-xs"
+              >
+                <AlertDescription className="text-xs">
                   {unavailableSelectedCount} selected {unavailableSelectedCount === 1 ? "attempt is" : "attempts are"} unavailable.
-                </span>
+                </AlertDescription>
                 {onClearSelection && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="xs"
                     onClick={onClearSelection}
-                    className="underline hover:no-underline font-semibold cursor-pointer shrink-0 rounded focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+                    className="h-auto p-0 underline hover:no-underline font-semibold cursor-pointer shrink-0 text-destructive"
                   >
                     Clear selection
-                  </button>
+                  </Button>
                 )}
-              </div>
+              </Alert>
             )}
             {selectedSubmissions.map((sub) => (
               <div key={sub.id} className="flex flex-col gap-1 border-b pb-2">
@@ -169,7 +176,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isBatchDeleting ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                  <Spinner className="mr-1.5 size-4" />
                   Deleting...
                 </>
               ) : (
@@ -207,7 +214,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isSingleDeleting ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                  <Spinner className="mr-1.5 size-4" />
                   Deleting...
                 </>
               ) : (
@@ -249,7 +256,7 @@ export const AttemptDeletionDialogs = memo(function AttemptDeletionDialogs({
             >
               {isStudentBatchDeleting ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+                  <Spinner className="mr-1.5 size-4" />
                   Deleting...
                 </>
               ) : (

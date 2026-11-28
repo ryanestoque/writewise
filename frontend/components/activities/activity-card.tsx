@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { Activity } from "@/lib/hooks/use-activities";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { WorksheetPrompt } from "@/components/activities/worksheet-prompt";
 import {
@@ -169,27 +170,25 @@ export const ActivityCard = memo(function ActivityCard({
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-1.5 flex-wrap min-w-0">
             {/* Selection Checkbox with Touch-Friendly Hit Target */}
-            <div className="w-8 shrink-0 flex items-center justify-center">
-              <label
-                className="flex size-10 sm:size-7 items-center justify-center rounded-md hover:bg-muted/70 cursor-pointer transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={(e) => {
-                    onToggleSelect(
-                      activity.id,
-                      Boolean((e.nativeEvent as MouseEvent)?.shiftKey)
-                    );
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  aria-label={`Select activity: ${displayTargetText.slice(0, 40)}`}
-                  className="size-4.5 sm:size-4 rounded border-border accent-primary cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </label>
+            <div
+              className="w-8 shrink-0 flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => {
+                  onToggleSelect(activity.id);
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (e.shiftKey) {
+                    e.preventDefault();
+                    onToggleSelect(activity.id, true);
+                  }
+                }}
+                aria-label={`Select activity: ${displayTargetText.slice(0, 40)}`}
+                className="cursor-pointer"
+              />
             </div>
 
             {isArchived ? (

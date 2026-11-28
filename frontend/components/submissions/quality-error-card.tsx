@@ -3,6 +3,11 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -819,9 +824,10 @@ export function QualityErrorCard({
               {presentation.title}
             </h4>
             {presentation.badgeLabel && (
-              <span
+              <Badge
+                variant="outline"
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                  "h-auto gap-1.5 px-2.5 py-0.5 text-xs font-medium",
                   presentation.isQualityCheck
                     ? "bg-warning/15 text-warning-foreground border-warning/30"
                     : "bg-destructive/15 text-destructive border-destructive/25"
@@ -835,7 +841,7 @@ export function QualityErrorCard({
                   aria-hidden="true"
                 />
                 {presentation.badgeLabel}
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -845,26 +851,33 @@ export function QualityErrorCard({
 
           {/* Technical diagnostic disclosure (for teachers & calibration) */}
           {hasTechnicalDetails && variant !== "parent" && (
-            <div className="pt-0.5">
-              <button
-                type="button"
-                onClick={() => setShowTechDetails((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-[38px] sm:min-h-0"
-                aria-expanded={showTechDetails}
-                aria-controls="technical-diagnostic-details"
+            <Collapsible
+              open={showTechDetails}
+              onOpenChange={setShowTechDetails}
+              className="pt-0.5"
+            >
+              <CollapsibleTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className="h-auto gap-1.5 py-1.5 px-2 -ml-2 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer rounded-md min-h-[38px] sm:min-h-0"
+                    aria-controls="technical-diagnostic-details"
+                  >
+                    <span>{showTechDetails ? "Hide advanced details" : "Show advanced details"}</span>
+                    {showTechDetails ? (
+                      <ChevronUp className="size-3.5" aria-hidden="true" />
+                    ) : (
+                      <ChevronDown className="size-3.5" aria-hidden="true" />
+                    )}
+                  </Button>
+                }
+              />
+              <CollapsibleContent
+                id="technical-diagnostic-details"
+                className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-xs font-sans tabular-nums text-muted-foreground space-y-1"
               >
-                <span>{showTechDetails ? "Hide advanced details" : "Show advanced details"}</span>
-                {showTechDetails ? (
-                  <ChevronUp className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="size-3.5" aria-hidden="true" />
-                )}
-              </button>
-              {showTechDetails && (
-                <div
-                  id="technical-diagnostic-details"
-                  className="mt-1.5 p-2.5 rounded-lg bg-muted/60 text-xs font-sans tabular-nums text-muted-foreground space-y-1"
-                >
                   {typeof error.details?.measured_value === "number" && (
                     <div className="flex justify-between items-center gap-2">
                       <span className="font-sans">Measured:</span>
@@ -905,9 +918,8 @@ export function QualityErrorCard({
                       </span>
                     </div>
                   )}
-                </div>
-              )}
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
         </div>
       </div>
@@ -1026,10 +1038,12 @@ export function QualityErrorCard({
           </ul>
           {presentation.tips.length > 1 && (
             <div className="pt-0.5 flex justify-center">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="xs"
                 onClick={() => setShowAllTips((prev) => !prev)}
-                className="inline-flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-md min-h-11 sm:min-h-0"
+                className="h-auto gap-1.5 py-1.5 px-3 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer rounded-md min-h-11 sm:min-h-0"
                 aria-expanded={showAllTips}
                 aria-controls="remediation-tips-list"
               >
@@ -1043,7 +1057,7 @@ export function QualityErrorCard({
                 ) : (
                   <ChevronDown className="size-3.5" aria-hidden="true" />
                 )}
-              </button>
+              </Button>
             </div>
           )}
         </div>

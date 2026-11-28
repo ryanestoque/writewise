@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ApiError } from "@/lib/utils/api-error";
 import {
   readEmailPreference,
   saveEmailPreference,
-  type PreferenceRole,
-} from "@/lib/notifications/preferences";
+  type PreferenceRole } from "@/lib/notifications/preferences";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,15 +18,13 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from "@/components/ui/card";
 import {
   Field,
   FieldContent,
   FieldDescription,
   FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+  FieldLabel } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
@@ -39,8 +37,7 @@ interface NotificationSettingsCardProps {
 export function NotificationSettingsCard({
   accountId,
   role,
-  initialEnabled,
-}: NotificationSettingsCardProps) {
+  initialEnabled }: NotificationSettingsCardProps) {
   const [supabase] = useState(createClient);
   const router = useRouter();
   const headingId = useId();
@@ -113,8 +110,7 @@ export function NotificationSettingsCard({
 
   useEffect(() => {
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+      data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user.id === accountId) return;
       generation.current += 1;
       pending.current?.abort();
@@ -254,7 +250,7 @@ export function NotificationSettingsCard({
               disabled={busy || draftEnabled === null || draftEnabled === savedEnabled}
             >
               {isSaving && (
-                <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+                <Spinner data-icon="inline-start" />
               )}
               {isSaving ? "Saving…" : "Save changes"}
             </Button>

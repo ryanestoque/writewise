@@ -74,6 +74,7 @@ Lint/format: `uv run ruff check .` (backend), `npx eslint .` (frontend). Full se
 ## 4. Code Conventions
 
 - **TypeScript:** `strict: true`, kept strict — don't relax it. ESLint (flat config, `eslint-config-next`) + Prettier.
+- **Frontend UI (shadcn-first):** Always use installed shadcn/ui primitives from `@/components/ui/*` (`base-luma` / Base UI) before writing raw HTML controls (`<button>`, `<input>`, `<label>`, `<fieldset>`, `role="radiogroup"`, `role="progressbar"`, `role="alert"`, `animate-pulse` loaders, `Loader2 animate-spin`) or bespoke styled wrappers. Compose with `Button`, `InputGroup`, `Field`/`FieldGroup`/`FieldSet`, `ToggleGroup`, `Checkbox`, `Alert`, `Badge`, `Collapsible`, `Progress`, `Spinner`, `Skeleton`, `Separator`, `Card`, `Empty`, etc. Exceptions: native `<input type="file">` mobile capture inputs, SVG diagnostic overlay layers, and custom canvases.
 - **Python:** ruff for lint *and* format (replaces black/isort/flake8). Pydantic v2 + `pydantic-settings` for typed env config.
 - **API errors:** every error response uses the envelope `{ error: { code, message, details } }`. Frontend branches on `error.code` only — never on `message` text. Adding a new error path means adding its code to `API_SPEC.md` §2.4's catalog.
 - **DB schema:** SQL-first — migrations are `.sql` files in `supabase/migrations/`, the single source of truth. No ORM-owned migrations, no dashboard-only schema edits.
