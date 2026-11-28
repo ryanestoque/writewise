@@ -662,7 +662,8 @@ export function CursiveGuideDialog({
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => setCaseFilter("pairs")}
-                        aria-label="Clear filter"
+                        aria-label={`Clear ${activeCaseLabel} filter`}
+                        className="relative after:absolute after:-inset-2.5"
                       >
                         <XIcon aria-hidden="true" />
                       </Button>
@@ -676,7 +677,8 @@ export function CursiveGuideDialog({
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => setZoneFilter("all")}
-                        aria-label="Clear filter"
+                        aria-label={`Clear ${activeZoneLabel} filter`}
+                        className="relative after:absolute after:-inset-2.5"
                       >
                         <XIcon aria-hidden="true" />
                       </Button>

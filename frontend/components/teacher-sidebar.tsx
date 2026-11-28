@@ -195,7 +195,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                   size="sm"
                   render={
                     <Link
-                      href="/activities?status=needs_review"
+                      href="/activities"
                       onClick={handleNavClick}
                     />
                   }
@@ -204,7 +204,7 @@ export function TeacherSidebar({ user, pendingSubmissionsCount }: TeacherSidebar
                   <ClipboardListIcon aria-hidden="true" />
                   <span>Pending review</span>
                 </SidebarMenuButton>
-                <SidebarMenuBadge className="text-sidebar-accent-foreground font-semibold">
+                <SidebarMenuBadge className="top-2 md:top-1 text-sidebar-accent-foreground font-semibold">
                   {pendingSubmissionsCount}
                 </SidebarMenuBadge>
               </SidebarMenuItem>

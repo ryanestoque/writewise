@@ -71,7 +71,7 @@ const RULING_GUIDES = (
       x2="390"
       y2="75"
       stroke="currentColor"
-      className="text-band-1 dark:text-band-1-text"
+      className="text-band-1-text"
       strokeWidth="1.8"
       strokeOpacity="0.9"
     />
@@ -337,7 +337,7 @@ export function CursiveStrokeCanvas({
             <RotateCcwIcon aria-hidden="true" />
           </Button>
 
-          <Separator orientation="vertical" className="mx-0.5 h-6" />
+          <Separator orientation="vertical" className="mx-0.5 h-6 self-center" />
 
           <div className="flex items-center gap-1">
             <GaugeIcon className="hidden size-3.5 text-muted-foreground sm:block" aria-hidden="true" />
@@ -388,7 +388,7 @@ export function CursiveStrokeCanvas({
                 strokeWidth="2.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-muted-foreground/20 dark:text-muted-foreground/15"
+                className="text-muted-foreground/20"
                 strokeDasharray="3 3"
               />
             ))}
