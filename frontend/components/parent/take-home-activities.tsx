@@ -52,13 +52,14 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayBody,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayFooter,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import {
   ClipboardList,
   CheckCircle2,
@@ -248,7 +249,7 @@ export function TakeHomeActivities({
       <div className="flex flex-col gap-3">
         {recovery}
         <Empty className="border border-border rounded-xl sm:rounded-2xl shadow-warm bg-card py-8">
-          <EmptyMedia variant="icon" className="bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300">
+          <EmptyMedia variant="icon" className="bg-secondary text-secondary-foreground">
             <ClipboardList className="size-6" aria-hidden="true" />
           </EmptyMedia>
           <EmptyHeader>
@@ -278,7 +279,7 @@ export function TakeHomeActivities({
       {focusMeta && toDoActivities.length > 0 && (
         <Alert
           role="note"
-          className="border-primary/20 bg-primary/5 dark:bg-primary/10 px-4 py-3 text-xs sm:text-sm"
+          className="border-primary/20 bg-primary/5 px-4 py-3 text-xs sm:text-sm"
         >
           <AlertDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             <span className="font-semibold text-foreground">Focus · {focusMeta.label}:</span>{" "}
@@ -846,10 +847,10 @@ function ActivityCard({
       className={cn(
         "group relative justify-between rounded-xl sm:rounded-2xl sm:[--card-spacing:--spacing(5)] hover:shadow-md transition-[border-color,box-shadow] duration-200",
         isRejected || latestRejected
-          ? "border-warning/50 dark:border-warning/60 bg-warning/5 dark:bg-warning/10 hover:border-warning/80"
+          ? "border-warning/50 bg-warning/5 hover:border-warning/80"
           : isReturned
-            ? "border-primary/40 bg-primary/5 dark:bg-primary/10 hover:border-primary/60"
-            : "hover:border-brand-300 dark:hover:border-brand-800"
+            ? "border-primary/40 bg-primary/5 hover:border-primary/60"
+            : "hover:border-primary/40"
       )}
     >
       <CardHeader className="gap-1">
@@ -1098,23 +1099,23 @@ function PhotoPreviewDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl max-h-[90dvh] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
-          <DialogHeader className="p-4 sm:p-5 border-b border-border/70 pr-12 space-y-1">
-            <DialogTitle className="font-heading text-base sm:text-lg font-semibold text-foreground break-words">
+      <ResponsiveRichOverlay open={open} onOpenChange={onOpenChange}>
+        <ResponsiveRichOverlayContent className="w-[calc(100%-1.5rem)] sm:max-w-3xl max-h-[90dvh] p-0 gap-0 overflow-hidden flex flex-col shadow-warm">
+          <ResponsiveRichOverlayHeader className="p-4 sm:p-5 border-b border-border/70 pr-12 flex flex-col gap-1">
+            <ResponsiveRichOverlayTitle className="font-heading text-base sm:text-lg font-semibold text-foreground break-words">
               {title}
-            </DialogTitle>
+            </ResponsiveRichOverlayTitle>
             {(childName || statusLabel) && (
               <p className="text-xs font-medium text-muted-foreground">
                 {[childName, statusLabel].filter(Boolean).join(" · ")}
               </p>
             )}
-            <DialogDescription className="text-xs text-muted-foreground italic break-words line-clamp-2">
+            <ResponsiveRichOverlayDescription className="text-xs text-muted-foreground italic break-words line-clamp-2">
               &ldquo;{normalizeActivityPrompt(targetText)}&rdquo;
-            </DialogDescription>
-          </DialogHeader>
+            </ResponsiveRichOverlayDescription>
+          </ResponsiveRichOverlayHeader>
 
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+          <ResponsiveRichOverlayBody className="p-4 sm:p-5">
             <WorksheetImageInspector
               imageUrl={imageUrl}
               altText={`Uploaded handwriting worksheet for ${title}`}
@@ -1128,9 +1129,12 @@ function PhotoPreviewDialog({
               flatFrame={true}
               aspectRatioClass="h-[260px] sm:h-[360px] lg:min-h-[420px] lg:max-h-[min(600px,calc(100dvh-18rem))]"
             />
-          </div>
+          </ResponsiveRichOverlayBody>
 
-          <DialogFooter className="p-3 sm:p-4 border-t border-border sm:items-center sm:justify-between bg-background">
+          <ResponsiveRichOverlayFooter
+            showCloseButton={false}
+            className="flex-wrap border-t border-border sm:p-4 sm:items-center sm:justify-between bg-background"
+          >
             <div className="flex items-center gap-2 flex-wrap">
               {activityId && childId && submissionId && (
                 <WorkCommentsButton
@@ -1178,9 +1182,9 @@ function PhotoPreviewDialog({
             >
               Close
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </ResponsiveRichOverlayFooter>
+        </ResponsiveRichOverlayContent>
+      </ResponsiveRichOverlay>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
