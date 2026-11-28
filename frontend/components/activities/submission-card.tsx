@@ -986,7 +986,7 @@ export const UnsubmittedCard = memo(function UnsubmittedCard({
             <Button
               variant="outline"
               size="sm"
-              className="w-full lg:w-auto min-h-11 md:min-h-9 text-xs font-medium"
+              className="w-full lg:w-auto h-10 min-h-11 md:h-9 md:min-h-9 px-3 text-xs sm:text-sm font-medium shrink-0"
               onClick={() => onUpload(student.id)}
               aria-label={`Upload worksheet for ${student.full_name}`}
             >
