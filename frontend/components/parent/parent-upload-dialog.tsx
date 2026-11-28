@@ -8,13 +8,14 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveRichOverlay,
+  ResponsiveRichOverlayBody,
+  ResponsiveRichOverlayContent,
+  ResponsiveRichOverlayDescription,
+  ResponsiveRichOverlayFooter,
+  ResponsiveRichOverlayHeader,
+  ResponsiveRichOverlayTitle,
+} from "@/components/shared/responsive-rich-overlay";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -141,14 +143,14 @@ export function ParentUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
 
   return (
-    <Dialog
+    <ResponsiveRichOverlay
       open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen && isUploading) return;
         onOpenChange(nextOpen);
       }}
     >
-      <DialogContent
+      <ResponsiveRichOverlayContent
         showCloseButton={!isUploading}
         className="w-[calc(100%-1.5rem)] max-w-xl max-h-[min(92dvh,calc(100dvh-2rem))] p-0 gap-0 overflow-hidden flex flex-col shadow-warm"
       >
@@ -160,8 +162,8 @@ export function ParentUploadDialog({
           prefilledActivityId={prefilledActivityId}
           onUploadingChange={setIsUploading}
         />
-      </DialogContent>
-    </Dialog>
+      </ResponsiveRichOverlayContent>
+    </ResponsiveRichOverlay>
   );
 }
 
@@ -544,14 +546,14 @@ function ParentUploadFlow({
         onChange={(e) => handleFileChange(e.target.files?.[0])}
       />
 
-      <DialogHeader className="shrink-0 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
+      <ResponsiveRichOverlayHeader className="shrink-0 px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 border-b border-border/80">
         <div className="min-w-0 pr-10 sm:pr-8">
-          <DialogTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
+          <ResponsiveRichOverlayTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
             Send worksheet photo
-          </DialogTitle>
-          <DialogDescription className="sr-only">
+          </ResponsiveRichOverlayTitle>
+          <ResponsiveRichOverlayDescription className="sr-only">
             Submitting for {childName}
-          </DialogDescription>
+          </ResponsiveRichOverlayDescription>
         </div>
 
         {/* 3-Step Interactive Progress Stepper */}
@@ -574,25 +576,31 @@ function ParentUploadFlow({
                   return (
                     <li
                       key={s.step}
-                      className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${idx < activeSteps.length - 1 ? "flex-1" : ""
-                        }`}
+                      className={cn(
+                        "flex items-center gap-1.5 sm:gap-2 min-w-0",
+                        idx < activeSteps.length - 1 && "flex-1"
+                      )}
                       aria-current={isCurrent ? "step" : undefined}
                     >
                       {canJump && !isCurrent ? (
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setStep(s.step as Step)}
                           aria-label={`${s.label} — Step ${stepNumber}${isCompleted ? ", completed" : ""}`}
-                          className="group flex items-center gap-1.5 sm:gap-2 min-w-0 min-h-11 sm:min-h-9 p-1 -m-1 rounded-lg transition-colors hover:bg-muted/80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary text-left cursor-pointer touch-manipulation"
+                          className="group h-auto min-w-0 min-h-11 sm:min-h-9 p-1 -m-1 rounded-lg justify-start text-left cursor-pointer touch-manipulation hover:bg-muted/80"
                         >
                           <span
-                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-transform ${isCompleted
-                              ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
-                              : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                              }`}
+                            className={cn(
+                              "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-transform",
+                              isCompleted
+                                ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
+                                : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                            )}
                           >
                             {isCompleted ? (
-                              <CheckIcon className="size-3.5" aria-hidden="true" />
+                              <CheckIcon aria-hidden="true" />
                             ) : (
                               stepNumber
                             )}
@@ -600,16 +608,18 @@ function ParentUploadFlow({
                           <span className="text-xs sm:text-sm truncate font-medium text-foreground group-hover:text-primary transition-colors">
                             {s.label}
                           </span>
-                        </button>
+                        </Button>
                       ) : (
                         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                           <div
-                            className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${isCompleted
-                              ? "bg-primary text-primary-foreground"
-                              : isCurrent
-                                ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                : "bg-muted text-muted-foreground"
-                              }`}
+                            className={cn(
+                              "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
+                              isCompleted
+                                ? "bg-primary text-primary-foreground"
+                                : isCurrent
+                                  ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                  : "bg-muted text-muted-foreground"
+                            )}
                           >
                             {isCompleted ? (
                               <CheckIcon className="size-3.5" aria-hidden="true" />
@@ -618,12 +628,14 @@ function ParentUploadFlow({
                             )}
                           </div>
                           <span
-                            className={`text-xs sm:text-sm truncate font-medium ${isCurrent
-                              ? "text-foreground font-semibold"
-                              : isCompleted
-                                ? "text-foreground"
-                                : "text-muted-foreground"
-                              }`}
+                            className={cn(
+                              "text-xs sm:text-sm truncate font-medium",
+                              isCurrent
+                                ? "text-foreground font-semibold"
+                                : isCompleted
+                                  ? "text-foreground"
+                                  : "text-muted-foreground"
+                            )}
                           >
                             {s.label}
                           </span>
@@ -632,8 +644,10 @@ function ParentUploadFlow({
 
                       {idx < activeSteps.length - 1 && (
                         <div
-                          className={`h-0.5 flex-1 rounded-full transition-colors ${step > s.step || step === 5 ? "bg-primary" : "bg-muted"
-                            }`}
+                          className={cn(
+                            "h-0.5 flex-1 rounded-full transition-colors",
+                            step > s.step || step === 5 ? "bg-primary" : "bg-muted"
+                          )}
                           aria-hidden="true"
                         />
                       )}
@@ -644,9 +658,9 @@ function ParentUploadFlow({
             );
           })()}
         </nav>
-      </DialogHeader>
+      </ResponsiveRichOverlayHeader>
 
-      <div className="flex-1 min-h-0 px-4 sm:px-6 py-4 overflow-y-auto overscroll-contain">
+      <ResponsiveRichOverlayBody className="px-4 sm:px-6 py-4">
         {activitiesError && step !== 5 && (
           <QueryRecovery
             title="Could not load practice worksheets"
@@ -767,23 +781,24 @@ function ParentUploadFlow({
                             : status.processing
                               ? { label: "Checking photo…", className: "text-muted-foreground font-medium" }
                               : status.category === "submitted" && !status.excused
-                                ? { label: "Photo sent · Replace if needed", className: "text-brand-700 dark:text-brand-300 font-medium" }
+                                ? { label: "Photo sent · Replace if needed", className: "text-primary font-medium" }
                                 : status.excused
                                   ? { label: "Excused · Optional", className: "text-muted-foreground font-medium" }
                                   : null;
 
                       return (
-                        <button
+                        <Button
                           key={act.id}
                           type="button"
+                          variant="outline"
                           onClick={() => {
                             setSelectedActivityId(act.id);
                             setStep(2);
                           }}
                           className={cn(
-                            "flex flex-col text-left p-3.5 rounded-xl border transition-colors text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                            "h-auto w-full flex-col items-stretch justify-start text-left whitespace-normal font-normal p-3.5 rounded-xl border transition-colors text-xs sm:text-sm cursor-pointer shadow-xs focus-visible:ring-primary",
                             isSelected
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
+                              ? "border-primary bg-primary/5 hover:bg-primary/5 ring-1 ring-primary"
                               : "border-border/80 bg-card hover:border-primary/60 hover:bg-muted/30"
                           )}
                         >
@@ -793,7 +808,7 @@ function ParentUploadFlow({
                             </span>
                             {isSelected && (
                               <CheckCircle2Icon
-                                className="size-4 text-primary shrink-0"
+                                className="text-primary shrink-0"
                                 aria-hidden="true"
                               />
                             )}
@@ -818,7 +833,7 @@ function ParentUploadFlow({
                                 : `Assigned ${formatActivityDate(act.createdAt)}`}
                             </span>
                           </span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -830,8 +845,8 @@ function ParentUploadFlow({
             {step === 2 && (
               <>
                 {/* Context Header: Active Child & Worksheet */}
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
-                  <div className="flex items-center justify-between gap-3">
+                <Card size="sm" className="py-0 shadow-none bg-muted/40 border-border/80 text-xs">
+                  <CardContent className="p-3 flex items-center justify-between gap-3">
                     <div className="min-w-0 flex flex-col gap-0.5">
                       <div className="font-semibold text-foreground break-words">
                         <span>{childName}</span>
@@ -858,20 +873,17 @@ function ParentUploadFlow({
                         Change worksheet
                       </Button>
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
                   <Alert
                     role="status"
-                    className="py-2.5 px-3 bg-brand-50/80 dark:bg-brand-950/40 border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200"
+                    className="py-2.5 px-3 bg-secondary/60 border-primary/20 text-xs text-foreground"
                   >
-                    <CheckCircle2Icon
-                      className="text-brand-600 dark:text-brand-400"
-                      aria-hidden="true"
-                    />
-                    <AlertDescription className="text-xs text-brand-900 dark:text-brand-200">
+                    <CheckCircle2Icon className="text-primary" aria-hidden="true" />
+                    <AlertDescription className="text-xs text-foreground/90">
                       <strong>New attempt</strong> — earlier photos stay saved in history.
                     </AlertDescription>
                   </Alert>
@@ -1042,38 +1054,46 @@ function ParentUploadFlow({
                     </span>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
-                      <p className="font-semibold text-foreground text-xs sm:text-sm">
-                        1. 3-line penmanship paper
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Use standard 3-line paper with top line, midline, and baseline clearly visible.
-                      </p>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
-                      <p className="font-semibold text-foreground text-xs sm:text-sm">
-                        2. Connected cursive
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Words must be written in connected cursive strokes, not separated print letters.
-                      </p>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
-                      <p className="font-semibold text-foreground text-xs sm:text-sm">
-                        3. Flat paper &amp; even light
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Hold your phone straight above the page. Avoid strong glare, shadows, or camera angles.
-                      </p>
-                    </div>
-                    <div className="p-2.5 rounded-lg bg-background/60 dark:bg-muted/30 flex flex-col gap-0.5">
-                      <p className="font-semibold text-foreground text-xs sm:text-sm">
-                        4. Sharp focus
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Tap your phone screen on the ink before snapping so writing lines stay crisp.
-                      </p>
-                    </div>
+                    <Card size="sm" className="rounded-lg bg-card py-0 shadow-none">
+                      <CardContent className="p-2.5 flex flex-col gap-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          1. 3-line penmanship paper
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Use standard 3-line paper with top line, midline, and baseline clearly visible.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card size="sm" className="rounded-lg bg-card py-0 shadow-none">
+                      <CardContent className="p-2.5 flex flex-col gap-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          2. Connected cursive
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Words must be written in connected cursive strokes, not separated print letters.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card size="sm" className="rounded-lg bg-card py-0 shadow-none">
+                      <CardContent className="p-2.5 flex flex-col gap-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          3. Flat paper &amp; even light
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Hold your phone straight above the page. Avoid strong glare, shadows, or camera angles.
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card size="sm" className="rounded-lg bg-card py-0 shadow-none">
+                      <CardContent className="p-2.5 flex flex-col gap-0.5">
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          4. Sharp focus
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Tap your phone screen on the ink before snapping so writing lines stay crisp.
+                        </p>
+                      </CardContent>
+                    </Card>
                   </CollapsibleContent>
                 </Collapsible>
               </>
@@ -1083,8 +1103,8 @@ function ParentUploadFlow({
             {step === 3 && selectedFile && (
               <>
                 {/* Context Header: Active Child & Worksheet */}
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs">
-                  <div className="flex items-center justify-between gap-3">
+                <Card size="sm" className="py-0 shadow-none bg-muted/40 border-border/80 text-xs">
+                  <CardContent className="p-3 flex items-center justify-between gap-3">
                     <div className="min-w-0 flex flex-col gap-0.5">
                       <div className="font-semibold text-foreground break-words">
                         <span>{childName}</span>
@@ -1111,20 +1131,17 @@ function ParentUploadFlow({
                         Change worksheet
                       </Button>
                     )}
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
 
                 {/* Reassurance banner for re-attempts */}
                 {priorSubmission?.status === "completed" && (
                   <Alert
                     role="status"
-                    className="py-2.5 px-3 bg-brand-50/80 dark:bg-brand-950/40 border-brand-200/70 dark:border-brand-800/50 text-xs text-brand-900 dark:text-brand-200"
+                    className="py-2.5 px-3 bg-secondary/60 border-primary/20 text-xs text-foreground"
                   >
-                    <CheckCircle2Icon
-                      className="text-brand-600 dark:text-brand-400"
-                      aria-hidden="true"
-                    />
-                    <AlertDescription className="text-xs text-brand-900 dark:text-brand-200">
+                    <CheckCircle2Icon className="text-primary" aria-hidden="true" />
+                    <AlertDescription className="text-xs text-foreground/90">
                       <strong>New attempt</strong> — earlier photos stay saved in history.
                     </AlertDescription>
                   </Alert>
@@ -1184,12 +1201,13 @@ function ParentUploadFlow({
 
                   {previewUrl && (
                     <CardContent>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => setZoomOpen(true)}
                         aria-label="Inspect worksheet photo full size before sending"
                         className={cn(
-                          "group relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center touch-pan-y cursor-zoom-in focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                          "group relative h-auto w-full rounded-xl overflow-hidden bg-muted/40 border border-border p-0 flex items-center justify-center touch-pan-y cursor-zoom-in hover:bg-muted/40 focus-visible:ring-primary",
                           isPortrait
                             ? "aspect-3/4 max-h-[240px] sm:max-h-[400px]"
                             : "aspect-4/3 max-h-[220px] sm:max-h-[340px]"
@@ -1206,36 +1224,39 @@ function ParentUploadFlow({
                           }}
                           className="size-full object-contain pointer-events-none select-none"
                         />
-                        <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-background/90 backdrop-blur-xs border border-border/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-warm-sm group-hover:bg-background">
-                          <ZoomInIcon className="size-3.5 text-primary" aria-hidden="true" />
+                        <Badge
+                          variant="secondary"
+                          className="absolute bottom-2.5 right-2.5 h-auto rounded-full bg-background/90 backdrop-blur-xs border-border/80 px-2.5 py-1 text-xs font-medium text-foreground shadow-warm-sm"
+                        >
+                          <ZoomInIcon data-icon="inline-start" className="text-primary" aria-hidden="true" />
                           <span>Tap to zoom</span>
-                        </span>
-                      </button>
+                        </Badge>
+                      </Button>
                     </CardContent>
                   )}
                 </Card>
 
                 {previewUrl && (
-                  <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
-                    <DialogContent className="max-w-3xl max-h-[92dvh] p-0 overflow-hidden flex flex-col">
-                      <DialogHeader className="p-4 border-b border-border/70 pr-12">
-                        <DialogTitle className="text-base font-semibold text-foreground">
+                  <ResponsiveRichOverlay open={zoomOpen} onOpenChange={setZoomOpen}>
+                    <ResponsiveRichOverlayContent className="max-w-3xl max-h-[92dvh] p-0 gap-0 overflow-hidden flex flex-col">
+                      <ResponsiveRichOverlayHeader className="p-4 border-b border-border/70 pr-12">
+                        <ResponsiveRichOverlayTitle className="text-base font-semibold text-foreground">
                           Check photo sharpness
-                        </DialogTitle>
-                        <DialogDescription className="text-xs text-muted-foreground">
+                        </ResponsiveRichOverlayTitle>
+                        <ResponsiveRichOverlayDescription className="text-xs text-muted-foreground">
                           Make sure 3-line rulings, cursive strokes, and all 4 corners are crisp before sending.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="flex-1 overflow-auto p-4 bg-muted/20 flex items-center justify-center">
+                        </ResponsiveRichOverlayDescription>
+                      </ResponsiveRichOverlayHeader>
+                      <ResponsiveRichOverlayBody className="p-4 bg-muted/20 flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={previewUrl}
                           alt={`Full-size handwriting preview for ${childName}`}
                           className="w-full h-auto max-h-[72dvh] object-contain rounded-lg border border-border"
                         />
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                      </ResponsiveRichOverlayBody>
+                    </ResponsiveRichOverlayContent>
+                  </ResponsiveRichOverlay>
                 )}
               </>
             )}
@@ -1254,23 +1275,26 @@ function ParentUploadFlow({
 
             {/* Step 5 — Success State */}
             {step === 5 && (
-              <div className="flex flex-col items-center justify-center py-6 text-center space-y-4 animate-in fade-in-50 zoom-in-95 duration-200 motion-reduce:animate-none">
-                <div className="flex size-14 sm:size-16 items-center justify-center rounded-2xl bg-success/10 text-success border border-success/20 shadow-warm">
+              <Empty className="border-0 p-6 gap-4 animate-in fade-in-50 zoom-in-95 duration-200 motion-reduce:animate-none">
+                <EmptyMedia
+                  variant="icon"
+                  className="size-14 sm:size-16 rounded-2xl bg-success/10 text-success border border-success/20 shadow-warm"
+                >
                   <CheckCircle2Icon className="size-8 sm:size-9" aria-hidden="true" />
-                </div>
+                </EmptyMedia>
 
-                <div className="space-y-1.5 max-w-sm">
-                  <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight font-heading">
+                <EmptyHeader className="max-w-sm gap-1.5">
+                  <EmptyTitle className="text-base sm:text-lg font-semibold text-foreground tracking-tight font-heading">
                     Photo received—waiting for teacher review
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  </EmptyTitle>
+                  <EmptyDescription className="text-sm text-muted-foreground leading-relaxed">
                     The cursive sample for{" "}
                     <strong className="text-foreground font-medium">{childName}</strong>{" "}
                     has been received. Your teacher reviews every result before you see it, so feedback appears here once it&apos;s released.
-                  </p>
-                </div>
+                  </EmptyDescription>
+                </EmptyHeader>
 
-                <div className="pt-2 w-full max-w-xs">
+                <EmptyContent className="pt-2 w-full max-w-xs">
                   <Button
                     ref={doneButtonRef}
                     type="button"
@@ -1280,16 +1304,16 @@ function ParentUploadFlow({
                   >
                     Done
                   </Button>
-                </div>
-              </div>
+                </EmptyContent>
+              </Empty>
             )}
           </div>
         )}
-      </div>
+      </ResponsiveRichOverlayBody>
 
       {/* Step 3 (Review & Confirm) Action Footer */}
       {!isUploading && step === 3 && (
-        <DialogFooter className="shrink-0 flex-row items-center justify-between sm:justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-background">
+        <ResponsiveRichOverlayFooter className="shrink-0 flex-row items-center justify-between sm:justify-between border-t border-border bg-background sm:p-3.5 sm:px-6">
           <Button
             variant="outline"
             onClick={() => setStep(2)}
@@ -1308,7 +1332,7 @@ function ParentUploadFlow({
             <CheckCircle2Icon data-icon="inline-start" aria-hidden="true" />
             Send worksheet photo
           </Button>
-        </DialogFooter>
+        </ResponsiveRichOverlayFooter>
       )}
     </>
   );
