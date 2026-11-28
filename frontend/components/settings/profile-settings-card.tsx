@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,10 @@ import { Spinner } from "@/components/ui/spinner";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Lock, Check } from "lucide-react";
 import { toast } from "@/components/ui/toast";
@@ -34,6 +37,7 @@ export function ProfileSettingsCard({
   email,
 }: ProfileSettingsCardProps) {
   const router = useRouter();
+  const headingId = useId();
   const [fullName, setFullName] = useState(initialFullName);
   const [schoolName, setSchoolName] = useState(initialSchoolName);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -106,22 +110,34 @@ export function ProfileSettingsCard({
   };
 
   return (
-    <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
+    <section
+      aria-labelledby={headingId}
+      className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]"
+    >
       {/* Left Section Header */}
       <div>
-        <h2 className="font-heading text-lg font-semibold text-foreground">
+        <h2 id={headingId} className="font-heading text-lg font-semibold text-foreground">
           Personal Information
         </h2>
       </div>
 
       {/* Right Form Card */}
       <div>
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
-          <form onSubmit={handleSave} aria-busy={isSaving}>
-            <CardContent className="pt-6 pb-6">
+        <Card className="gap-0 pb-0">
+          <form onSubmit={handleSave} aria-busy={isSaving} className="flex flex-col">
+            <CardHeader className="pb-4">
+              <CardTitle as="h3">Profile</CardTitle>
+              <CardDescription>
+                Update your display name and school shown across the teacher portal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-6">
               <FieldGroup className="gap-5">
                 {/* Full Name */}
-                <Field data-invalid={nameError ? true : undefined}>
+                <Field
+                  data-invalid={nameError ? true : undefined}
+                  data-disabled={isSaving || undefined}
+                >
                   <FieldLabel
                     htmlFor="full-name"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -132,6 +148,7 @@ export function ProfileSettingsCard({
                     id="full-name"
                     type="text"
                     autoComplete="name"
+                    disabled={isSaving}
                     value={fullName}
                     onChange={(e) => {
                       setFullName(e.target.value);
@@ -145,14 +162,14 @@ export function ProfileSettingsCard({
                     aria-describedby={nameError ? "name-error" : undefined}
                   />
                   {nameError ? (
-                    <FieldError id="name-error" role="alert" aria-live="polite" className="text-xs font-medium">
+                    <FieldError id="name-error" aria-live="polite" className="text-xs font-medium">
                       {nameError}
                     </FieldError>
                   ) : null}
                 </Field>
 
                 {/* School Name */}
-                <Field>
+                <Field data-disabled={isSaving || undefined}>
                   <FieldLabel
                     htmlFor="school-name"
                     className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
@@ -163,6 +180,7 @@ export function ProfileSettingsCard({
                     id="school-name"
                     type="text"
                     autoComplete="organization"
+                    disabled={isSaving}
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
                     placeholder="e.g. Holy Cross of Davao College"
@@ -175,16 +193,17 @@ export function ProfileSettingsCard({
                 </Field>
 
                 {/* Email (Read-only) */}
-                <Field className="pt-1">
-                  <div className="flex items-center justify-between">
+                <Field className="pt-1" data-disabled={isSaving || undefined}>
+                  <div className="flex items-center justify-between gap-2">
                     <FieldLabel
                       htmlFor="email-display"
                       className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                     >
                       Email Address
                     </FieldLabel>
-                    <Badge variant="secondary" className="gap-1 text-[11px] font-medium text-muted-foreground">
-                      <Lock className="size-3" aria-hidden="true" /> Verified Login
+                    <Badge variant="secondary" className="text-[11px] font-medium text-muted-foreground">
+                      <Lock data-icon="inline-start" aria-hidden="true" />
+                      Verified Login
                     </Badge>
                   </div>
                   <Input
@@ -221,7 +240,7 @@ export function ProfileSettingsCard({
               <Button
                 type="submit"
                 disabled={!isDirty || isSaving}
-                className="w-full sm:w-auto h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-xs"
+                className="w-full sm:w-auto h-11 sm:h-9 px-4 sm:px-5 text-xs sm:text-sm font-medium shadow-warm-sm"
               >
                 {isSaving ? (
                   <>
@@ -239,6 +258,6 @@ export function ProfileSettingsCard({
           </form>
         </Card>
       </div>
-    </div>
+    </section>
   );
 }

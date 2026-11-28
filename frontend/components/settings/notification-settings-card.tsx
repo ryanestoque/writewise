@@ -172,9 +172,9 @@ export function NotificationSettingsCard({
       <h2 id={headingId} className="font-heading text-lg font-semibold">
         Notifications
       </h2>
-      <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
+      <Card className="gap-0 pb-0">
         <form onSubmit={save} aria-busy={busy} className="flex flex-col">
-          <CardHeader className="pt-6 pb-4">
+          <CardHeader className="pb-4">
             <CardTitle as="h3">Email updates</CardTitle>
             <CardDescription>
               {role === "parent"
@@ -237,10 +237,10 @@ export function NotificationSettingsCard({
               </Alert>
             )}
             {savedMessage && (
-              <p role="status" className="text-sm font-medium text-primary flex items-center gap-1.5">
-                <Check className="size-4" aria-hidden="true" />
-                <span>Email settings saved.</span>
-              </p>
+              <Alert role="status">
+                <Check aria-hidden="true" />
+                <AlertDescription>Email settings saved.</AlertDescription>
+              </Alert>
             )}
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t border-border bg-muted/20 px-6 py-3.5">

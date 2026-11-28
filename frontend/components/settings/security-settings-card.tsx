@@ -1,20 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
-  InputGroupInput } from "@/components/ui/input-group";
-import { Label } from "@/components/ui/label";
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
-  CardFooter } from "@/components/ui/card";
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -23,14 +35,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger } from "@/components/ui/dialog";
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Eye,
   EyeOff,
   Check,
   X,
   ShieldCheck,
-  CheckCircle2 } from "lucide-react";
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
 interface SecuritySettingsCardProps {
@@ -116,13 +130,9 @@ function ForgotPasswordDialog({ email }: { email: string }) {
         </DialogHeader>
 
         {isSent ? (
-          <div className="space-y-4 py-1">
-            <Alert
-              role="status"
-              aria-live="polite"
-              className="border-brand-200 bg-brand-50/70 text-brand-900 dark:border-brand-900 dark:bg-brand-950/50 dark:text-brand-300"
-            >
-              <CheckCircle2 className="size-4 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
+          <div className="flex flex-col gap-4 py-1">
+            <Alert role="status" aria-live="polite" variant="success">
+              <CheckCircle2 aria-hidden="true" />
               <AlertDescription className="text-xs leading-relaxed">
                 A recovery link has been sent to{" "}
                 <span className="font-semibold">{email}</span>. Follow the instructions
@@ -147,7 +157,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
             </DialogFooter>
           </div>
         ) : (
-          <div className="space-y-4 pt-1">
+          <div className="flex flex-col gap-4 pt-1">
             {sendError && (
               <Alert variant="destructive">
                 <AlertDescription className="text-xs">
@@ -183,7 +193,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
               >
                 {isSending ? (
                   <>
-                    <Spinner className="mr-2 size-4" />
+                    <Spinner data-icon="inline-start" />
                     Sending Link...
                   </>
                 ) : (
@@ -199,6 +209,7 @@ function ForgotPasswordDialog({ email }: { email: string }) {
 }
 
 export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
+  const headingId = useId();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -284,274 +295,245 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
     }
   };
 
+  const passwordCriteria = [
+    { label: "At least 10 characters", met: hasMinLength },
+    { label: "One uppercase letter (A–Z)", met: hasUppercase },
+    { label: "One lowercase letter (a–z)", met: hasLowercase },
+    { label: "One number (0–9)", met: hasNumber },
+  ];
+
   return (
-    <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
+    <section
+      aria-labelledby={headingId}
+      className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]"
+    >
       {/* Left Section Header */}
       <div>
-        <h2 className="font-heading text-lg font-semibold text-foreground">
+        <h2 id={headingId} className="font-heading text-lg font-semibold text-foreground">
           Password & Security
         </h2>
       </div>
 
       {/* Right Form Card */}
       <div>
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-warm gap-0 pb-0 overflow-hidden ring-0">
-          <form onSubmit={handlePasswordUpdate} noValidate aria-busy={isSubmitting}>
-            <CardContent className="flex flex-col gap-5 pt-6 pb-6">
-              {/* Current Password */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="current-password"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Current password
-                  </Label>
-                  <ForgotPasswordDialog email={email} />
-                </div>
-                <InputGroup
-                  className={`h-10 sm:h-9 rounded-lg border border-input bg-background dark:bg-input/30 ${
-                    currentPasswordError
-                      ? "border-destructive has-[[data-slot=input-group-control]:focus-visible]:border-destructive has-[[data-slot=input-group-control]:focus-visible]:ring-destructive/30"
-                      : ""
-                  }`}
+        <Card className="gap-0 pb-0">
+          <form onSubmit={handlePasswordUpdate} noValidate aria-busy={isSubmitting} className="flex flex-col">
+            <CardHeader className="pb-4">
+              <CardTitle as="h3">Password & Security</CardTitle>
+              <CardDescription>
+                Verify your current password before setting a new one.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-6">
+              <FieldGroup className="gap-5">
+                {/* Current Password */}
+                <Field
+                  data-invalid={currentPasswordError ? true : undefined}
+                  data-disabled={isSubmitting || undefined}
                 >
-                  <InputGroupInput
-                    id="current-password"
-                    type={showCurrent ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    aria-required="true"
-                    value={currentPassword}
-                    onChange={(e) => {
-                      setCurrentPassword(e.target.value);
-                      if (currentPasswordError) {
-                        setCurrentPasswordError(null);
+                  <div className="flex items-center justify-between gap-2">
+                    <FieldLabel htmlFor="current-password">
+                      Current password
+                    </FieldLabel>
+                    <ForgotPasswordDialog email={email} />
+                  </div>
+                  <InputGroup
+                    className={cn(
+                      "h-10 sm:h-9 rounded-lg border border-input bg-background",
+                      currentPasswordError &&
+                        "border-destructive has-[[data-slot=input-group-control]:focus-visible]:border-destructive has-[[data-slot=input-group-control]:focus-visible]:ring-destructive/30"
+                    )}
+                  >
+                    <InputGroupInput
+                      id="current-password"
+                      type={showCurrent ? "text" : "password"}
+                      autoComplete="current-password"
+                      required
+                      aria-required="true"
+                      disabled={isSubmitting}
+                      value={currentPassword}
+                      onChange={(e) => {
+                        setCurrentPassword(e.target.value);
+                        if (currentPasswordError) {
+                          setCurrentPasswordError(null);
+                        }
+                      }}
+                      placeholder="Enter current password"
+                      className="h-full text-base sm:text-sm"
+                      aria-invalid={currentPasswordError ? true : false}
+                      aria-describedby={
+                        currentPasswordError ? "current-password-error" : undefined
                       }
-                    }}
-                    placeholder="Enter current password"
-                    className="h-full text-base sm:text-sm"
-                    aria-invalid={currentPasswordError ? true : false}
-                    aria-describedby={
-                      currentPasswordError ? "current-password-error" : undefined
-                    }
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      type="button"
-                      size="icon-sm"
-                      onClick={() => setShowCurrent(!showCurrent)}
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={showCurrent ? "Hide current password" : "Show current password"}
-                    >
-                      {showCurrent ? (
-                        <EyeOff aria-hidden="true" />
-                      ) : (
-                        <Eye aria-hidden="true" />
-                      )}
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-                {currentPasswordError ? (
-                  <p
-                    id="current-password-error"
-                    role="alert"
-                    aria-live="polite"
-                    className="text-xs text-destructive font-medium mt-0.5"
-                  >
-                    {currentPasswordError}
-                  </p>
-                ) : null}
-              </div>
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        type="button"
+                        size="icon-sm"
+                        disabled={isSubmitting}
+                        onClick={() => setShowCurrent(!showCurrent)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label={showCurrent ? "Hide current password" : "Show current password"}
+                      >
+                        {showCurrent ? (
+                          <EyeOff aria-hidden="true" />
+                        ) : (
+                          <Eye aria-hidden="true" />
+                        )}
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {currentPasswordError ? (
+                    <FieldError id="current-password-error" aria-live="polite" className="text-xs font-medium">
+                      {currentPasswordError}
+                    </FieldError>
+                  ) : null}
+                </Field>
 
-              {/* New Password */}
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="new-password"
-                  className="text-sm font-medium text-foreground"
+                {/* New Password */}
+                <Field
+                  data-invalid={newPassword.length > 0 && !allCriteriaMet ? true : undefined}
+                  data-disabled={isSubmitting || undefined}
                 >
-                  New password
-                </Label>
-                <InputGroup className="h-10 sm:h-9 rounded-lg border border-input bg-background dark:bg-input/30">
-                  <InputGroupInput
-                    id="new-password"
-                    type={showNew ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                    aria-required="true"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="h-full text-base sm:text-sm"
-                    aria-describedby="new-password-hint"
-                    aria-invalid={newPassword.length > 0 && !allCriteriaMet}
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      type="button"
-                      size="icon-sm"
-                      onClick={() => setShowNew(!showNew)}
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={showNew ? "Hide new password" : "Show new password"}
-                    >
-                      {showNew ? (
-                        <EyeOff aria-hidden="true" />
-                      ) : (
-                        <Eye aria-hidden="true" />
-                      )}
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
+                  <FieldLabel htmlFor="new-password">
+                    New password
+                  </FieldLabel>
+                  <InputGroup className="h-10 sm:h-9 rounded-lg border border-input bg-background">
+                    <InputGroupInput
+                      id="new-password"
+                      type={showNew ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      aria-required="true"
+                      disabled={isSubmitting}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="h-full text-base sm:text-sm"
+                      aria-describedby="new-password-hint"
+                      aria-invalid={newPassword.length > 0 && !allCriteriaMet}
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        type="button"
+                        size="icon-sm"
+                        disabled={isSubmitting}
+                        onClick={() => setShowNew(!showNew)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label={showNew ? "Hide new password" : "Show new password"}
+                      >
+                        {showNew ? (
+                          <EyeOff aria-hidden="true" />
+                        ) : (
+                          <Eye aria-hidden="true" />
+                        )}
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
 
-                <p id="new-password-hint" className="sr-only">
-                  Password must be at least 10 characters and include uppercase, lowercase, and a number.
-                </p>
+                  <FieldDescription id="new-password-hint" className="sr-only">
+                    Password must be at least 10 characters and include uppercase, lowercase, and a number.
+                  </FieldDescription>
 
-                {/* Real-time criteria checklist */}
-                <ul
-                  id="password-requirements"
-                  aria-label="Password requirements"
-                  className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-muted-foreground list-none p-0 m-0"
+                  {/* Real-time criteria checklist */}
+                  <ul
+                    id="password-requirements"
+                    aria-label="Password requirements"
+                    className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-muted-foreground list-none p-0 m-0"
+                  >
+                    {passwordCriteria.map((criterion) => (
+                      <li
+                        key={criterion.label}
+                        className={cn(
+                          "flex items-center gap-1.5",
+                          criterion.met && "text-primary font-medium"
+                        )}
+                      >
+                        {criterion.met ? (
+                          <Check className="size-3.5 text-primary shrink-0" aria-hidden="true" />
+                        ) : (
+                          <div
+                            className="size-2 rounded-full border border-muted-foreground/70 mx-0.5 shrink-0"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span>{criterion.label}</span>
+                        <span className="sr-only">
+                          {criterion.met ? "(requirement met)" : "(requirement not met)"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Polite screen reader live status announcement */}
+                  <div className="sr-only" aria-live="polite" aria-atomic="true">
+                    {allCriteriaMet ? "All password requirements satisfied." : ""}
+                  </div>
+                </Field>
+
+                {/* Confirm New Password */}
+                <Field
+                  data-invalid={confirmPassword.length > 0 && !passwordsMatch ? true : undefined}
+                  data-disabled={isSubmitting || undefined}
                 >
-                  <li
-                    className={`flex items-center gap-1.5 ${
-                      hasMinLength
-                        ? "text-brand-600 dark:text-brand-400 font-medium"
-                        : ""
-                    }`}
-                  >
-                    {hasMinLength ? (
-                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                    ) : (
-                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
-                    )}
-                    <span>At least 10 characters</span>
-                    <span className="sr-only">
-                      {hasMinLength ? "(requirement met)" : "(requirement not met)"}
-                    </span>
-                  </li>
-                  <li
-                    className={`flex items-center gap-1.5 ${
-                      hasUppercase
-                        ? "text-brand-600 dark:text-brand-400 font-medium"
-                        : ""
-                    }`}
-                  >
-                    {hasUppercase ? (
-                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                    ) : (
-                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
-                    )}
-                    <span>One uppercase letter (A–Z)</span>
-                    <span className="sr-only">
-                      {hasUppercase ? "(requirement met)" : "(requirement not met)"}
-                    </span>
-                  </li>
-                  <li
-                    className={`flex items-center gap-1.5 ${
-                      hasLowercase
-                        ? "text-brand-600 dark:text-brand-400 font-medium"
-                        : ""
-                    }`}
-                  >
-                    {hasLowercase ? (
-                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                    ) : (
-                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
-                    )}
-                    <span>One lowercase letter (a–z)</span>
-                    <span className="sr-only">
-                      {hasLowercase ? "(requirement met)" : "(requirement not met)"}
-                    </span>
-                  </li>
-                  <li
-                    className={`flex items-center gap-1.5 ${
-                      hasNumber
-                        ? "text-brand-600 dark:text-brand-400 font-medium"
-                        : ""
-                    }`}
-                  >
-                    {hasNumber ? (
-                      <Check className="size-3.5 text-brand-600 dark:text-brand-400 shrink-0" aria-hidden="true" />
-                    ) : (
-                      <div className="size-2 rounded-full border border-muted-foreground/70 dark:border-muted-foreground/60 mx-0.5 shrink-0" aria-hidden="true" />
-                    )}
-                    <span>One number (0–9)</span>
-                    <span className="sr-only">
-                      {hasNumber ? "(requirement met)" : "(requirement not met)"}
-                    </span>
-                  </li>
-                </ul>
-
-                {/* Polite screen reader live status announcement */}
-                <div className="sr-only" aria-live="polite" aria-atomic="true">
-                  {allCriteriaMet ? "All password requirements satisfied." : ""}
-                </div>
-              </div>
-
-              {/* Confirm New Password */}
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor="confirm-password"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Confirm new password
-                </Label>
-                <InputGroup className="h-10 sm:h-9 rounded-lg border border-input bg-background dark:bg-input/30">
-                  <InputGroupInput
-                    id="confirm-password"
-                    type={showConfirm ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                    aria-required="true"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Re-enter new password"
-                    className="h-full text-base sm:text-sm"
-                    aria-describedby={
-                      confirmPassword.length > 0 ? "confirm-password-status" : undefined
-                    }
-                    aria-invalid={confirmPassword.length > 0 && !passwordsMatch}
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton
-                      type="button"
-                      size="icon-sm"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="text-muted-foreground hover:text-foreground"
-                      aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
-                    >
-                      {showConfirm ? (
-                        <EyeOff aria-hidden="true" />
-                      ) : (
-                        <Eye aria-hidden="true" />
-                      )}
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-                {confirmPassword.length > 0 ? (
-                  <p
-                    id="confirm-password-status"
-                    role="status"
-                    aria-live="polite"
-                    className={`text-xs font-medium flex items-center gap-1 mt-0.5 ${
-                      passwordsMatch
-                        ? "text-brand-600 dark:text-brand-400"
-                        : "text-destructive"
-                    }`}
-                  >
-                    {passwordsMatch ? (
-                      <>
+                  <FieldLabel htmlFor="confirm-password">
+                    Confirm new password
+                  </FieldLabel>
+                  <InputGroup className="h-10 sm:h-9 rounded-lg border border-input bg-background">
+                    <InputGroupInput
+                      id="confirm-password"
+                      type={showConfirm ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      aria-required="true"
+                      disabled={isSubmitting}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter new password"
+                      className="h-full text-base sm:text-sm"
+                      aria-describedby={
+                        confirmPassword.length > 0 ? "confirm-password-status" : undefined
+                      }
+                      aria-invalid={confirmPassword.length > 0 && !passwordsMatch}
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        type="button"
+                        size="icon-sm"
+                        disabled={isSubmitting}
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                      >
+                        {showConfirm ? (
+                          <EyeOff aria-hidden="true" />
+                        ) : (
+                          <Eye aria-hidden="true" />
+                        )}
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {confirmPassword.length > 0 ? (
+                    passwordsMatch ? (
+                      <FieldDescription
+                        id="confirm-password-status"
+                        role="status"
+                        aria-live="polite"
+                        className="text-xs font-medium text-primary flex items-center gap-1"
+                      >
                         <Check className="size-3.5" aria-hidden="true" /> Passwords match
-                      </>
+                      </FieldDescription>
                     ) : (
-                      <>
+                      <FieldError
+                        id="confirm-password-status"
+                        aria-live="polite"
+                        className="text-xs font-medium flex items-center gap-1"
+                      >
                         <X className="size-3.5" aria-hidden="true" /> Passwords do not match
-                      </>
-                    )}
-                  </p>
-                ) : null}
-              </div>
+                      </FieldError>
+                    )
+                  ) : null}
+                </Field>
+              </FieldGroup>
             </CardContent>
 
             <CardFooter className="flex justify-end border-t border-border bg-muted/20 px-6 py-3.5">
@@ -562,12 +544,12 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
               >
                 {isSubmitting ? (
                   <>
-                    <Spinner data-icon="inline-start" className="mr-1.5 size-4" />
+                    <Spinner data-icon="inline-start" />
                     Updating...
                   </>
                 ) : (
                   <>
-                    <ShieldCheck data-icon="inline-start" className="mr-1.5 size-4" aria-hidden="true" />
+                    <ShieldCheck data-icon="inline-start" aria-hidden="true" />
                     Update password
                   </>
                 )}
@@ -576,6 +558,6 @@ export function SecuritySettingsCard({ email }: SecuritySettingsCardProps) {
           </form>
         </Card>
       </div>
-    </div>
+    </section>
   );
 }

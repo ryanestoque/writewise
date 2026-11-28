@@ -33,7 +33,7 @@ export default async function SettingsPage() {
   const email = user.email || teacherProfile?.email || "";
 
   return (
-    <div className="w-full min-w-0 space-y-10 pb-20 sm:pb-16">
+    <div className="w-full min-w-0 flex flex-col gap-10 pb-20 sm:pb-16">
       {/* Page Header */}
       <div className="border-border border-b pb-6">
         <h1 className="font-heading text-foreground text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -49,7 +49,7 @@ export default async function SettingsPage() {
       />
 
       {/* Section Divider */}
-      <div className="border-border border-t" />
+      <Separator />
 
       {/* Password & Security Section */}
       <SecuritySettingsCard email={email} />
