@@ -6,6 +6,7 @@ import { Bell } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Popover,
   PopoverContent,
@@ -165,7 +166,7 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
       {count.data !== undefined && count.data > 0 && (
         <Badge
           aria-hidden="true"
-          className="absolute -top-1 -right-1 min-w-5 justify-center rounded-full px-1 text-xs leading-none bg-primary text-primary-foreground font-semibold shadow-xs"
+          className="absolute -top-1 -right-1 min-w-5 justify-center rounded-full px-1 text-xs leading-none font-semibold shadow-xs"
         >
           {count.data > 99 ? "99+" : count.data}
         </Badge>
@@ -219,7 +220,14 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
                 disabled={readAll.isPending}
                 onClick={handleMarkAllRead}
               >
-                {readAll.isPending ? "Saving…" : "Mark all read"}
+                {readAll.isPending ? (
+                  <>
+                    <Spinner data-icon="inline-start" />
+                    Saving…
+                  </>
+                ) : (
+                  "Mark all read"
+                )}
               </Button>
             )}
           </DrawerHeader>
@@ -260,7 +268,14 @@ export function NotificationBell({ userId, role }: { userId: string; role: "teac
               disabled={readAll.isPending}
               onClick={handleMarkAllRead}
             >
-              {readAll.isPending ? "Saving…" : "Mark all read"}
+              {readAll.isPending ? (
+                <>
+                  <Spinner data-icon="inline-start" />
+                  Saving…
+                </>
+              ) : (
+                "Mark all read"
+              )}
             </Button>
           )}
         </PopoverHeader>

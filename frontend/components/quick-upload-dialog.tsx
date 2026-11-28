@@ -12,14 +12,22 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Kbd } from "@/components/ui/kbd";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput } from "@/components/ui/input-group";
 import {
   NativeSelect,
   NativeSelectOption } from "@/components/ui/native-select";
@@ -27,7 +35,9 @@ import { toast } from "@/components/ui/toast";
 import {
   Field,
   FieldContent,
+  FieldGroup,
   FieldLabel } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import {
   Combobox,
   ComboboxContent,
@@ -173,7 +183,6 @@ function UploadFlow({
 }) {
   const activityInputId = useId();
   const studentInputId = useId();
-  const photoTipsId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -711,7 +720,10 @@ function UploadFlow({
               return (
                 <li
                   key={s.step}
-                  className={`flex items-center gap-1.5 sm:gap-2 min-w-0 ${s.step < STEPS.length ? "flex-1" : ""}`}
+                  className={cn(
+                    "flex items-center gap-1.5 sm:gap-2 min-w-0",
+                    s.step < STEPS.length && "flex-1"
+                  )}
                   aria-current={isCurrent ? "step" : undefined}
                 >
                   {canJump && !isCurrent ? (
@@ -724,11 +736,12 @@ function UploadFlow({
                       className="group h-auto shrink min-w-0 justify-start gap-1.5 sm:gap-2 p-1 -m-1 hover:bg-muted/80 text-left font-normal"
                     >
                       <div
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all ${
+                        className={cn(
+                          "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all",
                           isCompleted
                             ? "bg-primary text-primary-foreground group-hover:bg-primary/90 group-hover:scale-105"
                             : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                        }`}
+                        )}
                       >
                         {isCompleted ? <CheckIcon className="size-3.5" /> : s.step}
                       </div>
@@ -739,24 +752,26 @@ function UploadFlow({
                   ) : (
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                       <div
-                        className={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                        className={cn(
+                          "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
                           isCompleted
                             ? "bg-primary text-primary-foreground"
                             : isCurrent
                             ? "bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
                             : "bg-muted text-muted-foreground"
-                        }`}
+                        )}
                       >
                         {isCompleted ? <CheckIcon className="size-3.5" /> : s.step}
                       </div>
                       <span
-                        className={`text-xs sm:text-sm truncate font-medium ${
+                        className={cn(
+                          "text-xs sm:text-sm truncate font-medium",
                           isCurrent
                             ? "text-foreground font-semibold"
                             : isCompleted
                             ? "text-foreground"
                             : "text-muted-foreground"
-                        }`}
+                        )}
                       >
                         {s.label}
                       </span>
@@ -765,9 +780,10 @@ function UploadFlow({
 
                   {s.step < STEPS.length && (
                     <div
-                      className={`h-0.5 flex-1 rounded-full transition-colors ${
+                      className={cn(
+                        "h-0.5 flex-1 rounded-full transition-colors",
                         step > s.step || step === 5 ? "bg-primary" : "bg-muted"
-                      }`}
+                      )}
                       aria-hidden="true"
                     />
                   )}
@@ -785,10 +801,10 @@ function UploadFlow({
             aria-busy="true"
             aria-live="polite"
             aria-atomic="true"
-            className="flex flex-col items-center justify-center py-10 space-y-3.5 text-center min-h-[160px]"
+            className="flex flex-col items-center justify-center py-10 gap-3.5 text-center min-h-[160px]"
           >
             <Spinner className="size-8 text-primary" />
-            <div className="space-y-1 transition-all duration-200">
+            <div className="flex flex-col gap-1 transition-all duration-200">
               <p className="text-sm font-semibold text-foreground tracking-tight">
                 {PROCESSING_STAGES[processingStageIndex].title}
               </p>
@@ -800,208 +816,208 @@ function UploadFlow({
               {PROCESSING_STAGES.map((_, idx) => (
                 <span
                   key={idx}
-                  className={`size-1.5 rounded-full transition-all duration-300 ${
+                  className={cn(
+                    "size-1.5 rounded-full transition-all duration-300",
                     idx === processingStageIndex
                       ? "bg-primary w-4"
                       : idx < processingStageIndex
                       ? "bg-primary/50"
                       : "bg-muted-foreground/30"
-                  }`}
+                  )}
                 />
               ))}
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             {/* Step 1 — Select student & activity */}
             {step === 1 && (
               <>
-                {invalidPrefill && !canProceed && <p role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">
-                  The previous selection is no longer available. Choose an assigned student below, or edit the activity&apos;s assignments first.
-                </p>}
-                <Field className="gap-1.5">
-                  <FieldLabel
-                    htmlFor={activityInputId}
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between"
-                  >
-                    <span>
-                      Activity{" "}
+                {invalidPrefill && !canProceed && (
+                  <Alert role="status">
+                    <AlertCircleIcon aria-hidden="true" />
+                    <AlertTitle>Selection unavailable</AlertTitle>
+                    <AlertDescription>
+                      The previous selection is no longer available. Choose an assigned student below, or edit the activity&apos;s assignments first.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <FieldGroup>
+                  <Field className="gap-1.5">
+                    <FieldLabel
+                      htmlFor={activityInputId}
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between"
+                    >
+                      <span>
+                        Activity{" "}
+                        <span className="text-destructive" aria-hidden="true">
+                          *
+                        </span>
+                      </span>
+                      {uploadedCount > 0 && !prefilledActivityId && activityChoice && (
+                        <span className="text-xs font-normal text-primary flex items-center gap-1 normal-case tracking-normal">
+                          <CheckCircle2Icon className="size-3" />
+                          Retained from batch
+                        </span>
+                      )}
+                    </FieldLabel>
+                    <FieldContent>
+                      {prefilledActivityId ? (
+                        <InputGroup className="h-10 sm:h-9 rounded-lg sm:rounded-xl">
+                          <InputGroupInput
+                            id={activityInputId}
+                            readOnly
+                            value={selectedActivity?.target_text ?? "Loading activity…"}
+                            aria-label={`Pre-selected activity: ${
+                              selectedActivity?.target_text ?? "Loading activity..."
+                            }`}
+                            className="font-medium"
+                          />
+                          <InputGroupAddon align="inline-end">
+                            <Badge variant="secondary">Locked</Badge>
+                          </InputGroupAddon>
+                        </InputGroup>
+                      ) : (
+                        <Combobox
+                          items={activityChoices}
+                          value={activityChoice}
+                          onValueChange={(choice) => { setActivityChoice(choice); setStudentChoice(null); }}
+                          itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
+                          itemToStringValue={(c: Choice | null) => c?.value ?? ""}
+                          isItemEqualToValue={(a: Choice, b: Choice) =>
+                            a?.value === b?.value
+                          }
+                        >
+                          <ComboboxInput
+                            id={activityInputId}
+                            aria-required="true"
+                            placeholder="Search activities..."
+                            className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                          />
+                          <ComboboxContent>
+                            <ComboboxList>
+                              <ComboboxEmpty>
+                                {activitiesLoading ? "Loading activities…" : activitiesError ? "Activities could not be loaded. Close and reopen upload to try again." : activityChoices.length === 0 ? "Create an activity before uploading a worksheet." : "No matching activities. Try another search."}
+                              </ComboboxEmpty>
+                              {activityChoices.map((choice) => (
+                                <ComboboxItem
+                                  key={choice.value}
+                                  value={choice}
+                                  className="py-2.5 px-3"
+                                >
+                                  <span className="truncate">
+                                    {choice.label}
+                                  </span>
+                                </ComboboxItem>
+                              ))}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                      )}
+                    </FieldContent>
+                  </Field>
+
+                  <Field className="gap-1.5">
+                    <FieldLabel
+                      htmlFor={studentInputId}
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
+                      Student{" "}
                       <span className="text-destructive" aria-hidden="true">
                         *
                       </span>
-                    </span>
-                    {uploadedCount > 0 && !prefilledActivityId && activityChoice && (
-                      <span className="text-xs font-normal text-primary flex items-center gap-1 normal-case tracking-normal">
-                        <CheckCircle2Icon className="size-3" />
-                        Retained from batch
-                      </span>
-                    )}
-                  </FieldLabel>
-                  <FieldContent>
-                    {prefilledActivityId ? (
-                      <div
-                        id={activityInputId}
-                        role="textbox"
-                        aria-readonly="true"
-                        tabIndex={0}
-                        className="flex items-center justify-between gap-2 h-10 sm:h-9 px-3.5 rounded-lg sm:rounded-xl border border-border bg-muted/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label={`Pre-selected activity: ${
-                          selectedActivity?.target_text ?? "Loading activity..."
-                        }`}
-                      >
-                        <span className="truncate font-medium">
-                          {selectedActivity?.target_text ??
-                            "Loading activity\u2026"}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className="text-xs font-medium shrink-0 bg-background/60 border-border/80"
+                    </FieldLabel>
+                    <FieldContent>
+                      {prefilledStudentId ? (
+                        <InputGroup className="h-10 sm:h-9 rounded-lg sm:rounded-xl">
+                          <InputGroupInput
+                            id={studentInputId}
+                            readOnly
+                            value={selectedStudent?.full_name ?? "Loading student…"}
+                            aria-label={`Pre-selected student: ${
+                              selectedStudent?.full_name ?? "Loading student..."
+                            }`}
+                            className="font-medium"
+                          />
+                          <InputGroupAddon align="inline-end">
+                            <Badge variant="secondary">Locked</Badge>
+                          </InputGroupAddon>
+                        </InputGroup>
+                      ) : (
+                        <Combobox
+                          items={studentChoices}
+                          value={studentChoice}
+                          onValueChange={setStudentChoice}
+                          itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
+                          itemToStringValue={(c: Choice | null) => c?.value ?? ""}
+                          isItemEqualToValue={(a: Choice, b: Choice) =>
+                            a?.value === b?.value
+                          }
                         >
-                          Pre-selected
-                        </Badge>
-                      </div>
-                    ) : (
-                      <Combobox
-                        items={activityChoices}
-                        value={activityChoice}
-                        onValueChange={(choice) => { setActivityChoice(choice); setStudentChoice(null); }}
-                        itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
-                        itemToStringValue={(c: Choice | null) => c?.value ?? ""}
-                        isItemEqualToValue={(a: Choice, b: Choice) =>
-                          a?.value === b?.value
-                        }
-                      >
-                        <ComboboxInput
-                          id={activityInputId}
-                          aria-required="true"
-                          placeholder="Search activities..."
-                          className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                        />
-                        <ComboboxContent>
-                          <ComboboxList>
-                            <ComboboxEmpty>
-                              {activitiesLoading ? "Loading activities…" : activitiesError ? "Activities could not be loaded. Close and reopen upload to try again." : activityChoices.length === 0 ? "Create an activity before uploading a worksheet." : "No matching activities. Try another search."}
-                            </ComboboxEmpty>
-                            {activityChoices.map((choice) => (
-                              <ComboboxItem
-                                key={choice.value}
-                                value={choice}
-                                className="py-2.5 px-3"
-                              >
-                                <span className="truncate">
-                                  {choice.label}
-                                </span>
-                              </ComboboxItem>
-                            ))}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
-                    )}
-                  </FieldContent>
-                </Field>
-
-                <Field className="gap-1.5">
-                  <FieldLabel
-                    htmlFor={studentInputId}
-                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                  >
-                    Student{" "}
-                    <span className="text-destructive" aria-hidden="true">
-                      *
-                    </span>
-                  </FieldLabel>
-                  <FieldContent>
-                    {prefilledStudentId ? (
-                      <div
-                        id={studentInputId}
-                        role="textbox"
-                        aria-readonly="true"
-                        tabIndex={0}
-                        className="flex items-center justify-between gap-2 h-10 sm:h-9 px-3.5 rounded-lg sm:rounded-xl border border-border bg-muted/40 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                        aria-label={`Pre-selected student: ${
-                          selectedStudent?.full_name ?? "Loading student..."
-                        }`}
-                      >
-                        <span className="truncate font-medium">
-                          {selectedStudent?.full_name ??
-                            "Loading student\u2026"}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className="text-xs font-medium shrink-0 bg-background/60 border-border/80"
-                        >
-                          Pre-selected
-                        </Badge>
-                      </div>
-                    ) : (
-                      <Combobox
-                        items={studentChoices}
-                        value={studentChoice}
-                        onValueChange={setStudentChoice}
-                        itemToStringLabel={(c: Choice | null) => c?.label ?? ""}
-                        itemToStringValue={(c: Choice | null) => c?.value ?? ""}
-                        isItemEqualToValue={(a: Choice, b: Choice) =>
-                          a?.value === b?.value
-                        }
-                      >
-                        <ComboboxInput
-                          id={studentInputId}
-                          aria-required="true"
-                          placeholder="Search students..."
-                          className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
-                        />
-                        <ComboboxContent>
-                          <ComboboxList>
-                            <ComboboxEmpty>
-                              {studentsLoading ? "Loading students…" : studentsError ? "Students could not be loaded. Close and reopen upload to try again." : !selectedActivity ? "Choose an activity first." : !students?.length ? "Add students to your class roster first." : studentChoices.length === 0 ? "No students are assigned to this activity." : "No matching students. Try another search."}
-                            </ComboboxEmpty>
-                            {studentChoices.map((choice) => (
-                              <ComboboxItem
-                                key={choice.value}
-                                value={choice}
-                                className="py-2.5 px-3"
-                              >
-                                <span className="truncate">
-                                  {choice.label}
-                                </span>
-                                {choice.sublabel && (
-                                  <span className="text-xs text-muted-foreground ml-auto shrink-0 font-medium">
-                                    {choice.sublabel}
+                          <ComboboxInput
+                            id={studentInputId}
+                            aria-required="true"
+                            placeholder="Search students..."
+                            className="h-10 sm:h-9 text-base sm:text-sm rounded-lg sm:rounded-xl"
+                          />
+                          <ComboboxContent>
+                            <ComboboxList>
+                              <ComboboxEmpty>
+                                {studentsLoading ? "Loading students…" : studentsError ? "Students could not be loaded. Close and reopen upload to try again." : !selectedActivity ? "Choose an activity first." : !students?.length ? "Add students to your class roster first." : studentChoices.length === 0 ? "No students are assigned to this activity." : "No matching students. Try another search."}
+                              </ComboboxEmpty>
+                              {studentChoices.map((choice) => (
+                                <ComboboxItem
+                                  key={choice.value}
+                                  value={choice}
+                                  className="py-2.5 px-3"
+                                >
+                                  <span className="truncate">
+                                    {choice.label}
                                   </span>
-                                )}
-                              </ComboboxItem>
-                            ))}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
-                    )}
-                  </FieldContent>
-                </Field>
+                                  {choice.sublabel && (
+                                    <span className="text-xs text-muted-foreground ml-auto shrink-0 font-medium">
+                                      {choice.sublabel}
+                                    </span>
+                                  )}
+                                </ComboboxItem>
+                              ))}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                      )}
+                    </FieldContent>
+                  </Field>
+                </FieldGroup>
 
                 {/* Duplicate Submission Warning Banner (Step 1) */}
                 {!activitiesLoading && !studentsLoading && !activitiesError && !studentsError && (
                   activityChoices.length === 0 || !students?.length || (selectedActivity && studentChoices.length === 0)
                 ) && (
-                  <div role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">
-                    <p>
-                      {!students?.length
-                        ? "Add students to your class roster before uploading a worksheet."
-                        : activityChoices.length === 0
-                          ? "Create an activity and assign students before uploading a worksheet."
-                          : "Assign students to this activity before uploading a worksheet."}
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-2 min-h-10 md:min-h-9"
-                      onClick={() => {
-                        onClose();
-                        router.push(!students?.length ? "/roster" : activityChoices.length === 0 ? "/activities" : `/activities/${selectedActivity!.id}`);
-                      }}
-                    >
-                      {!students?.length ? "Go to Class Roster" : activityChoices.length === 0 ? "Go to Activities" : "Manage activity assignments"}
-                    </Button>
-                  </div>
+                  <Alert role="status">
+                    <AlertCircleIcon aria-hidden="true" />
+                    <AlertTitle>Setup needed before uploading</AlertTitle>
+                    <AlertDescription className="flex flex-col items-start gap-2">
+                      <p>
+                        {!students?.length
+                          ? "Add students to your class roster before uploading a worksheet."
+                          : activityChoices.length === 0
+                            ? "Create an activity and assign students before uploading a worksheet."
+                            : "Assign students to this activity before uploading a worksheet."}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-10 md:min-h-9"
+                        onClick={() => {
+                          onClose();
+                          router.push(!students?.length ? "/roster" : activityChoices.length === 0 ? "/activities" : `/activities/${selectedActivity!.id}`);
+                        }}
+                      >
+                        {!students?.length ? "Go to Class Roster" : activityChoices.length === 0 ? "Go to Activities" : "Manage activity assignments"}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {isDuplicateSubmission && (
@@ -1052,25 +1068,27 @@ function UploadFlow({
 
                 {/* Persistent Retake Guidance Banner */}
                 {lastRetakeTip && (
-                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-warning/10 border border-warning/25 text-foreground text-xs animate-in fade-in-50 duration-200">
-                    <LightbulbIcon className="size-4 text-warning shrink-0 mt-0.5" aria-hidden="true" />
-                    <div className="flex-1 space-y-0.5">
-                      <p className="font-semibold text-foreground">
-                        Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}:
-                      </p>
-                      <p className="text-muted-foreground leading-relaxed">{lastRetakeTip.tip}</p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={() => setLastRetakeTip(null)}
-                      className="relative after:absolute after:-inset-2 sm:after:hidden text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
-                      aria-label="Dismiss tip"
-                    >
-                      <XIcon className="size-3.5" />
-                    </Button>
-                  </div>
+                  <Alert className="border-warning/30 bg-warning/10 text-foreground text-xs animate-in fade-in-50 duration-200 motion-reduce:animate-none">
+                    <LightbulbIcon className="text-warning" aria-hidden="true" />
+                    <AlertTitle className="text-xs font-semibold">
+                      Tip for this retake{lastRetakeTip.badgeLabel ? ` (${lastRetakeTip.badgeLabel})` : ""}
+                    </AlertTitle>
+                    <AlertDescription className="text-xs leading-relaxed">
+                      {lastRetakeTip.tip}
+                    </AlertDescription>
+                    <AlertAction>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => setLastRetakeTip(null)}
+                        className="relative after:absolute after:-inset-2 sm:after:hidden text-muted-foreground hover:text-foreground cursor-pointer"
+                        aria-label="Dismiss tip"
+                      >
+                        <XIcon aria-hidden="true" />
+                      </Button>
+                    </AlertAction>
+                  </Alert>
                 )}
 
                 {/* Standard File Picker Input */}
@@ -1138,10 +1156,10 @@ function UploadFlow({
                     {/* Camera Controls Bar */}
                     <div className="flex items-center justify-between w-full pt-3 px-1 gap-2">
                       {videoDevices.length > 1 ? (
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <Label htmlFor="camera-select" className="sr-only">
-                            Select camera input
-                          </Label>
+                        <Field className="w-auto min-w-0">
+                          <FieldLabel htmlFor="camera-select" className="sr-only">
+                            Camera
+                          </FieldLabel>
                           <NativeSelect
                             id="camera-select"
                             size="sm"
@@ -1155,10 +1173,10 @@ function UploadFlow({
                               </NativeSelectOption>
                             ))}
                           </NativeSelect>
-                        </div>
+                        </Field>
                       ) : (
                         <span className="text-xs text-muted-foreground flex items-center gap-1.5 pl-1">
-                          <span className="size-2 rounded-full bg-success animate-pulse" />
+                          <span className="size-2 rounded-full bg-success" aria-hidden="true" />
                           Live Viewfinder
                         </span>
                       )}
@@ -1177,10 +1195,10 @@ function UploadFlow({
                           type="button"
                           variant="default"
                           size="sm"
-                          className="h-8 text-xs font-semibold gap-1.5 shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+                          className="h-8 text-xs font-semibold shadow-warm cursor-pointer"
                           onClick={handleCaptureFrame}
                         >
-                          <CameraIcon className="size-3.5" />
+                          <CameraIcon data-icon="inline-start" aria-hidden="true" />
                           Capture Photo
                         </Button>
                       </div>
@@ -1201,11 +1219,12 @@ function UploadFlow({
                       setIsDragging(false);
                       handleFileChange(e.dataTransfer.files?.[0]);
                     }}
-                    className={`group relative flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm overflow-hidden ${
+                    className={cn(
+                      "group relative flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border-2 border-dashed transition-all text-center shadow-warm overflow-hidden",
                       isDragging
                         ? "border-primary bg-primary/5 scale-[0.99]"
                         : "border-border bg-card hover:border-primary/60 hover:bg-muted/10"
-                    }`}
+                    )}
                   >
                     {/* Viewfinder Corner Framing Brackets */}
                     <div className="absolute top-2.5 left-2.5 size-3 pointer-events-none" aria-hidden="true">
@@ -1227,7 +1246,7 @@ function UploadFlow({
 
                     {/* Decorative Cursive Penmanship Guidelines Background (DESIGN.md signature component) */}
                     <div
-                      className="absolute inset-x-8 top-1/2 -translate-y-1/2 flex flex-col justify-between h-20 opacity-30 dark:opacity-20 pointer-events-none select-none transition-opacity group-hover:opacity-40"
+                      className="absolute inset-x-8 top-1/2 -translate-y-1/2 flex flex-col justify-between h-20 opacity-25 pointer-events-none select-none transition-opacity group-hover:opacity-40"
                       aria-hidden="true"
                     >
                       {/* Headline */}
@@ -1263,20 +1282,20 @@ function UploadFlow({
                           ref={takePhotoButtonRef}
                           type="button"
                           variant="default"
-                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
                           onClick={() => cameraInputRef.current?.click()}
                         >
-                          <CameraIcon className="size-3.5" />
+                          <CameraIcon data-icon="inline-start" aria-hidden="true" />
                           Take Photo
                         </Button>
                         <Button
                           ref={browseButtonRef}
                           type="button"
                           variant="outline"
-                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full cursor-pointer"
                           onClick={() => fileInputRef.current?.click()}
                         >
-                          <FileImageIcon className="size-3.5 text-muted-foreground" />
+                          <FileImageIcon data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
                           Photo Library
                         </Button>
                       </div>
@@ -1286,19 +1305,19 @@ function UploadFlow({
                           ref={browseButtonRef}
                           type="button"
                           variant="default"
-                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full shadow-warm cursor-pointer"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full shadow-warm cursor-pointer"
                           onClick={() => fileInputRef.current?.click()}
                         >
-                          <FileImageIcon className="size-3.5" />
+                          <FileImageIcon data-icon="inline-start" aria-hidden="true" />
                           Browse Files
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
-                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full bg-background hover:bg-muted cursor-pointer"
+                          className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full cursor-pointer"
                           onClick={() => handleStartDesktopCamera()}
                         >
-                          <Video className="size-3.5 text-primary" />
+                          <Video data-icon="inline-start" className="text-primary" aria-hidden="true" />
                           Use Camera / Doc Cam
                         </Button>
                       </div>
@@ -1318,77 +1337,81 @@ function UploadFlow({
                 </div>
 
                 {/* Streamlined Photo Quality Guide (Collapsible Accordion Below Dropzone) */}
-                <div className="rounded-xl bg-muted/30 overflow-hidden text-xs">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setShowTips((prev) => !prev)}
-                    className="w-full h-auto justify-between rounded-none px-3.5 py-2.5 hover:bg-muted/50 text-left font-medium text-foreground cursor-pointer"
-                    aria-expanded={showTips}
-                    aria-controls={photoTipsId}
+                <Collapsible
+                  open={showTips}
+                  onOpenChange={setShowTips}
+                  className="rounded-xl bg-muted/30 overflow-hidden text-xs"
+                >
+                  <CollapsibleTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-auto justify-between rounded-none px-3.5 py-2.5 hover:bg-muted/50 text-left font-medium text-foreground cursor-pointer"
+                      />
+                    }
                   >
-                    <div className="flex items-center gap-2">
-                      <LightbulbIcon className="size-4 text-primary shrink-0" />
+                    <span className="flex items-center gap-2">
+                      <LightbulbIcon data-icon="inline-start" className="text-primary shrink-0" aria-hidden="true" />
                       <span className="text-xs sm:text-sm font-semibold">Photo quality tips</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
+                    </span>
+                    <span className="flex items-center gap-1 text-muted-foreground text-xs font-medium">
                       <span>{showTips ? "Hide tips" : "Show tips"}</span>
                       <ChevronDownIcon
-                        className={`size-3.5 transition-transform duration-200 ${
-                          showTips ? "rotate-180" : ""
-                        }`}
+                        data-icon="inline-end"
+                        className={cn("transition-transform duration-200", showTips && "rotate-180")}
+                        aria-hidden="true"
                       />
-                    </div>
-                  </Button>
-                  {showTips && (
-                    <div id={photoTipsId} className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <Scan className="size-4 text-primary shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            90° Overhead Angle
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Hold camera flat directly above the paper.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <SunMedium className="size-4 text-primary shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Even Light
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Avoid shadows and strong glare on words.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <AlignJustify className="size-4 text-primary shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Clear Ruling
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Keep headline, midline &amp; baseline visible.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2.5 p-2 rounded-lg bg-background/60 dark:bg-muted/30">
-                        <Focus className="size-4 text-primary shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-foreground text-xs sm:text-sm">
-                            Sharp Focus
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                            Tap screen on cursive ink before snapping.
-                          </p>
-                        </div>
+                    </span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-3.5 pb-3.5 pt-1.5 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs animate-in fade-in-50 duration-150 motion-reduce:animate-none">
+                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
+                      <Scan className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                      <div>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          90° Overhead Angle
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                          Hold camera flat directly above the paper.
+                        </p>
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
+                      <SunMedium className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                      <div>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          Even Light
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                          Avoid shadows and strong glare on words.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
+                      <AlignJustify className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                      <div>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          Clear Ruling
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                          Keep headline, midline &amp; baseline visible.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5 p-2 rounded-lg bg-card">
+                      <Focus className="size-4 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                      <div>
+                        <p className="font-semibold text-foreground text-xs sm:text-sm">
+                          Sharp Focus
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                          Tap screen on cursive ink before snapping.
+                        </p>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </>
             )}
 
@@ -1436,7 +1459,7 @@ function UploadFlow({
                   </Alert>
                 )}
 
-                <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                <div className="rounded-2xl border border-border bg-card p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <FileImageIcon className="size-5 text-primary shrink-0" />
@@ -1470,10 +1493,11 @@ function UploadFlow({
                         title="Rotate 90° clockwise"
                         aria-label="Rotate photo 90 degrees clockwise"
                       >
-                        <RotateCwIcon
-                          className={`size-4 ${isRotating ? "animate-spin" : ""}`}
-                          aria-hidden="true"
-                        />
+                        {isRotating ? (
+                          <Spinner data-icon="inline-start" />
+                        ) : (
+                          <RotateCwIcon aria-hidden="true" />
+                        )}
                       </Button>
                       <Button
                         type="button"
@@ -1483,18 +1507,19 @@ function UploadFlow({
                         onClick={handleClearFile}
                         aria-label="Remove selected image and select another"
                       >
-                        <XIcon className="size-4" />
+                        <XIcon aria-hidden="true" />
                       </Button>
                     </div>
                   </div>
 
                   {previewUrl && (
                     <div
-                      className={`relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center transition-[aspect-ratio,max-height] duration-200 touch-pan-y ${
+                      className={cn(
+                        "relative w-full rounded-xl overflow-hidden bg-muted/40 border border-border flex items-center justify-center transition-[aspect-ratio,max-height] duration-200 touch-pan-y",
                         isPortrait
                           ? "aspect-3/4 max-h-[380px] sm:max-h-[440px]"
                           : "aspect-4/3 max-h-[300px] sm:max-h-[360px]"
-                      }`}
+                      )}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -1531,12 +1556,12 @@ function UploadFlow({
 
             {/* Step 5 — Success & Continuous Class Upload Flow */}
             {step === 5 && (
-              <div className="flex flex-col items-center justify-center py-6 text-center space-y-4 animate-in fade-in-50 zoom-in-95 duration-200 motion-reduce:animate-none">
+              <div className="flex flex-col items-center justify-center py-6 text-center gap-4 animate-in fade-in-50 zoom-in-95 duration-200 motion-reduce:animate-none">
                 <div className="flex size-14 sm:size-16 items-center justify-center rounded-2xl bg-success/10 text-success border border-success/20 shadow-warm">
                   <CheckCircle2Icon className="size-8 sm:size-9" />
                 </div>
 
-                <div className="space-y-1.5 max-w-sm">
+                <div className="flex flex-col gap-1.5 max-w-sm">
                   <h3 className="text-base sm:text-lg font-semibold text-foreground tracking-tight">
                     Worksheet Submitted!
                   </h3>
@@ -1557,7 +1582,7 @@ function UploadFlow({
                     variant="outline"
                     className="text-xs font-semibold px-2.5 py-0.5 bg-success/10 text-success border-success/30"
                   >
-                    <Hash className="size-3 mr-1" />
+                    <Hash data-icon="inline-start" aria-hidden="true" />
                     {uploadedCount} {uploadedCount === 1 ? "worksheet" : "worksheets"} uploaded this session
                   </Badge>
                 </div>
@@ -1567,9 +1592,9 @@ function UploadFlow({
                     type="button"
                     variant="default"
                     onClick={handleViewDiagnostic}
-                    className="h-10 sm:h-9 text-xs sm:text-sm font-semibold gap-1.5 w-full shadow-warm bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
+                    className="h-10 sm:h-9 text-xs sm:text-sm font-semibold w-full shadow-warm cursor-pointer"
                   >
-                    <ArrowRightIcon className="size-3.5" />
+                    <ArrowRightIcon data-icon="inline-start" aria-hidden="true" />
                     View Diagnostic Results
                   </Button>
                   <Button
@@ -1577,9 +1602,9 @@ function UploadFlow({
                     type="button"
                     variant="outline"
                     onClick={handleNextUpload}
-                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium gap-1.5 w-full cursor-pointer bg-background hover:bg-muted"
+                    className="h-10 sm:h-9 text-xs sm:text-sm font-medium w-full cursor-pointer"
                   >
-                    <Plus className="size-3.5 text-muted-foreground" />
+                    <Plus data-icon="inline-start" className="text-muted-foreground" aria-hidden="true" />
                     Upload Next Student
                   </Button>
                 </div>
@@ -1591,7 +1616,7 @@ function UploadFlow({
 
       {/* Footer actions for Steps 1–3 */}
       {!isUploading && step <= 3 && (
-        <div className="flex items-center justify-between p-3 sm:p-3.5 px-4 sm:px-6 border-t border-border bg-muted/20">
+        <DialogFooter className="border-t border-border bg-muted/20 px-4 py-3 sm:px-6 sm:justify-between">
           {step === 1 && (
             <Button
               variant="outline"
@@ -1605,9 +1630,9 @@ function UploadFlow({
             <Button
               variant="outline"
               onClick={() => setStep(1)}
-              className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <ArrowLeftIcon className="size-3.5" />
+              <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
               Back
             </Button>
           )}
@@ -1615,9 +1640,9 @@ function UploadFlow({
             <Button
               variant="outline"
               onClick={handleClearFile}
-              className="gap-1.5 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
-              <ArrowLeftIcon className="size-3.5" />
+              <ArrowLeftIcon data-icon="inline-start" aria-hidden="true" />
               Back
             </Button>
           )}
@@ -1626,10 +1651,10 @@ function UploadFlow({
             <Button
               disabled={!canProceed}
               onClick={() => setStep(2)}
-              className="gap-2 h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
+              className="h-10 sm:h-9 px-4 text-xs sm:text-sm font-medium cursor-pointer"
             >
               <span>Next</span>
-              <ArrowRightIcon className="size-3.5" />
+              <ArrowRightIcon data-icon="inline-end" aria-hidden="true" />
             </Button>
           )}
           {step === 3 && (
@@ -1637,13 +1662,13 @@ function UploadFlow({
               ref={submitButtonRef}
               disabled={uploadMutation.isPending}
               onClick={handleRetryUpload}
-              className="gap-2 h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="h-10 sm:h-9 px-5 text-xs sm:text-sm font-semibold shadow-warm cursor-pointer"
             >
-              <CheckCircle2Icon className="size-4" />
+              <CheckCircle2Icon data-icon="inline-start" aria-hidden="true" />
               Submit
             </Button>
           )}
-        </div>
+        </DialogFooter>
       )}
     </>
   );

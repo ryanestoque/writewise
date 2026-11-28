@@ -6,7 +6,9 @@ import { Check, PenTool } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Empty,
@@ -187,7 +189,7 @@ export function NotificationList({
             {unreadCount > 0 && (
               <Badge
                 variant="secondary"
-                className="h-auto rounded-full bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums"
+                className="h-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary tabular-nums"
               >
                 {unreadCount}
               </Badge>
@@ -254,7 +256,14 @@ export function NotificationList({
                     loadMore();
                   }}
                 >
-                  {loadingMore ? "Loading older updates…" : "Load older updates"}
+                  {loadingMore ? (
+                    <>
+                      <Spinner data-icon="inline-start" />
+                      Loading older updates…
+                    </>
+                  ) : (
+                    "Load older updates"
+                  )}
                 </Button>
                 {Boolean(loadMoreError) && (
                   <Alert
@@ -299,65 +308,74 @@ export function NotificationList({
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-3 pr-1 pb-2 [scrollbar-width:thin] [scrollbar-color:var(--border)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/60 hover:[&::-webkit-scrollbar-thumb]:bg-border">
-          {groups.map((group) => (
-            <div key={group.label} className="flex flex-col gap-1">
-              <h3 className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                {group.label}
-              </h3>
-              <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
-                {group.items.map((row) => (
-                  <NotificationRowItem
-                    key={row.id}
-                    row={row}
-                    labels={labels}
-                    role={role}
-                    pending={row.id === pendingId}
-                    onRead={onRead}
-                    onActivate={onActivate}
-                  />
-                ))}
-              </ul>
-            </div>
-          ))}
-          {hasMore && (
-            <div className="flex flex-col gap-1.5 pt-2 pb-1 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[44px] md:min-h-[36px] touch-manipulation cursor-pointer w-full text-xs font-medium"
-                disabled={loadingMore}
-                onClick={() => {
-                  wasLoadingMoreRef.current = true;
-                  loadMore();
-                }}
-              >
-                {loadingMore ? "Loading…" : "Load more"}
-              </Button>
-              {Boolean(loadMoreError) && (
-                <Alert
-                  variant="destructive"
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-2 text-xs"
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="flex flex-col gap-3 pr-2 pb-2">
+            {groups.map((group) => (
+              <div key={group.label} className="flex flex-col gap-1">
+                <h3 className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  {group.label}
+                </h3>
+                <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
+                  {group.items.map((row) => (
+                    <NotificationRowItem
+                      key={row.id}
+                      row={row}
+                      labels={labels}
+                      role={role}
+                      pending={row.id === pendingId}
+                      onRead={onRead}
+                      onActivate={onActivate}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {hasMore && (
+              <div className="flex flex-col gap-1.5 pt-2 pb-1 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px] md:min-h-[36px] touch-manipulation cursor-pointer w-full text-xs font-medium"
+                  disabled={loadingMore}
+                  onClick={() => {
+                    wasLoadingMoreRef.current = true;
+                    loadMore();
+                  }}
                 >
-                  <AlertDescription className="font-medium text-xs">
-                    Failed to load more.
-                  </AlertDescription>
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => {
-                      wasLoadingMoreRef.current = true;
-                      loadMore();
-                    }}
-                    className="h-9 min-h-[44px] md:h-7 md:min-h-0 px-3 md:px-2 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer shrink-0"
+                  {loadingMore ? (
+                    <>
+                      <Spinner data-icon="inline-start" />
+                      Loading…
+                    </>
+                  ) : (
+                    "Load more"
+                  )}
+                </Button>
+                {Boolean(loadMoreError) && (
+                  <Alert
+                    variant="destructive"
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-2 text-xs"
                   >
-                    Retry
-                  </Button>
-                </Alert>
-              )}
-            </div>
-          )}
-        </div>
+                    <AlertDescription className="font-medium text-xs">
+                      Failed to load more.
+                    </AlertDescription>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => {
+                        wasLoadingMoreRef.current = true;
+                        loadMore();
+                      }}
+                      className="h-9 min-h-[44px] md:h-7 md:min-h-0 px-3 md:px-2 border-destructive/30 hover:bg-destructive/15 text-xs touch-manipulation cursor-pointer shrink-0"
+                    >
+                      Retry
+                    </Button>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
       )}
     </div>
   );

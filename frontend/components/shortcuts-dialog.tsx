@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Kbd } from "@/components/ui/kbd";
 import { useShortcutKeys } from "@/hooks/use-shortcut-keys";
 
@@ -120,33 +129,35 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="p-6 pt-4 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="p-6 pt-4 flex flex-col gap-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
           {categories.map((category) => (
-            <div key={category} className="space-y-2.5">
+            <div key={category} className="flex flex-col gap-2.5">
               <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">
                 {category}
               </h4>
-              <div className="rounded-xl border divide-y bg-card/50">
+              <ItemGroup className="gap-0 rounded-xl border border-border bg-card">
                 {shortcuts
                   .filter((s) => s.category === category)
                   .map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between px-3.5 py-2.5 text-xs"
-                    >
-                      <span className="text-foreground font-medium">
-                        {item.description}
-                      </span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {item.keys.map((key, keyIdx) => (
-                          <Kbd key={keyIdx} className="text-[11px] px-1.5 py-0.5 font-mono">
-                            {key === "⌘" ? modifierKey : key === "Alt" ? altKey : key}
-                          </Kbd>
-                        ))}
-                      </div>
-                    </div>
+                    <Fragment key={`${category}-${idx}`}>
+                      {idx > 0 && <ItemSeparator className="my-0" />}
+                      <Item size="xs" className="justify-between">
+                        <ItemContent>
+                          <ItemTitle className="text-xs font-medium text-foreground line-clamp-none">
+                            {item.description}
+                          </ItemTitle>
+                        </ItemContent>
+                        <ItemActions className="gap-1 shrink-0">
+                          {item.keys.map((key, keyIdx) => (
+                            <Kbd key={keyIdx} className="text-[11px] px-1.5 py-0.5 font-mono">
+                              {key === "⌘" ? modifierKey : key === "Alt" ? altKey : key}
+                            </Kbd>
+                          ))}
+                        </ItemActions>
+                      </Item>
+                    </Fragment>
                   ))}
-              </div>
+              </ItemGroup>
             </div>
           ))}
         </div>

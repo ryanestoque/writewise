@@ -23,45 +23,45 @@ function getNotificationVisual(type: NotificationRow["type"]) {
     case "submission_rejected":
       return {
         icon: ScanLine,
-        badgeStyle: "bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive",
+        badgeStyle: "bg-destructive/10 text-destructive",
         dotStyle: "bg-destructive",
       };
     case "due_soon":
       return {
         icon: Clock,
-        badgeStyle: "bg-warning/15 text-warning-foreground dark:bg-warning/20 dark:text-warning",
+        badgeStyle: "bg-warning/15 text-warning-foreground",
         dotStyle: "bg-warning",
       };
     case "activity_missing":
       return {
         icon: FileQuestion,
-        badgeStyle: "bg-warning/15 text-warning-foreground dark:bg-warning/20 dark:text-warning",
+        badgeStyle: "bg-warning/15 text-warning-foreground",
         dotStyle: "bg-warning",
       };
     case "submission_returned":
     case "resubmitted_after_return":
       return {
         icon: RotateCcw,
-        badgeStyle: "bg-secondary text-secondary-foreground dark:bg-secondary/40 dark:text-secondary-foreground",
+        badgeStyle: "bg-secondary text-secondary-foreground",
         dotStyle: "bg-primary",
       };
     case "comment_posted":
       return {
         icon: MessageSquare,
-        badgeStyle: "bg-secondary text-secondary-foreground dark:bg-secondary/40 dark:text-secondary-foreground",
+        badgeStyle: "bg-secondary text-secondary-foreground",
         dotStyle: "bg-primary",
       };
     case "score_released":
       return {
         icon: BarChart3,
-        badgeStyle: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
+        badgeStyle: "bg-primary/10 text-primary",
         dotStyle: "bg-primary",
       };
     case "activity_assigned":
     default:
       return {
         icon: PenTool,
-        badgeStyle: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
+        badgeStyle: "bg-primary/10 text-primary",
         dotStyle: "bg-primary",
       };
   }
@@ -99,7 +99,7 @@ export const NotificationRowItem = memo(function NotificationRowItem({
       className={cn(
         "group relative flex items-start gap-3 rounded-lg p-2.5 transition-colors border",
         unread
-          ? "bg-primary/5 dark:bg-primary/10 hover:bg-primary/10 dark:hover:bg-primary/15 border-primary/10 dark:border-primary/20"
+          ? "bg-primary/5 hover:bg-primary/10 border-primary/15"
           : "border-transparent hover:bg-muted/50"
       )}
     >
@@ -175,7 +175,7 @@ export const NotificationRowItem = memo(function NotificationRowItem({
             onRead(row.id);
           }}
         >
-          <Check className="size-3.5" aria-hidden="true" />
+          <Check aria-hidden="true" />
         </Button>
       )}
     </li>

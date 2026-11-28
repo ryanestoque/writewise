@@ -7,8 +7,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -139,6 +141,7 @@ interface ScoringBandItem {
   range: string;
   dotColor: string;
   containerClass: string;
+  badgeClass: string;
   desc: string;
   parentDesc: string;
 }
@@ -149,7 +152,8 @@ const scoringBands: ScoringBandItem[] = [
     level: "Band 4",
     range: "75–100%",
     dotColor: "bg-band-4",
-    containerClass: "border-band-4/30 bg-band-4/5 dark:bg-band-4/10",
+    containerClass: "border-band-4/30 bg-band-4/10",
+    badgeClass: "border-band-4/30 text-band-4-text",
     desc: "Exemplary cursive discipline with fluid loop closures, uniform forward slant, and consistent baseline adherence.",
     parentDesc: "Smooth, steady cursive handwriting with consistent letter shapes, spacing, and alignment across the worksheet.",
   },
@@ -158,7 +162,8 @@ const scoringBands: ScoringBandItem[] = [
     level: "Band 3",
     range: "50–74%",
     dotColor: "bg-band-3",
-    containerClass: "border-band-3/30 bg-band-3/5 dark:bg-band-3/10",
+    containerClass: "border-band-3/30 bg-band-3/10",
+    badgeClass: "border-band-3/30 text-band-3-text",
     desc: "Strong cursive legibility with minor spacing or slant variations on complex letter joins (b, k, f, z).",
     parentDesc: "Easy-to-read cursive with a solid foundation and only small spots to polish on trickier letters.",
   },
@@ -167,7 +172,8 @@ const scoringBands: ScoringBandItem[] = [
     level: "Band 2",
     range: "25–49%",
     dotColor: "bg-band-2",
-    containerClass: "border-band-2/30 bg-band-2/5 dark:bg-band-2/10",
+    containerClass: "border-band-2/30 bg-band-2/10",
+    badgeClass: "border-band-2/30 text-band-2-text",
     desc: "Recognizable cursive structure with noticeable letterform irregularities, midline drift, or fluctuating slant.",
     parentDesc: "Actively building cursive muscle memory — letter shapes are coming together and will steady with practice.",
   },
@@ -176,7 +182,8 @@ const scoringBands: ScoringBandItem[] = [
     level: "Band 1",
     range: "0–24%",
     dotColor: "bg-band-1",
-    containerClass: "border-band-1/30 bg-band-1/5 dark:bg-band-1/10",
+    containerClass: "border-band-1/30 bg-band-1/10",
+    badgeClass: "border-band-1/30 text-band-1-text",
     desc: "Frequent print-cursive hybrid strokes, disconnected joins, erratic slant angles, or significant baseline drift.",
     parentDesc: "Starting out with basic cursive strokes and letter joins — guided tracing and slow practice help most here.",
   },
@@ -191,7 +198,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
 }) {
   return (
     <div
-      className="relative rounded-lg border border-border/70 bg-background/90 dark:bg-surface/80 p-2.5 overflow-hidden select-none"
+      className="relative rounded-lg border border-border/70 bg-surface/90 p-2.5 overflow-hidden select-none"
       aria-hidden="true"
     >
       <div className="mb-1.5">
@@ -204,7 +211,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
         {criterionId === "formation" && (
           <svg
             viewBox="0 0 240 50"
-            className="w-full h-12 max-w-xs overflow-visible text-primary dark:text-brand-300"
+            className="w-full h-12 max-w-xs overflow-visible text-primary"
             aria-label="Cursive letter formation loop diagram"
           >
             <line x1="10" y1="10" x2="230" y2="10" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1" />
@@ -233,7 +240,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
         {criterionId === "slant" && (
           <svg
             viewBox="0 0 240 50"
-            className="w-full h-12 max-w-xs overflow-visible text-primary dark:text-brand-300"
+            className="w-full h-12 max-w-xs overflow-visible text-primary"
             aria-label="Cursive slant diagram"
           >
             <line x1="10" y1="10" x2="230" y2="10" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1" />
@@ -263,7 +270,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
         {criterionId === "spacing" && (
           <svg
             viewBox="0 0 240 50"
-            className="w-full h-12 max-w-xs overflow-visible text-primary dark:text-brand-300"
+            className="w-full h-12 max-w-xs overflow-visible text-primary"
             aria-label="Cursive spacing diagram"
           >
             <line x1="10" y1="10" x2="230" y2="10" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1" />
@@ -301,7 +308,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
         {criterionId === "baseline" && (
           <svg
             viewBox="0 0 240 50"
-            className="w-full h-12 max-w-xs overflow-visible text-primary dark:text-brand-300"
+            className="w-full h-12 max-w-xs overflow-visible text-primary"
             aria-label="Cursive baseline alignment diagram"
           >
             <line x1="10" y1="10" x2="230" y2="10" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1" />
@@ -331,7 +338,7 @@ const CriterionVisualGuide = React.memo(function CriterionVisualGuide({
         {criterionId === "size" && (
           <svg
             viewBox="0 0 240 50"
-            className="w-full h-12 max-w-xs overflow-visible text-primary dark:text-brand-300"
+            className="w-full h-12 max-w-xs overflow-visible text-primary"
             aria-label="Cursive size consistency diagram"
           >
             <line x1="10" y1="10" x2="230" y2="10" stroke="currentColor" strokeOpacity="0.45" strokeWidth="1" />
@@ -400,9 +407,9 @@ export function RubricReferenceDialog({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain focus-visible:outline-none">
-          <div className="p-4 sm:p-5 space-y-6">
+          <div className="p-4 sm:p-5 flex flex-col gap-6">
             {/* Section 1: 5 Handwriting Skills */}
-            <section aria-labelledby="criteria-heading" className="space-y-3">
+            <section aria-labelledby="criteria-heading" className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
                 <h3
                   id="criteria-heading"
@@ -417,9 +424,9 @@ export function RubricReferenceDialog({
                   size="xs"
                   onClick={toggleAll}
                   aria-expanded={allExpanded}
-                  className="h-11 sm:h-6 -mr-1.5 gap-1.5 px-2.5 sm:px-1.5 text-primary hover:bg-primary/5 hover:text-primary/80 aria-expanded:bg-transparent aria-expanded:text-primary cursor-pointer"
+                  className="h-11 sm:h-6 -mr-1.5 px-2.5 sm:px-1.5 text-primary hover:bg-primary/5 hover:text-primary/80 aria-expanded:bg-transparent aria-expanded:text-primary cursor-pointer"
                 >
-                  <ChevronsUpDownIcon className="size-3.5" aria-hidden="true" />
+                  <ChevronsUpDownIcon data-icon="inline-start" aria-hidden="true" />
                   <span>{allExpanded ? "Collapse all" : "Expand all"}</span>
                 </Button>
               </div>
@@ -461,10 +468,10 @@ export function RubricReferenceDialog({
                         </span>
                       </AccordionTrigger>
 
-                      <AccordionContent className="pt-3.5 pb-4 border-t border-border/50 space-y-3 [&_p:not(:last-child)]:mb-0">
+                      <AccordionContent className="pt-3.5 pb-4 border-t border-border/50 flex flex-col gap-3 [&_p:not(:last-child)]:mb-0">
                         <CriterionVisualGuide criterionId={item.id} isParent={isParent} />
 
-                        <div className="text-sm text-muted-foreground leading-relaxed space-y-1.5 bg-muted/30 p-3 rounded-lg border border-border/40">
+                        <div className="text-sm text-muted-foreground leading-relaxed flex flex-col gap-1.5 bg-muted/30 p-3 rounded-lg border border-border/40">
                           <p>
                             <span className="font-semibold text-foreground">
                               {isParent ? "What we check: " : "Technical: "}
@@ -485,8 +492,10 @@ export function RubricReferenceDialog({
               </Accordion>
             </section>
 
+            <Separator />
+
             {/* Section 2: Score Levels */}
-            <section aria-labelledby="bands-heading" className="space-y-3 pt-2 border-t border-border/60">
+            <section aria-labelledby="bands-heading" className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
                 <h3
                   id="bands-heading"
@@ -507,25 +516,28 @@ export function RubricReferenceDialog({
                     size="sm"
                     role="listitem"
                     className={cn(
-                      "py-3.5 shadow-none transition-colors",
+                      "gap-2 shadow-none transition-colors",
                       band.containerClass
                     )}
                   >
-                    <CardContent className="px-3.5 space-y-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className={cn("size-2.5 rounded-full shrink-0", band.dotColor)}
-                            aria-hidden="true"
-                          />
-                          <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-                            {band.band}
-                          </span>
-                        </div>
-                        <span className="text-xs font-semibold text-foreground/90 font-sans tabular-nums shrink-0 whitespace-nowrap">
+                    <CardHeader className="items-center">
+                      <CardTitle as="div" className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span
+                          className={cn("size-2.5 rounded-full shrink-0", band.dotColor)}
+                          aria-hidden="true"
+                        />
+                        <span>{band.band}</span>
+                      </CardTitle>
+                      <CardAction>
+                        <Badge
+                          variant="outline"
+                          className={cn("font-sans tabular-nums", band.badgeClass)}
+                        >
                           {band.range}
-                        </span>
-                      </div>
+                        </Badge>
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {isParent ? band.parentDesc : band.desc}
                       </p>
