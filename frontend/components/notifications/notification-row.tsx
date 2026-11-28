@@ -14,6 +14,7 @@ import {
   ScanLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Item, ItemActions, ItemContent, ItemMedia } from "@/components/ui/item";
 import { cn } from "@/lib/utils";
 import { notificationCopy, notificationHref } from "@/lib/notifications/presentation";
 import type { NotificationLabels, NotificationRow } from "@/lib/notifications/data";
@@ -94,10 +95,13 @@ export const NotificationRowItem = memo(function NotificationRowItem({
   const formattedTitle = useMemo(() => createdAtDate.toLocaleString(), [createdAtDate]);
 
   return (
-    <li
+    <Item
+      role="listitem"
       data-notification-id={row.id}
+      size="xs"
+      variant={unread ? "muted" : "default"}
       className={cn(
-        "group relative flex items-start gap-3 rounded-lg p-2.5 transition-colors border",
+        "group relative flex-nowrap items-start gap-3 rounded-lg p-2.5 transition-colors border",
         unread
           ? "bg-primary/5 hover:bg-primary/10 border-primary/15"
           : "border-transparent hover:bg-muted/50"
@@ -113,7 +117,7 @@ export const NotificationRowItem = memo(function NotificationRowItem({
         className="flex min-w-0 flex-1 items-start gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/* Domain-grounded pedagogical icon with semantic urgency & unread indicator dot */}
-        <div className="relative mt-0.5 shrink-0">
+        <ItemMedia className="relative mt-0.5 shrink-0">
           <div
             className={cn(
               "flex size-8 items-center justify-center rounded-lg transition-colors",
@@ -134,9 +138,9 @@ export const NotificationRowItem = memo(function NotificationRowItem({
               aria-hidden="true"
             />
           )}
-        </div>
+        </ItemMedia>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <ItemContent className="min-w-0 flex-1 gap-1 group-data-[size=xs]/item:gap-1">
           <span className="sr-only">
             {unread ? "Unread notification: " : "Read notification: "}
           </span>
@@ -159,25 +163,27 @@ export const NotificationRowItem = memo(function NotificationRowItem({
           >
             {formattedDistance}
           </time>
-        </div>
+        </ItemContent>
       </Link>
 
       {/* Quick mark-as-read action ONLY when unread with 44px tap target expansion that doesn't bleed into title link */}
       {unread && !(row.type === "comment_posted" && !row.comment_version) && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative size-8 md:size-7 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 active:bg-muted rounded-md touch-manipulation cursor-pointer after:absolute after:-inset-y-2 after:-end-3 after:start-0 focus-visible:ring-2 focus-visible:ring-ring"
-          disabled={pending}
-          aria-label={`Mark as read: ${notificationCopy(row.type)} for ${labels.students[row.student_id] ?? "Student"}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRead(row.id);
-          }}
-        >
-          <Check aria-hidden="true" />
-        </Button>
+        <ItemActions className="shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative size-8 md:size-7 shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 active:bg-muted rounded-md touch-manipulation cursor-pointer after:absolute after:-inset-y-2 after:-end-3 after:start-0 focus-visible:ring-2 focus-visible:ring-ring"
+            disabled={pending}
+            aria-label={`Mark as read: ${notificationCopy(row.type)} for ${labels.students[row.student_id] ?? "Student"}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRead(row.id);
+            }}
+          >
+            <Check aria-hidden="true" />
+          </Button>
+        </ItemActions>
       )}
-    </li>
+    </Item>
   );
 });

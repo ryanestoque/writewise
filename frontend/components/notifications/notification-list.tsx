@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ItemGroup } from "@/components/ui/item";
 import {
   Empty,
   EmptyHeader,
@@ -315,7 +316,7 @@ export function NotificationList({
                 <h3 className="sticky top-0 z-10 bg-popover/95 backdrop-blur-xs px-2 py-1 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                   {group.label}
                 </h3>
-                <ul aria-label={`${group.label} notifications`} className="flex flex-col gap-1">
+                <ItemGroup aria-label={`${group.label} notifications`} className="gap-1">
                   {group.items.map((row) => (
                     <NotificationRowItem
                       key={row.id}
@@ -327,7 +328,7 @@ export function NotificationList({
                       onActivate={onActivate}
                     />
                   ))}
-                </ul>
+                </ItemGroup>
               </div>
             ))}
             {hasMore && (
