@@ -14,9 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -33,7 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/supabase/client";
 import type { LinkedChild } from "@/lib/hooks/use-parent-data";
-import { Loader2, LogOut, Settings, Users, BookOpen, PenTool, ChevronDown, Check } from "lucide-react";
+import { LogOut, Settings, Users, BookOpen, PenTool, ChevronDown, Check } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import {
@@ -112,6 +115,10 @@ export function ParentNav({
       .toUpperCase() || "P";
 
   const activeChild = linkedChildren.find((c) => c.id === selectedChildId);
+  const childItems = linkedChildren.map((child) => ({
+    value: child.id,
+    label: `${child.fullName} (${child.section})`,
+  }));
   const hasSubNav = pathname === "/progress";
   const isScrolled = useScrolled(16, !hasSubNav);
 
@@ -122,7 +129,7 @@ export function ParentNav({
         className={cn(
           "fixed top-0 left-0 right-0 z-40 h-14 bg-background print:hidden",
           !hasSubNav &&
-            "border-b border-border transition-[border-color,box-shadow] duration-200 ease-out data-[scrolled=true]:border-brand-200 dark:data-[scrolled=true]:border-border data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(20_80_73/0.08)] dark:data-[scrolled=true]:shadow-[0_4px_20px_-2px_rgb(0_0_0/0.35)]"
+            "border-b border-border transition-[border-color,box-shadow] duration-200 ease-out data-[scrolled=true]:border-border data-[scrolled=true]:shadow-warm"
         )}
       >
         <nav
@@ -148,6 +155,7 @@ export function ParentNav({
                 {/* Desktop Switcher: Standard Select Dropdown */}
                 <div className="hidden sm:block">
                   <Select
+                    items={childItems}
                     value={selectedChildId ?? undefined}
                     onValueChange={(val) => {
                       if (val) onChildChange(val);
@@ -158,24 +166,28 @@ export function ParentNav({
                       aria-label="Switch child profile"
                     >
                       <Users className="size-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-                      <SelectValue placeholder="Select child" className="min-w-0">
+                      <SelectValue className="min-w-0">
                         {activeChild ? (
                           <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full">
                             <span className="truncate font-semibold text-foreground">{activeChild.fullName}</span>
                             <span className="text-muted-foreground text-xs shrink-0">({activeChild.section})</span>
                           </span>
-                        ) : undefined}
+                        ) : (
+                          "Select child"
+                        )}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent align="center" className="w-[280px]">
-                      {linkedChildren.map((child) => (
-                        <SelectItem key={child.id} value={child.id} className="cursor-pointer text-sm">
-                          <div className="flex flex-col text-left">
-                            <span className="font-medium text-foreground">{child.fullName}</span>
-                            <span className="text-xs text-muted-foreground">Section {child.section}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        {linkedChildren.map((child) => (
+                          <SelectItem key={child.id} value={child.id} className="cursor-pointer text-sm">
+                            <div className="flex flex-col text-left">
+                              <span className="font-medium text-foreground">{child.fullName}</span>
+                              <span className="text-xs text-muted-foreground">Section {child.section}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
@@ -191,9 +203,11 @@ export function ParentNav({
                           aria-label={`Switch student profile, currently viewing ${activeChild?.fullName ?? "child"}`}
                           className="h-auto inline-flex items-center gap-1.5 w-full min-w-0 px-2.5 py-1 rounded-full text-xs font-medium bg-card hover:bg-muted/50 border-border/80 text-foreground shadow-warm-sm active:bg-muted cursor-pointer touch-manipulation min-h-11"
                         >
-                          <span className="flex size-5 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold text-xs shrink-0">
-                            {activeChild ? getStudentInitials(activeChild.fullName) : "S"}
-                          </span>
+                          <Avatar size="sm" className="shrink-0">
+                            <AvatarFallback className="bg-secondary text-secondary-foreground font-semibold text-xs">
+                              {activeChild ? getStudentInitials(activeChild.fullName) : "S"}
+                            </AvatarFallback>
+                          </Avatar>
                           <span className="truncate font-semibold text-xs min-w-0 flex-1 text-left">
                             {activeChild?.fullName}
                           </span>
@@ -232,21 +246,23 @@ export function ParentNav({
                               className={cn(
                                 "h-auto w-full flex items-center justify-between p-3 rounded-xl text-left font-normal cursor-pointer min-h-[52px] touch-manipulation",
                                 isSelected
-                                  ? "bg-brand-50/80 border-brand-500/50 hover:bg-brand-50 dark:bg-brand-950/50 dark:border-brand-500/40 dark:hover:bg-brand-950/70 shadow-warm-sm"
+                                  ? "bg-primary/5 border-primary/40 hover:bg-primary/10 shadow-warm-sm"
                                   : "bg-card border-border/70 hover:bg-muted/40 active:bg-muted/70"
                               )}
                             >
                               <span className="flex items-center gap-3 min-w-0">
-                                <span
-                                  className={cn(
-                                    "flex size-9 items-center justify-center rounded-full font-bold text-xs shrink-0",
-                                    isSelected
-                                      ? "bg-primary text-primary-foreground shadow-xs"
-                                      : "bg-muted text-muted-foreground border border-border/60"
-                                  )}
-                                >
-                                  {childInitials}
-                                </span>
+                                <Avatar size="default" className="size-9 shrink-0">
+                                  <AvatarFallback
+                                    className={cn(
+                                      "font-semibold text-xs",
+                                      isSelected
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-muted-foreground"
+                                    )}
+                                  >
+                                    {childInitials}
+                                  </AvatarFallback>
+                                </Avatar>
                                 <span className="flex flex-col min-w-0">
                                   <span className="font-semibold text-sm text-foreground truncate">
                                     {child.fullName}
@@ -278,10 +294,21 @@ export function ParentNav({
 
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="size-10 sm:size-9 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 rounded-full inline-flex items-center justify-center font-semibold text-xs bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 hover:bg-brand-200/80 dark:hover:bg-brand-900/80 border border-brand-200 dark:border-brand-800 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary outline-none transition-colors touch-manipulation"
-                aria-label={`Account menu for ${user.fullName}`}
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-10 sm:size-9 rounded-full cursor-pointer touch-manipulation"
+                    aria-label={`Account menu for ${user.fullName}`}
+                  />
+                }
               >
-                {initials}
+                <Avatar className="size-full">
+                  <AvatarFallback className="bg-secondary text-secondary-foreground font-semibold text-xs">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
@@ -290,9 +317,11 @@ export function ParentNav({
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="font-normal p-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex aspect-square size-9 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold text-xs border border-brand-200/60 dark:border-brand-900/60 shrink-0">
-                        {initials}
-                      </div>
+                      <Avatar className="size-9 rounded-xl after:rounded-xl shrink-0">
+                        <AvatarFallback className="rounded-xl bg-secondary text-secondary-foreground font-semibold text-xs">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex flex-col min-w-0 flex-1">
                         <p className="text-sm font-semibold text-foreground truncate">{user.fullName}</p>
                         <p className="text-xs text-muted-foreground truncate" title={user.email}>{user.email}</p>
@@ -307,7 +336,7 @@ export function ParentNav({
                       onClick={() => onOpenRubric()}
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
-                      <BookOpen className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <BookOpen aria-hidden="true" />
                       <span>Score Guide</span>
                     </DropdownMenuItem>
                   )}
@@ -316,7 +345,7 @@ export function ParentNav({
                       onClick={() => onOpenCursiveGuide()}
                       className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                     >
-                      <PenTool className="size-4 text-muted-foreground" aria-hidden="true" />
+                      <PenTool aria-hidden="true" />
                       <span>Cursive Guide</span>
                     </DropdownMenuItem>
                   )}
@@ -324,7 +353,7 @@ export function ParentNav({
                     render={<Link href="/parent-settings" />}
                     className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm"
                   >
-                    <Settings className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <Settings aria-hidden="true" />
                     <span>Account Settings</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -334,7 +363,7 @@ export function ParentNav({
                     onClick={() => setShowSignOutDialog(true)}
                     className="cursor-pointer gap-2 py-2 min-h-10 sm:min-h-9 text-sm text-destructive focus:text-destructive"
                   >
-                    <LogOut className="size-4" aria-hidden="true" />
+                    <LogOut aria-hidden="true" />
                     <span>Sign out</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -359,11 +388,10 @@ export function ParentNav({
               id="confirm-parent-sign-out"
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="gap-2"
             >
               {isSigningOut ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <Spinner data-icon="inline-start" aria-hidden="true" />
                   <span>Signing out...</span>
                 </>
               ) : (
